@@ -276,19 +276,19 @@
             color: #c0c0c0;
         }
         .form-group input[type="text"],
-        .form-group input[type="number"],
         .form-group input[type="date"],
         .form-group select {
             background-color: #4a4a4a;
             border: 1px solid #555;
-            color: #e0e0e0;
+            color: #ffffff; 
             padding: 0.75rem;
             border-radius: 0.5rem;
             width: 100%;
             box-sizing: border-box;
         }
-        .form-group input[type="text"]::placeholder,
-        .form-group input[type="number"]::placeholder {
+        
+        /* UPDATED: Reverted to a simpler rule now that inputs are type="text" */
+        .form-group input[type="text"]::placeholder {
             color: #b0b0b0;
         }
         .form-group select option {
@@ -509,7 +509,7 @@
                 <div class="section-card flex-grow">
                     <h2 class="text-purple-400">Projects <button id="openCreateProjectModalBtn" class="ml-2 text-gray-400 hover:text-white" aria-label="Create New Project"><i class="fas fa-plus-circle"></i></button></h2>
                     <div id="projectsList" class="mt-4 scrollable-content">
-                        <!-- Projects will be dynamically added here -->
+                        <!-- Projects will be dynamically loaded here -->
                         <p id="noProjectsMessage" class="text-gray-400 text-center py-4">No projects yet. Create one!</p>
                     </div>
                 </div>
@@ -577,9 +577,11 @@
                 <div class="flex items-center space-x-2">
                     <select id="forTypeSelect" class="flex-shrink-0">
                         <option value="atLeast">at least</option>
+                        <option value="atMost">at most</option>
                     </select>
-                    <input type="number" id="forHoursInput" placeholder="hours" class="flex-grow" min="0" step="1" aria-label="Target Hours">
-                    <input type="number" id="forMinutesInput" placeholder="mins" class="flex-grow" min="0" max="59" step="1" aria-label="Target Minutes">
+                    <!-- UPDATED: Changed to type="text" and added inputmode/pattern -->
+                    <input type="text" id="forHoursInput" placeholder="hours" class="flex-grow" inputmode="numeric" pattern="[0-9]*" aria-label="Target Hours">
+                    <input type="text" id="forMinutesInput" placeholder="mins" class="flex-grow" inputmode="numeric" pattern="[0-9]*" aria-label="Target Minutes">
                     <select id="forFrequencySelect" class="flex-shrink-0">
                         <option value="day">every day</option>
                         <option value="week">every week</option>
@@ -724,9 +726,11 @@
                 <div class="flex items-center space-x-2">
                     <select id="editForTypeSelect" class="flex-shrink-0">
                         <option value="atLeast">at least</option>
+                        <option value="atMost">at most</option>
                     </select>
-                    <input type="number" id="editForHoursInput" placeholder="hours" class="flex-grow" min="0" step="1" aria-label="Edit Target Hours">
-                    <input type="number" id="editForMinutesInput" placeholder="mins" class="flex-grow" min="0" max="59" step="1" aria-label="Edit Target Minutes">
+                    <!-- UPDATED: Changed to type="text" and added inputmode/pattern -->
+                    <input type="text" id="editForHoursInput" placeholder="hours" class="flex-grow" inputmode="numeric" pattern="[0-9]*" aria-label="Edit Target Hours">
+                    <input type="text" id="editForMinutesInput" placeholder="mins" class="flex-grow" inputmode="numeric" pattern="[0-9]*" aria-label="Edit Target Minutes">
                     <select id="editForFrequencySelect" class="flex-shrink-0">
                         <option value="day">every day</option>
                         <option value="week">every week</option>
@@ -963,6 +967,18 @@
 
         // --- Utility Functions ---
         
+        // UPDATED: Function to sanitize inputs to only allow numbers
+        function sanitizeNumericInput(inputElement, max = null) {
+            let value = inputElement.value.replace(/\D/g, ''); // Remove all non-digit characters
+            if (max !== null) {
+                const numericValue = parseInt(value, 10);
+                if (!isNaN(numericValue) && numericValue > max) {
+                    value = max.toString(); // Cap the value at the max
+                }
+            }
+            inputElement.value = value;
+        }
+
         function toggleModal(modalElement, show) {
             if (show) {
                 modalElement.classList.remove('hidden');
@@ -1171,6 +1187,7 @@
 
                 const progress = Math.min(100, (goal.currentMs / goal.targetMs) * 100 || 0);
                 const isEnded = goal.endDate && now > new Date(goal.endDate);
+                const goalTypeDisplay = goal.type === 'atMost' ? 'At most' : 'At least';
                 const goalDiv = document.createElement('div');
                 goalDiv.className = 'goal-item';
                 goalDiv.innerHTML = `
@@ -1178,10 +1195,10 @@
                         <span>${Math.round(progress)}%</span>
                     </div>
                     <div class="flex-grow">
-                        <div class="font-semibold">${goal.name}</div>
+                        <div class="font-semibold">${goal.name} (${goalTypeDisplay})</div>
                         <div class="text-sm text-gray-400">
                             ${goal.projectName ? `Project: ${goal.projectName}<br>` : ''}
-                            ${formatTime(goal.currentMs)} / ${formatTime(goal.targetMs)} ${goal.frequency}
+                            ${formatTime(goal.currentMs)} / ${formatTime(goal.targetMs)} per ${goal.frequency}
                             ${goal.endDate ? ` (Until: ${new Date(goal.endDate).toLocaleDateString()})` : ''}
                             ${isEnded ? ' <span class="text-red-400">(Ended)</span>' : ''}
                         </div>
@@ -1313,6 +1330,7 @@
             noEndDateCheckbox.checked = false;
             untilDateInput.disabled = false;
             goalProjectSelect.value = '';
+            forTypeSelect.value = 'atLeast';
             hideError(goalNameError, goalNameInput);
             hideError(forTimeError, forHoursInput);
             hideError(forTimeError, forMinutesInput);
@@ -1351,6 +1369,7 @@
             goals.push({
                 id: Date.now().toString(),
                 name: goalName,
+                type: forTypeSelect.value,
                 targetMs: totalTargetMs,
                 frequency: forFrequencySelect.value,
                 endDate: endDate,
@@ -1492,6 +1511,7 @@
                 editGoalId.value = goal.id;
                 editGoalNameInput.value = goal.name;
                 editGoalProjectSelect.value = goal.projectId || '';
+                editForTypeSelect.value = goal.type || 'atLeast';
                 
                 const totalSeconds = goal.targetMs / 1000;
                 editForHoursInput.value = Math.floor(totalSeconds / 3600);
@@ -1530,6 +1550,7 @@
             if (index !== -1) {
                 const updatedProjectId = editGoalProjectSelect.value || null;
                 goals[index].name = updatedName;
+                goals[index].type = editForTypeSelect.value;
                 goals[index].targetMs = updatedTargetMs;
                 goals[index].frequency = editForFrequencySelect.value;
                 goals[index].endDate = updatedEndDate;
@@ -1713,6 +1734,12 @@
             if (currentTask) {
                 startTimerDisplay();
             }
+
+            // UPDATED: Add event listeners for the new text inputs
+            forHoursInput.addEventListener('input', () => sanitizeNumericInput(forHoursInput));
+            forMinutesInput.addEventListener('input', () => sanitizeNumericInput(forMinutesInput, 59));
+            editForHoursInput.addEventListener('input', () => sanitizeNumericInput(editForHoursInput));
+            editForMinutesInput.addEventListener('input', () => sanitizeNumericInput(editForMinutesInput, 59));
         };
     </script>
 </body>
