@@ -1,1746 +1,1523 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Tracker & Reporter</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #1a1a1a; /* Dark background */
-            color: #e0e0e0; /* Light text color */
-        }
-        .container {
-            max-width: 95%; /* Wider fluid width */
-            margin: 2rem auto;
-            padding: 1.5rem;
-            background-color: #2a2a2a; /* Darker container background */
-            border-radius: 1rem;
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3), 0 8px 12px -6px rgba(0, 0, 0, 0.2);
-        }
-        .top-bar {
-            background-color: #3a3a3a;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap; /* Allow items to wrap on smaller screens */
-        }
-        .top-bar input, .top-bar select {
-            background-color: #4a4a4a;
-            border: 1px solid #555;
-            color: #e0e0e0;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            flex-grow: 1;
-        }
-        .top-bar input::placeholder, .top-bar select option {
-            color: #b0b0b0;
-        }
-        .timer-display {
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-            font-size: 2.25rem; /* Larger timer */
-            font-weight: 600;
-            color: #e0e0e0;
-            min-width: 150px;
-            text-align: right;
-            flex-shrink: 0; /* Prevent timer from shrinking */
-        }
-        .play-pause-btn {
-            background-color: #6a0dad; /* Purple accent */
-            color: white;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            box-shadow: 0 4px 10px rgba(106, 13, 173, 0.4);
-            flex-shrink: 0; /* Prevent button from shrinking */
-        }
-        .play-pause-btn:hover {
-            background-color: #8a2be2;
-            transform: scale(1.05);
-        }
-        .icon-btn {
-            color: #b0b0b0;
-            font-size: 1.25rem;
-            transition: color 0.2s ease;
-        }
-        .icon-btn:hover {
-            color: #e0e0e0;
-        }
-        .date-nav {
-            background-color: #3a3a3a;
-            padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.5rem;
-            color: #e0e0e0;
-            font-weight: 600;
-        }
-        .date-nav button {
-            background: none;
-            border: none;
-            color: #b0b0b0;
-            font-size: 1.25rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            transition: background-color 0.2s ease, color 0.2s ease;
-        }
-        .date-nav button:hover {
-            background-color: #4a4a4a;
-            color: #e0e0e0;
-        }
-        .total-display {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: #c0c0c0;
-        }
-        .main-content {
-            display: grid;
-            grid-template-columns: 2fr 1fr; /* Task list on left, goals/projects on right */
-            gap: 1.5rem;
-        }
-        @media (max-width: 1024px) {
-            .main-content {
-                grid-template-columns: 1fr; /* Stack on smaller screens */
-            }
-        }
-        .section-card {
-            background-color: #3a3a3a;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-        .section-card h2 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: #e0e0e0;
-            margin-bottom: 1rem;
-        }
-        .task-entry {
-            background-color: #4a4a4a;
-            padding: 1rem 1.25rem;
-            border-radius: 0.75rem;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            color: #e0e0e0;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        .task-entry-details {
-            flex-grow: 1;
-        }
-        .task-entry-description {
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 0.25rem;
-        }
-        .task-entry-times {
-            font-size: 0.9rem;
-            color: #b0b0b0;
-        }
-        .task-entry-duration {
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: #6EE7B7; /* Changed to vibrant light green for better visibility */
-        }
-        .goal-item, .project-item {
-            background-color: #4a4a4a;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            color: #e0e0e0;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        .goal-progress-circle {
-            position: relative;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: conic-gradient(#6a0dad var(--progress, 0%), #555 0%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: white;
-        }
-        .goal-progress-circle::before {
-            content: '';
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #4a4a4a;
-        }
-        .goal-progress-circle span {
-            position: relative;
-            z-index: 1;
-        }
-        .add-goal-input-group {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-        .add-goal-input-group input {
-            flex-grow: 1;
-            background-color: #4a4a4a;
-            border: 1px solid #555;
-            color: #e0e0e0;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-        }
-        .add-goal-input-group button {
-            background-color: #6a0dad;
-            color: white;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            transition: background-color 0.3s ease;
-        }
-        .add-goal-input-group button:hover {
-            background-color: #8a2be2;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOCUS — Pomodoro & Task Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+  --bg:       #282828;
+  --bg1:      #3c3836;
+  --bg2:      #504945;
+  --bg3:      #665c54;
+  --red:      #cc241d;
+  --red-b:    #fb4934;
+  --green:    #98971a;
+  --green-b:  #b8bb26;
+  --yellow:   #d79921;
+  --yellow-b: #fabd2f;
+  --blue:     #458588;
+  --blue-b:   #83a598;
+  --purple:   #b16286;
+  --purple-b: #d3869b;
+  --aqua:     #689d6a;
+  --aqua-b:   #8ec07c;
+  --gray:     #a89984;
+  --fg:       #ebdbb2;
+  --fg-dim:   #a89984;
+  --mono:     'JetBrains Mono', monospace;
+  --body:     'Atkinson Hyperlegible', sans-serif;
+  --r:        6px;
+  --rl:       10px;
+  --t:        140ms ease;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100vh;font-size:16px;line-height:1.5;}
+:focus-visible{outline:2px solid var(--yellow-b);outline-offset:2px;border-radius:var(--r);}
 
-        /* Custom Modal */
-        #customModal, #createGoalModal, #createProjectModal, #advancedReportModal, #editTimeEntryModal, #editGoalModal, #editProjectModal, #exportDataModal, #importDataModal {
-            background-color: rgba(0, 0, 0, 0.7); /* Darker overlay */
-        }
-        #customModal > div {
-            background-color: #3a3a3a; /* Dark modal background */
-            color: #e0e0e0;
-            border-radius: 1rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            padding: 1.5rem;
-            max-width: 500px; /* Max width for general alerts */
-            width: 90%; /* Fluid width */
-        }
-        #createGoalModal > div, #createProjectModal > div, #editTimeEntryModal > div, #editGoalModal > div, #editProjectModal > div, #importDataModal > div { /* Specific styles for modals */
-            background-color: #3a3a3a; /* Dark modal background */
-            color: #e0e0e0;
-            border-radius: 1rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            padding: 1rem; /* Reduced padding */
-            max-width: 400px; /* Adjusted max-width */
-            width: 90%; /* Fluid width */
-            max-height: 80vh; /* Max height for scrollability */
-            overflow-y: auto; /* Enable vertical scrolling */
-        }
-        #advancedReportModal > div, #exportDataModal > div { /* Specific styles for advanced report modal and export modal */
-            background-color: #3a3a3a;
-            color: #e0e0e0;
-            border-radius: 1rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            padding: 1.5rem;
-            max-width: 600px; /* Wider for reports and export */
-            width: 90%;
-            max-height: 90vh; /* Allow more height for results */
-            overflow-y: auto;
-        }
-        #modalMessage {
-            color: #e0e0e0;
-        }
-        #modalButtons button, #createGoalModal button, #createProjectModal button, #advancedReportModal button, #editTimeEntryModal button, #editGoalModal button, #editProjectModal button, #exportDataModal button, #importDataModal button {
-            @apply py-2 px-4 rounded-lg font-bold transition duration-300 ease-in-out;
-        }
-        #modalConfirmBtn, #modalCloseBtn, #createGoalBtnModal, #createProjectBtnModal, #generateReportBtn, #saveTimeEntryBtn, #saveGoalEditBtn, #saveProjectEditBtn, #exportDataConfirmBtn, #importDataConfirmBtn {
-            @apply bg-purple-600 hover:bg-purple-700 text-white;
-        }
-        #modalCancelBtn, #cancelGoalBtn, #cancelProjectBtn, #closeReportModalBtn, #cancelTimeEntryEditBtn, #cancelGoalEditBtn, #cancelProjectEditBtn, #cancelExportBtn, #cancelImportBtn {
-            @apply bg-gray-600 hover:bg-gray-700 text-white;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #c0c0c0;
-        }
-        .form-group input[type="text"],
-        .form-group input[type="date"],
-        .form-group select {
-            background-color: #4a4a4a;
-            border: 1px solid #555;
-            color: #ffffff; 
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        
-        /* UPDATED: Reverted to a simpler rule now that inputs are type="text" */
-        .form-group input[type="text"]::placeholder {
-            color: #b0b0b0;
-        }
-        .form-group select option {
-            background-color: #4a4a4a;
-            color: #e0e0e0;
-        }
-        .form-group input[type="checkbox"], .form-group input[type="radio"] {
-            margin-right: 0.5rem;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            flex-shrink: 0; /* Prevent header from shrinking */
-        }
-        .modal-header h3 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #e0e0e0;
-        }
-        .modal-close-btn {
-            background: none;
-            border: none;
-            color: #b0b0b0;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-        .modal-close-btn:hover {
-            color: #e0e0e0;
-        }
+/* LAYOUT */
+.app{max-width:1080px;margin:0 auto;padding:16px 20px;}
 
-        /* Scrollable content areas */
-        .scrollable-content {
-            max-height: 400px; /* Adjust as needed */
-            overflow-y: auto;
-            padding-right: 0.5rem; /* Space for scrollbar */
-        }
-        /* Custom scrollbar for dark theme */
-        .scrollable-content::-webkit-scrollbar,
-        #createGoalModal > div::-webkit-scrollbar,
-        #createProjectModal > div::-webkit-scrollbar,
-        #advancedReportModal > div::-webkit-scrollbar,
-        #editTimeEntryModal > div::-webkit-scrollbar,
-        #editGoalModal > div::-webkit-scrollbar,
-        #editProjectModal > div::-webkit-scrollbar,
-        #exportDataModal > div::-webkit-scrollbar,
-        #importDataModal > div::-webkit-scrollbar { /* Apply to modal content too */
-            width: 8px;
-        }
-        .scrollable-content::-webkit-scrollbar-track,
-        #createGoalModal > div::-webkit-scrollbar-track,
-        #createProjectModal > div::-webkit-scrollbar-track,
-        #advancedReportModal > div::-webkit-scrollbar-track,
-        #editTimeEntryModal > div::-webkit-scrollbar-track,
-        #editGoalModal > div::-webkit-scrollbar-track,
-        #editProjectModal > div::-webkit-scrollbar-track,
-        #exportDataModal > div::-webkit-scrollbar-track,
-        #importDataModal > div::-webkit-scrollbar-track {
-            background: #3a3a3a;
-            border-radius: 10px;
-        }
-        .scrollable-content::-webkit-scrollbar-thumb,
-        #createGoalModal > div::-webkit-scrollbar-thumb,
-        #createProjectModal > div::-webkit-scrollbar-thumb,
-        #advancedReportModal > div::-webkit-scrollbar-thumb,
-        #editTimeEntryModal > div::-webkit-scrollbar-thumb,
-        #editGoalModal > div::-webkit-scrollbar-thumb,
-        #editProjectModal > div::-webkit-scrollbar-thumb,
-        #exportDataModal > div::-webkit-scrollbar-thumb,
-        #importDataModal > div::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 10px;
-        }
-        .scrollable-content::-webkit-scrollbar-thumb:hover,
-        #createGoalModal > div::-webkit-scrollbar-thumb:hover,
-        #createProjectModal > div::-webkit-scrollbar-thumb:hover,
-        #advancedReportModal > div::-webkit-scrollbar-thumb:hover,
-        #editTimeEntryModal > div::-webkit-scrollbar-thumb:hover,
-        #editGoalModal > div::-webkit-scrollbar-thumb:hover,
-        #editProjectModal > div::-webkit-scrollbar-thumb:hover,
-        #exportDataModal > div::-webkit-scrollbar-thumb:hover,
-        #importDataModal > div::-webkit-scrollbar-thumb:hover {
-            background: #777;
-        }
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
+.logo{font-family:var(--mono);font-weight:800;font-size:18px;color:var(--yellow-b);letter-spacing:-0.5px;}
+.logo em{color:var(--fg-dim);font-style:normal;font-weight:400;}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 
-        .report-entry {
-            background-color: #4a4a4a;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 0.5rem;
-            display: flex;
-            flex-direction: column;
-            color: #e0e0e0;
-        }
-        .report-entry-header {
-            display: flex;
-            justify-content: space-between;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-        .report-entry-details {
-            font-size: 0.85rem;
-            color: #b0b0b0;
-        }
+/* DATE NAV */
+.date-nav{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;}
+.date-nav button{background:var(--bg1);border:1px solid var(--bg2);color:var(--fg-dim);width:28px;height:28px;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:var(--t);}
+.date-nav button:hover{background:var(--bg2);color:var(--fg);}
+.date-label{min-width:170px;text-align:center;color:var(--fg);font-weight:600;font-size:12px;}
 
-        /* Toast Notification */
-        .toast-notification {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #4CAF50; /* Green for success */
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-        }
-        .toast-notification.show {
-            opacity: 1;
-        }
-        .toast-notification.error {
-            background-color: #f44336; /* Red for error */
-        }
+/* TOTALS */
+.totals{display:flex;gap:10px;}
+.chip{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--r);padding:4px 10px;font-family:var(--mono);font-size:11px;display:flex;align-items:center;gap:6px;}
+.chip .lbl{color:var(--fg-dim);}
+.chip .val{color:var(--yellow-b);font-weight:700;}
+.chip.avg .val{color:var(--aqua-b);}
 
+/* POMODORO */
+.pomo{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:18px 24px 16px;margin-bottom:10px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.pomo-tabs{display:flex;gap:3px;background:var(--bg);border-radius:var(--r);padding:3px;}
+.pomo-tab{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--fg-dim);background:transparent;border:none;cursor:pointer;padding:6px 13px;border-radius:calc(var(--r) - 2px);transition:var(--t);letter-spacing:.5px;}
+.pomo-tab.active{background:var(--bg2);color:var(--fg);}
+.pomo-tab[data-m="work"].active{color:var(--red-b);}
+.pomo-tab[data-m="short"].active{color:var(--green-b);}
+.pomo-tab[data-m="long"].active{color:var(--blue-b);}
 
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .container {
-                margin: 1rem auto;
-                padding: 1rem;
-            }
-            .top-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .top-bar > * {
-                margin-bottom: 0.5rem;
-            }
-            .timer-display {
-                text-align: center;
-                font-size: 2rem;
-            }
-            .date-nav {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            .date-nav > div {
-                flex-basis: 100%;
-                text-align: center;
-                margin-bottom: 0.5rem;
-            }
-            .date-nav button {
-                margin: 0 0.5rem;
-            }
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-            #createGoalModal > div, #createProjectModal > div, #advancedReportModal > div, #editTimeEntryModal > div, #editGoalModal > div, #editProjectModal > div, #exportDataModal > div, #importDataModal > div {
-                padding: 1rem;
-            }
-        }
-    </style>
+.pomo-ring-wrap{position:relative;display:flex;align-items:center;justify-content:center;}
+.pomo-svg{width:190px;height:190px;transform:rotate(-90deg);}
+.ring-bg{fill:none;stroke:var(--bg2);stroke-width:6;}
+.ring-fg{fill:none;stroke:var(--yellow-b);stroke-width:6;stroke-linecap:round;stroke-dasharray:534.07;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke .3s ease;}
+.pomo-time{position:absolute;font-family:var(--mono);font-size:40px;font-weight:800;color:var(--fg);letter-spacing:-2px;}
+.pomo-sub{font-family:var(--mono);font-size:10px;color:var(--fg-dim);letter-spacing:1px;text-align:center;margin-top:-4px;}
+
+.pomo-ctrls{display:flex;align-items:center;gap:12px;}
+.pbtn{display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;border-radius:var(--r);font-weight:700;transition:var(--t);}
+.pbtn-main{width:52px;height:52px;font-size:18px;background:var(--yellow);color:var(--bg);border-radius:50%;box-shadow:0 4px 14px rgba(215,153,33,.3);}
+.pbtn-main:hover{background:var(--yellow-b);transform:scale(1.05);}
+.pbtn-main.run{background:var(--red);box-shadow:0 4px 14px rgba(204,36,29,.3);}
+.pbtn-main.run:hover{background:var(--red-b);}
+.pbtn-sm{width:34px;height:34px;font-size:13px;background:var(--bg2);color:var(--fg-dim);}
+.pbtn-sm:hover{background:var(--bg3);color:var(--fg);}
+.pbtn-sm.active-auto{background:var(--aqua);color:var(--bg);}
+
+.pomo-dots{display:flex;gap:7px;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--bg2);transition:background .3s ease;}
+.dot.done{background:var(--red);}
+.dot.cur{background:var(--yellow-b);}
+.dot.break{background:var(--green-b);}
+
+/* Session plan strip */
+.pomo-plan{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:center;max-width:420px;}
+.plan-block{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.5px;white-space:nowrap;}
+.plan-block.work{background:rgba(251,73,52,.15);color:var(--red-b);border:1px solid rgba(251,73,52,.3);}
+.plan-block.short{background:rgba(184,187,38,.15);color:var(--green-b);border:1px solid rgba(184,187,38,.3);}
+.plan-block.long{background:rgba(131,165,152,.15);color:var(--blue-b);border:1px solid rgba(131,165,152,.3);}
+.plan-block.more{background:var(--bg2);color:var(--fg-dim);border:1px solid var(--bg3);}
+.plan-total{font-family:var(--mono);font-size:9px;color:var(--fg-dim);white-space:nowrap;margin-left:4px;}
+
+/* Auto-advance indicator */
+.auto-badge{font-family:var(--mono);font-size:9px;font-weight:700;color:var(--aqua-b);background:rgba(142,192,124,.1);border:1px solid rgba(142,192,124,.3);border-radius:3px;padding:2px 7px;letter-spacing:.5px;cursor:pointer;transition:var(--t);}
+.auto-badge:hover{background:rgba(142,192,124,.2);}
+.auto-badge.off{color:var(--fg-dim);background:transparent;border-color:var(--bg3);}
+.auto-badge.off:hover{background:var(--bg2);}
+
+/* TASK INPUT */
+.task-bar{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.task-bar select{background:var(--bg);border:1px solid var(--bg2);color:var(--fg);padding:6px 8px;border-radius:var(--r);font-family:var(--mono);font-size:11px;flex-shrink:1;min-width:100px;max-width:160px;cursor:pointer;outline:none;}
+.task-bar select option{background:var(--bg1);}
+.task-bar input{flex:1;min-width:120px;background:transparent;border:none;color:var(--fg);font-family:var(--body);font-size:15px;outline:none;padding:6px 0;}
+.task-bar input::placeholder{color:var(--bg3);}
+.task-bar input[readonly]{color:var(--fg-dim);cursor:default;}
+.live{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--green-b);min-width:75px;text-align:right;}
+.live.off{display:none;}
+.track-btn{background:var(--green);color:var(--bg);border:none;border-radius:var(--r);padding:8px 13px;font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:var(--t);white-space:nowrap;letter-spacing:.5px;}
+.track-btn:hover{background:var(--green-b);}
+.track-btn.on{background:var(--red);}
+.track-btn.on:hover{background:var(--red-b);}
+.kbd-hint{font-family:var(--mono);font-size:9px;color:var(--bg3);white-space:nowrap;align-self:center;}
+@media(max-width:600px){.kbd-hint{display:none;}}
+
+/* MAIN */
+.main{display:grid;grid-template-columns:1fr 315px;gap:10px;}
+@media(max-width:780px){.main{grid-template-columns:1fr;}}
+#goalList:empty::after,#projList:empty::after{content:'';display:block;min-height:30px;}
+
+/* CARDS */
+.card{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:14px;}
+.chead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.ctitle{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--fg-dim);}
+.ctitle b{color:var(--yellow-b);}
+.add-btn{width:22px;height:22px;background:var(--bg2);border:none;border-radius:4px;color:var(--fg-dim);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
+.add-btn:hover{background:var(--aqua);color:var(--bg);}
+
+/* ENTRIES */
+.entries{display:flex;flex-direction:column;gap:5px;max-height:230px;overflow-y:auto;scrollbar-gutter:stable;padding-right:3px;}
+.empty{color:var(--bg3);font-family:var(--mono);font-size:11px;text-align:center;padding:22px 0;}
+
+.entry{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:9px 11px;display:flex;align-items:center;gap:9px;transition:border-color var(--t);}
+.entry:hover{border-color:var(--bg3);}
+.e-bar{width:3px;flex-shrink:0;align-self:stretch;min-height:32px;border-radius:3px;}
+.e-body{flex:1;min-width:0;}
+.e-task{font-size:13px;font-weight:700;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.e-meta{font-family:var(--mono);font-size:10px;color:var(--fg-dim);margin-top:2px;}
+.e-dur{font-family:var(--mono);font-weight:700;font-size:12px;color:var(--aqua-b);flex-shrink:0;}
+.e-dur.running{color:var(--green-b);}
+.e-dur.running::before{content:'●';font-size:8px;vertical-align:middle;margin-right:4px;animation:blink 1s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+.e-acts{display:flex;gap:3px;flex-shrink:0;}
+.ea{width:24px;height:24px;background:transparent;border:none;border-radius:3px;color:var(--bg3);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
+.ea.ed:hover{color:var(--blue-b);background:var(--bg2);}
+.ea.dl:hover{color:var(--red-b);background:var(--bg2);}
+
+/* SIDEBAR */
+.sidebar{display:flex;flex-direction:column;gap:10px;}
+
+/* CALENDAR WIDGET */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.cal-month-lbl{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--fg);}
+.cal-nav-btns{display:flex;gap:3px;}
+.cal-nav{width:20px;height:20px;background:transparent;border:none;border-radius:3px;color:var(--fg-dim);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
+.cal-nav:hover{background:var(--bg2);color:var(--fg);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;}
+.cal-dow{font-family:var(--mono);font-size:8px;font-weight:700;color:var(--fg-dim);text-align:center;padding:3px 0;letter-spacing:.5px;}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;transition:background var(--t);position:relative;gap:1px;}
+.cal-day:hover{background:var(--bg2);}
+.cal-day.empty{cursor:default;}
+.cal-day.empty:hover{background:transparent;}
+.cal-day-num{font-family:var(--mono);font-size:10px;color:var(--fg-dim);line-height:1;}
+.cal-day.today .cal-day-num{color:var(--yellow-b);font-weight:700;}
+.cal-day.selected{background:var(--bg2);}
+.cal-day.selected .cal-day-num{color:var(--fg);font-weight:700;}
+.cal-day.today.selected{background:rgba(215,153,33,.2);}
+.cal-dot{width:4px;height:4px;border-radius:50%;background:var(--aqua-b);opacity:.8;}
+.cal-day.empty .cal-dot{display:none;}
+
+/* GOALS */
+.goal-item{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:8px 10px;display:flex;gap:9px;align-items:center;margin-bottom:5px;}
+.goal-item:last-child{margin-bottom:0;}
+.g-ring{position:relative;width:38px;height:38px;flex-shrink:0;}
+.g-ring svg{width:38px;height:38px;}
+.grb{fill:none;stroke:var(--bg2);stroke-width:4;}
+.grf{fill:none;stroke:var(--aqua);stroke-width:4;stroke-linecap:round;stroke-dasharray:100.53;transform:rotate(-90deg);transform-origin:50% 50%;}
+.grf.exceeded{stroke:var(--red-b);}
+.g-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;font-weight:700;color:var(--fg);}
+.g-pct.exceeded{color:var(--red-b);}
+.g-body{flex:1;min-width:0;}
+.g-name{font-size:12px;font-weight:700;color:var(--fg);}
+.g-meta{font-family:var(--mono);font-size:9px;color:var(--fg-dim);}
+.iacts{display:flex;gap:3px;}
+.ia{width:20px;height:20px;background:transparent;border:none;border-radius:3px;color:var(--bg3);font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
+.ia.ed:hover{color:var(--blue-b);}
+.ia.dl:hover{color:var(--red-b);}
+
+/* PROJECTS */
+.proj-item{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:8px 10px;display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.proj-item:last-child{margin-bottom:0;}
+.p-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.p-body{flex:1;}
+.p-name{font-size:12px;font-weight:700;color:var(--fg);}
+.p-total{font-family:var(--mono);font-size:9px;color:var(--blue-b);}
+
+/* ACTION BUTTONS */
+.act-btns{display:flex;flex-direction:column;gap:5px;}
+.act-btn{width:100%;background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);color:var(--fg-dim);font-family:var(--mono);font-size:11px;font-weight:600;padding:9px 13px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:var(--t);letter-spacing:.4px;}
+.act-btn:hover{background:var(--bg2);color:var(--fg);}
+.act-btn.rpt:hover{border-color:var(--purple);color:var(--purple-b);}
+.act-btn.imp:hover{border-color:var(--blue);color:var(--blue-b);}
+.act-btn.exp:hover{border-color:var(--gray);color:var(--fg);}
+
+/* SCROLLBARS */
+.entries::-webkit-scrollbar,.modal-body::-webkit-scrollbar,.rlist::-webkit-scrollbar{width:4px;}
+.entries::-webkit-scrollbar-track,.modal-body::-webkit-scrollbar-track,.rlist::-webkit-scrollbar-track{background:var(--bg);}
+.entries::-webkit-scrollbar-thumb,.modal-body::-webkit-scrollbar-thumb,.rlist::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px;}
+
+/* MODALS */
+.overlay{position:fixed;inset:0;background:rgba(20,18,16,.88);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:100;}
+.overlay.open{display:flex;}
+.modal{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);width:90%;max-width:420px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 48px rgba(0,0,0,.6);}
+.modal.wide{max-width:560px;}
+.mhead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;}
+.mtitle{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--yellow-b);}
+.mcls{width:26px;height:26px;background:var(--bg2);border:none;border-radius:var(--r);color:var(--fg-dim);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
+.mcls:hover{background:var(--bg3);color:var(--fg);}
+.modal-body{padding:14px 16px;overflow-y:auto;flex:1;}
+.mfoot{padding:10px 16px;border-top:1px solid var(--bg2);display:flex;justify-content:flex-end;gap:7px;}
+
+/* FORM */
+.field{margin-bottom:12px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--fg-dim);margin-bottom:4px;}
+.field input[type=text],.field input[type=number],.field input[type=date],.field select{width:100%;background:var(--bg);border:1px solid var(--bg2);color:var(--fg);font-family:var(--mono);font-size:12px;padding:7px 10px;border-radius:var(--r);outline:none;transition:border-color var(--t);}
+.field input:focus,.field select:focus{border-color:var(--yellow);}
+.field input::placeholder{color:var(--bg3);}
+.field select option{background:var(--bg1);}
+.field input.err,.field select.err{border-color:var(--red)!important;}
+.frow{display:flex;gap:6px;}
+.frow .field{flex:1;margin-bottom:0;}
+.errmsg{font-family:var(--mono);font-size:10px;color:var(--red-b);margin-top:3px;display:none;}
+.errmsg.show{display:block;}
+.radio-grp{display:flex;flex-direction:column;gap:6px;}
+.radio-opt{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--fg-dim);cursor:pointer;}
+.radio-opt input{accent-color:var(--yellow);}
+.cb-row{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--fg-dim);cursor:pointer;margin-top:6px;}
+.cb-row input{accent-color:var(--yellow);}
+
+/* Toggle switch */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;}
+.toggle-label{font-family:var(--mono);font-size:11px;color:var(--fg-dim);}
+.toggle-label span{color:var(--fg);font-weight:700;}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{position:absolute;inset:0;background:var(--bg2);border-radius:10px;cursor:pointer;transition:background .2s;}
+.toggle input:checked + .toggle-track{background:var(--aqua);}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:14px;height:14px;background:var(--fg);border-radius:50%;transition:transform .2s;pointer-events:none;}
+.toggle input:checked ~ .toggle-thumb{transform:translateX(16px);}
+
+/* Session preview */
+.session-preview{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:10px 12px;margin-top:12px;}
+.sp-title{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--fg-dim);margin-bottom:8px;}
+.sp-row{display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-bottom:6px;}
+.sp-stat{font-family:var(--mono);font-size:10px;color:var(--fg-dim);}
+.sp-stat b{color:var(--yellow-b);}
+
+/* Divider */
+.mdivider{border:none;border-top:1px solid var(--bg2);margin:12px 0;}
+
+/* File input */
+.file-input-wrap{position:relative;width:100%;}
+.file-input-wrap input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;}
+.file-input-label{display:flex;align-items:center;gap:8px;width:100%;background:var(--bg);border:1px solid var(--bg2);color:var(--fg-dim);font-family:var(--mono);font-size:11px;padding:7px 10px;border-radius:var(--r);cursor:pointer;transition:border-color var(--t);}
+.file-input-label:hover{border-color:var(--bg3);}
+.file-input-label i{color:var(--blue-b);}
+.file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* BUTTONS */
+.btn{font-family:var(--mono);font-weight:700;font-size:11px;letter-spacing:.4px;border:none;border-radius:var(--r);padding:8px 15px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:var(--t);}
+.btn-p{background:var(--yellow);color:var(--bg);}
+.btn-p:hover{background:var(--yellow-b);}
+.btn-s{background:var(--bg2);color:var(--fg-dim);}
+.btn-s:hover{background:var(--bg3);color:var(--fg);}
+
+/* ALERT */
+.alert-ov .modal{max-width:320px;}
+.alert-body{text-align:center;font-size:13px;line-height:1.7;color:var(--fg-dim);padding:18px;}
+
+/* REPORT */
+.rentry{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:9px 11px;margin-bottom:7px;}
+.rentry-h{display:flex;justify-content:space-between;font-weight:700;font-size:12px;color:var(--fg);}
+.rentry-m{font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:3px;}
+.rtotal{display:flex;justify-content:space-between;align-items:center;padding-top:11px;border-top:1px solid var(--bg2);font-family:var(--mono);font-weight:700;font-size:12px;color:var(--yellow-b);}
+.rlist{max-height:280px;overflow-y:auto;}
+
+/* TOAST */
+.toasts{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:7px;align-items:center;}
+.toast{font-family:var(--mono);font-size:11px;font-weight:600;background:var(--bg2);color:var(--fg);border:1px solid var(--bg3);border-radius:var(--r);padding:9px 15px;box-shadow:0 6px 20px rgba(0,0,0,.4);opacity:0;transform:translateY(6px);animation:tin .18s ease forwards;}
+.toast.ok{border-color:var(--green);color:var(--green-b);}
+.toast.err{border-color:var(--red);color:var(--red-b);}
+@keyframes tin{to{opacity:1;transform:translateY(0);}}
+@keyframes tout{to{opacity:0;transform:translateY(6px);}}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .header{flex-direction:column;align-items:flex-start;}
+  .header-right{flex-direction:column;align-items:flex-start;gap:10px;}
+  .pomo-time{font-size:34px;}
+  .pomo-svg{width:160px;height:160px;}
+}
+</style>
 </head>
-<body class="antialiased">
-    <div class="container">
-        <!-- Top Bar: Project Selection / Task Input / Timer / Play-Pause -->
-        <div class="top-bar">
-            <select id="projectSelect" class="w-full md:w-1/4" aria-label="Select Project">
-                <option value="">Select Project (Optional)</option>
-                <!-- Projects will be dynamically loaded here -->
-            </select>
-            <input type="text" id="taskInput" placeholder="What are you working on?" class="w-full md:w-1/2" aria-label="Task Description">
-            <span id="timerDisplay" class="timer-display">0:00:00</span>
-            <button id="playPauseButton" class="play-pause-btn" aria-label="Start or Pause Timer">
-                <i id="playPauseIcon" class="fas fa-play"></i>
-            </button>
-        </div>
+<body>
+<div class="app">
 
-        <!-- Date Navigation and Totals -->
-        <div class="date-nav">
-            <button id="prevDateBtn" aria-label="Previous Day"><i class="fas fa-chevron-left"></i></button>
-            <div class="flex items-center gap-2">
-                <button id="goToTodayBtn" class="bg-transparent hover:bg-gray-700 text-gray-400 hover:text-white p-1 rounded-full" aria-label="Go to Today's Tasks"><i class="fas fa-calendar-alt"></i></button>
-                <span id="currentViewDateDisplay"></span>
-            </div>
-            <button id="nextDateBtn" aria-label="Next Day"><i class="fas fa-chevron-right"></i></button>
-            <div class="total-display">TODAY TOTAL: <span id="todayTotalDisplay">0:00:00</span></div>
-            <div class="total-display">WEEK TOTAL: <span id="weekTotalDisplay">0:00:00</span></div>
-        </div>
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">FOCUS <em>/ pomodoro + tracker</em></div>
+    <div class="header-right">
+      <div class="date-nav">
+        <button id="prevDateBtn" aria-label="Previous day" title="Previous day"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
+        <span class="date-label" id="dateLabel" aria-live="polite"></span>
+        <button id="goTodayBtn" aria-label="Go to today" title="Go to today"><i class="fas fa-calendar-check" aria-hidden="true"></i></button>
+        <button id="nextDateBtn" aria-label="Next day" title="Next day"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <div class="totals" aria-label="Time totals">
+        <div class="chip"><span class="lbl">TODAY</span><span class="val" id="todayTotal" aria-live="polite">00:00:00</span></div>
+        <div class="chip"><span class="lbl">WEEK</span><span class="val" id="weekTotal" aria-live="polite">00:00:00</span></div>
+        <div class="chip"><span class="lbl">MONTH</span><span class="val" id="monthTotal" aria-live="polite">00:00:00</span></div>
+        <div class="chip avg" title="Average daily tracked time this week"><span class="lbl">D.AVG</span><span class="val" id="dayAvg" aria-live="polite">00:00:00</span></div>
+      </div>
+    </div>
+  </div>
 
-        <!-- Main Content: Task List, Goals, and Projects -->
-        <div class="main-content">
-            <!-- Task List Section -->
-            <div class="section-card">
-                <h2 class="text-purple-400">Tasks for <span id="currentViewDateDisplayHeader">Today</span></h2>
-                <div id="taskList" class="mt-4 scrollable-content">
-                    <!-- Task entries will be dynamically added here -->
-                    <p id="noEntriesMessage" class="text-gray-400 text-center py-4">No entries for this day. Start tracking!</p>
-                </div>
-            </div>
-
-            <!-- Right Column: Goals and Projects -->
-            <div class="flex flex-col space-y-4">
-                <!-- Goals Section -->
-                <div class="section-card flex-grow">
-                    <h2 class="text-purple-400">Goals <button id="openCreateGoalModalBtn" class="ml-2 text-gray-400 hover:text-white" aria-label="Create New Goal"><i class="fas fa-plus-circle"></i></button></h2>
-                    <div id="goalsList" class="mt-4 scrollable-content">
-                        <!-- Goals will be dynamically added here -->
-                        <p id="noGoalsMessage" class="text-gray-400 text-center py-4">No goals set yet.</p>
-                    </div>
-                </div>
-
-                <!-- Projects Section -->
-                <div class="section-card flex-grow">
-                    <h2 class="text-purple-400">Projects <button id="openCreateProjectModalBtn" class="ml-2 text-gray-400 hover:text-white" aria-label="Create New Project"><i class="fas fa-plus-circle"></i></button></h2>
-                    <div id="projectsList" class="mt-4 scrollable-content">
-                        <!-- Projects will be dynamically loaded here -->
-                        <p id="noProjectsMessage" class="text-gray-400 text-center py-4">No projects yet. Create one!</p>
-                    </div>
-                </div>
-
-                <!-- Reports and Export Buttons -->
-                <div class="section-card flex-grow flex flex-col items-center justify-center space-y-4">
-                    <button id="openAdvancedReportModalBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 flex items-center gap-2 w-full justify-center" aria-label="Open Advanced Reports">
-                        <i class="fas fa-chart-bar"></i> Advanced Reports
-                    </button>
-                    <!-- *** NEW: Import Button *** -->
-                    <button id="openImportDataModalBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 flex items-center gap-2 w-full justify-center" aria-label="Open Import Data Options">
-                        <i class="fas fa-upload"></i> Import Data
-                    </button>
-                    <button id="openExportDataModalBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 flex items-center gap-2 w-full justify-center" aria-label="Open Export Data Options">
-                        <i class="fas fa-download"></i> Export Data
-                    </button>
-                </div>
-            </div>
-        </div>
+  <!-- POMODORO -->
+  <div class="pomo" role="region" aria-label="Pomodoro timer">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <div class="pomo-tabs" role="tablist">
+        <button class="pomo-tab active" data-m="work" role="tab" aria-selected="true">WORK</button>
+        <button class="pomo-tab" data-m="short" role="tab" aria-selected="false">SHORT BREAK</button>
+        <button class="pomo-tab" data-m="long" role="tab" aria-selected="false">LONG BREAK</button>
+      </div>
+      <button class="auto-badge" id="autoBadge" title="Click to toggle Auto / Manual mode" aria-label="Toggle auto-advance mode">AUTO ▶</button>
     </div>
 
-    <!-- Custom Modal for Alerts/Confirmations -->
-    <div id="customModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
-            <p id="modalMessage" class="text-lg font-semibold text-gray-800 mb-4"></p>
-            <div id="modalButtons" class="flex justify-center space-x-4">
-                <button id="modalConfirmBtn" class="btn-primary hidden" aria-label="Confirm">Confirm</button>
-                <button id="modalCancelBtn" class="btn-secondary hidden" aria-label="Cancel">Cancel</button>
-                <button id="modalCloseBtn" class="btn-primary" aria-label="OK">OK</button>
-            </div>
-        </div>
+    <div class="pomo-ring-wrap" aria-hidden="true">
+      <svg class="pomo-svg" viewBox="0 0 190 190" aria-hidden="true">
+        <circle class="ring-bg" cx="95" cy="95" r="85"/>
+        <circle class="ring-fg" id="ringFg" cx="95" cy="95" r="85"/>
+      </svg>
+      <div class="pomo-time" id="pomoDisplay" aria-live="off">25:00</div>
+    </div>
+    <div class="pomo-sub" id="pomoSub">SESSION 1 OF 4</div>
+    <span class="sr-only" id="pomoLive" aria-live="polite" style="position:absolute;left:-9999px;"></span>
+
+    <div class="pomo-ctrls">
+      <button class="pbtn pbtn-sm" id="pomoReset" aria-label="Reset timer" title="Reset (R)"><i class="fas fa-redo" aria-hidden="true"></i></button>
+      <button class="pbtn pbtn-main" id="pomoStart" aria-label="Start timer" title="Start/Pause (Space)"><i class="fas fa-play" aria-hidden="true"></i></button>
+      <button class="pbtn pbtn-sm" id="pomoSkip" aria-label="Skip to next session" title="Skip"><i class="fas fa-forward-step" aria-hidden="true"></i></button>
+      <button class="pbtn pbtn-sm" id="pomoSettingsBtn" aria-label="Timer settings" title="Timer Settings"><i class="fas fa-sliders" aria-hidden="true"></i></button>
     </div>
 
-    <!-- Create Goal Modal -->
-    <div id="createGoalModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full" role="dialog" aria-modal="true" aria-labelledby="createGoalModalTitle">
-            <div class="modal-header">
-                <h3 id="createGoalModalTitle">Create a goal</h3>
-                <button id="closeCreateGoalModalBtn" class="modal-close-btn" aria-label="Close Create Goal Modal"><i class="fas fa-times"></i></button>
-            </div>
+    <div class="pomo-dots" id="pomoDots" aria-label="Session progress"></div>
 
-            <div class="form-group">
-                <label for="goalNameInput">GOAL</label>
-                <input type="text" id="goalNameInput" placeholder="Goal name" aria-required="true">
-                <p id="goalNameError" class="text-red-400 text-sm mt-1 hidden">Goal name cannot be empty.</p>
-            </div>
+    <!-- Session plan display -->
+    <div class="pomo-plan" id="pomoPlan" aria-label="Session plan"></div>
 
-            <div class="form-group">
-                <label for="memberSelect">MEMBER</label>
-                <select id="memberSelect" disabled aria-label="Member Selection">
-                    <option value="you">Najmussalahin Adib (You)</option>
-                </select>
-            </div>
+    <span class="kbd-hint" title="Keyboard shortcuts">Space: start/pause · R: reset · Ctrl+Enter: start/stop task</span>
+  </div>
 
-            <div class="form-group">
-                <label for="goalProjectSelect">TRACK (Project) <i class="fas fa-info-circle text-gray-400 ml-1"></i></label>
-                <select id="goalProjectSelect" aria-label="Track Project">
-                    <option value="">Select Project (Optional)</option>
-                    <!-- Projects will be dynamically loaded here -->
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>FOR <i class="fas fa-info-circle text-gray-400 ml-1"></i></label>
-                <div class="flex items-center space-x-2">
-                    <select id="forTypeSelect" class="flex-shrink-0">
-                        <option value="atLeast">at least</option>
-                        <option value="atMost">at most</option>
-                    </select>
-                    <!-- UPDATED: Changed to type="text" and added inputmode/pattern -->
-                    <input type="text" id="forHoursInput" placeholder="hours" class="flex-grow" inputmode="numeric" pattern="[0-9]*" aria-label="Target Hours">
-                    <input type="text" id="forMinutesInput" placeholder="mins" class="flex-grow" inputmode="numeric" pattern="[0-9]*" aria-label="Target Minutes">
-                    <select id="forFrequencySelect" class="flex-shrink-0">
-                        <option value="day">every day</option>
-                        <option value="week">every week</option>
-                        <option value="month">every month</option>
-                    </select>
-                </div>
-                <p id="forTimeError" class="text-red-400 text-sm mt-1 hidden">Please enter a valid positive time.</p>
-            </div>
+  <!-- TASK INPUT -->
+  <div class="task-bar" role="region" aria-label="Task tracker">
+    <select id="projSelect" aria-label="Select project"><option value="">— no project —</option></select>
+    <input type="text" id="taskInput" placeholder="What are you working on right now?" aria-label="Task description" autocomplete="off">
+    <span class="live off" id="liveTimer" aria-live="off">00:00:00</span>
+    <button class="track-btn" id="trackBtn" aria-label="Start task timer" title="Start/Stop (Ctrl+Enter)">
+      <i class="fas fa-play" aria-hidden="true"></i> START
+    </button>
+  </div>
 
-            <div class="form-group">
-                <label for="untilDateInput">UNTIL <i class="fas fa-info-circle text-gray-400 ml-1"></i></label>
-                <input type="date" id="untilDateInput" aria-label="End Date">
-                <div class="mt-2">
-                    <input type="checkbox" id="noEndDateCheckbox" aria-label="No End Date">
-                    <label for="noEndDateCheckbox">No end date</label>
-                </div>
-                <p id="untilDateError" class="text-red-400 text-sm mt-1 hidden">Please select an end date or check 'No end date'.</p>
-            </div>
-
-            <div class="flex justify-end space-x-4 mt-6">
-                <button id="cancelGoalBtn" class="btn-secondary" aria-label="Cancel Goal Creation">Cancel</button>
-                <button id="createGoalBtnModal" class="btn-primary" aria-label="Create Goal">Create goal</button>
-            </div>
-        </div>
+  <!-- MAIN GRID -->
+  <div class="main">
+    <!-- ENTRIES -->
+    <div class="card">
+      <div class="chead">
+        <div class="ctitle">ENTRIES — <b id="entryDateLabel">TODAY</b></div>
+      </div>
+      <div class="entries" id="entryList" role="list" aria-label="Time entries"></div>
     </div>
 
-    <!-- Create Project Modal -->
-    <div id="createProjectModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full" role="dialog" aria-modal="true" aria-labelledby="createProjectModalTitle">
-            <div class="modal-header">
-                <h3 id="createProjectModalTitle">Create a new project</h3>
-                <button id="closeCreateProjectModalBtn" class="modal-close-btn" aria-label="Close Create Project Modal"><i class="fas fa-times"></i></button>
-            </div>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
 
-            <div class="form-group">
-                <label for="projectNameInput">Project Name</label>
-                <input type="text" id="projectNameInput" placeholder="e.g., Website Redesign" aria-required="true">
-                <p id="projectNameError" class="text-red-400 text-sm mt-1 hidden">Project name cannot be empty.</p>
-            </div>
-
-            <div class="flex justify-end space-x-4 mt-6">
-                <button id="cancelProjectBtn" class="btn-secondary" aria-label="Cancel Project Creation">Cancel</button>
-                <button id="createProjectBtnModal" class="btn-primary" aria-label="Create Project">Create Project</button>
-            </div>
+      <!-- CALENDAR -->
+      <div class="card">
+        <div class="chead">
+          <div class="ctitle">CALENDAR</div>
+          <div class="cal-nav-btns">
+            <button class="cal-nav" id="calPrevBtn" aria-label="Previous month"><i class="fas fa-chevron-left"></i></button>
+            <button class="cal-nav" id="calTodayBtn" aria-label="Go to today's month" title="Today"><i class="fas fa-circle" style="font-size:6px"></i></button>
+            <button class="cal-nav" id="calNextBtn" aria-label="Next month"><i class="fas fa-chevron-right"></i></button>
+          </div>
         </div>
-    </div>
-
-    <!-- Advanced Report Modal -->
-    <div id="advancedReportModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full" role="dialog" aria-modal="true" aria-labelledby="advancedReportModalTitle">
-            <div class="modal-header">
-                <h3 id="advancedReportModalTitle">Advanced Reports</h3>
-                <button id="closeReportModalBtn" class="modal-close-btn" aria-label="Close Advanced Report Modal"><i class="fas fa-times"></i></button>
-            </div>
-
-            <div class="form-group">
-                <label for="reportProjectSelect">Filter by Project</label>
-                <select id="reportProjectSelect" aria-label="Report Project Filter">
-                    <option value="">All Projects</option>
-                    <!-- Projects will be dynamically loaded here -->
-                </select>
-            </div>
-
-            <div class="form-group flex space-x-2">
-                <div class="w-1/2">
-                    <label for="reportStartDateInput">Start Date</label>
-                    <input type="date" id="reportStartDateInput" aria-label="Report Start Date">
-                </div>
-                <div class="w-1/2">
-                    <label for="reportEndDateInput">End Date</label>
-                    <input type="date" id="reportEndDateInput" aria-label="Report End Date">
-                </div>
-            </div>
-            <p id="reportDateError" class="text-red-400 text-sm mt-1 hidden">Start date cannot be after end date.</p>
-
-
-            <div class="flex justify-end mt-4">
-                <button id="generateReportBtn" class="btn-primary" aria-label="Generate Report">Generate Report</button>
-            </div>
-
-            <div class="mt-6">
-                <h4 class="text-lg font-semibold text-purple-400 mb-3">Report Results</h4>
-                <div id="reportResultsList" class="scrollable-content max-h-60">
-                    <p class="text-gray-400 text-center py-4">Generate a report to see results here.</p>
-                </div>
-                <div class="text-right font-bold text-lg mt-4">
-                    Total Report Time: <span id="reportTotalDisplay" class="text-purple-400">0:00:00</span>
-                </div>
-            </div>
+        <div class="cal-month-lbl" id="calMonthLabel"></div>
+        <div style="margin-top:6px">
+          <div class="cal-grid" id="calDowRow"></div>
+          <div class="cal-grid" id="calGrid"></div>
         </div>
-    </div>
+      </div>
 
-    <!-- Edit Time Entry Modal -->
-    <div id="editTimeEntryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full" role="dialog" aria-modal="true" aria-labelledby="editTimeEntryModalTitle">
-            <div class="modal-header">
-                <h3 id="editTimeEntryModalTitle">Edit Time Entry</h3>
-                <button id="closeTimeEntryEditModalBtn" class="modal-close-btn" aria-label="Close Edit Time Entry Modal"><i class="fas fa-times"></i></button>
-            </div>
-            <input type="hidden" id="editTimeEntryId">
-            <div class="form-group">
-                <label for="editTaskInput">Task Description</label>
-                <input type="text" id="editTaskInput" aria-required="true">
-                <p id="editTaskError" class="text-red-400 text-sm mt-1 hidden">Task description cannot be empty.</p>
-            </div>
-            <div class="form-group">
-                <label for="editTimeEntryProjectSelect">Project</label>
-                <select id="editTimeEntryProjectSelect" aria-label="Edit Time Entry Project">
-                    <option value="">Select Project (Optional)</option>
-                    <!-- Projects will be dynamically loaded here -->
-                </select>
-            </div>
-            <div class="flex justify-end space-x-4 mt-6">
-                <button id="cancelTimeEntryEditBtn" class="btn-secondary" aria-label="Cancel Time Entry Edit">Cancel</button>
-                <button id="saveTimeEntryBtn" class="btn-primary" aria-label="Save Time Entry Changes">Save Changes</button>
-            </div>
+      <div class="card">
+        <div class="chead">
+          <div class="ctitle">GOALS</div>
+          <button class="add-btn" id="openGoalBtn" aria-label="Add goal" title="Add goal"><i class="fas fa-plus" aria-hidden="true"></i></button>
         </div>
-    </div>
-
-    <!-- Edit Goal Modal -->
-    <div id="editGoalModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full" role="dialog" aria-modal="true" aria-labelledby="editGoalModalTitle">
-            <div class="modal-header">
-                <h3 id="editGoalModalTitle">Edit Goal</h3>
-                <button id="closeGoalEditModalBtn" class="modal-close-btn" aria-label="Close Edit Goal Modal"><i class="fas fa-times"></i></button>
-            </div>
-            <input type="hidden" id="editGoalId">
-            <div class="form-group">
-                <label for="editGoalNameInput">GOAL</label>
-                <input type="text" id="editGoalNameInput" aria-required="true">
-                <p id="editGoalNameError" class="text-red-400 text-sm mt-1 hidden">Goal name cannot be empty.</p>
-            </div>
-            <div class="form-group">
-                <label for="editGoalProjectSelect">TRACK (Project)</label>
-                <select id="editGoalProjectSelect" aria-label="Edit Goal Project">
-                    <option value="">Select Project (Optional)</option>
-                    <!-- Projects will be dynamically loaded here -->
-                </select>
-            </div>
-            <div class="form-group">
-                <label>FOR</label>
-                <div class="flex items-center space-x-2">
-                    <select id="editForTypeSelect" class="flex-shrink-0">
-                        <option value="atLeast">at least</option>
-                        <option value="atMost">at most</option>
-                    </select>
-                    <!-- UPDATED: Changed to type="text" and added inputmode/pattern -->
-                    <input type="text" id="editForHoursInput" placeholder="hours" class="flex-grow" inputmode="numeric" pattern="[0-9]*" aria-label="Edit Target Hours">
-                    <input type="text" id="editForMinutesInput" placeholder="mins" class="flex-grow" inputmode="numeric" pattern="[0-9]*" aria-label="Edit Target Minutes">
-                    <select id="editForFrequencySelect" class="flex-shrink-0">
-                        <option value="day">every day</option>
-                        <option value="week">every week</option>
-                        <option value="month">every month</option>
-                    </select>
-                </div>
-                <p id="editForTimeError" class="text-red-400 text-sm mt-1 hidden">Please enter a valid positive time.</p>
-            </div>
-            <div class="form-group">
-                <label for="editUntilDateInput">UNTIL</label>
-                <input type="date" id="editUntilDateInput" aria-label="Edit End Date">
-                <div class="mt-2">
-                    <input type="checkbox" id="editNoEndDateCheckbox" aria-label="Edit No End Date">
-                    <label for="editNoEndDateCheckbox">No end date</label>
-                </div>
-                <p id="editUntilDateError" class="text-red-400 text-sm mt-1 hidden">Please select an end date or check 'No end date'.</p>
-            </div>
-            <div class="flex justify-end space-x-4 mt-6">
-                <button id="cancelGoalEditBtn" class="btn-secondary" aria-label="Cancel Goal Edit">Cancel</button>
-                <button id="saveGoalEditBtn" class="btn-primary" aria-label="Save Goal Changes">Save Changes</button>
-            </div>
+        <div id="goalList" role="list"></div>
+      </div>
+      <div class="card">
+        <div class="chead">
+          <div class="ctitle">PROJECTS</div>
+          <button class="add-btn" id="openProjBtn" aria-label="Add project" title="Add project"><i class="fas fa-plus" aria-hidden="true"></i></button>
         </div>
-    </div>
-
-    <!-- Edit Project Modal -->
-    <div id="editProjectModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full" role="dialog" aria-modal="true" aria-labelledby="editProjectModalTitle">
-            <div class="modal-header">
-                <h3 id="editProjectModalTitle">Edit Project</h3>
-                <button id="closeProjectEditModalBtn" class="modal-close-btn" aria-label="Close Edit Project Modal"><i class="fas fa-times"></i></button>
-            </div>
-            <input type="hidden" id="editProjectId">
-            <div class="form-group">
-                <label for="editProjectNameInput">Project Name</label>
-                <input type="text" id="editProjectNameInput" aria-required="true">
-                <p id="editProjectNameError" class="text-red-400 text-sm mt-1 hidden">Project name cannot be empty.</p>
-                <p id="editProjectDuplicateError" class="text-red-400 text-sm mt-1 hidden">A project with this name already exists.</p>
-            </div>
-            <div class="flex justify-end space-x-4 mt-6">
-                <button id="cancelProjectEditBtn" class="btn-secondary" aria-label="Cancel Project Edit">Cancel</button>
-                <button id="saveProjectEditBtn" class="btn-primary" aria-label="Save Project Changes">Save Project Changes</button>
-            </div>
+        <div id="projList" role="list"></div>
+      </div>
+      <div class="card">
+        <div class="act-btns">
+          <button class="act-btn rpt" id="openReportBtn"><i class="fas fa-chart-bar" aria-hidden="true"></i> ADVANCED REPORTS</button>
+          <button class="act-btn imp" id="openImportBtn"><i class="fas fa-upload" aria-hidden="true"></i> IMPORT DATA</button>
+          <button class="act-btn exp" id="openExportBtn"><i class="fas fa-download" aria-hidden="true"></i> EXPORT DATA</button>
         </div>
+      </div>
     </div>
+  </div>
+</div>
 
-    <!-- *** MODIFIED: Simplified Export Modal *** -->
-    <div id="exportDataModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full" role="dialog" aria-modal="true" aria-labelledby="exportDataModalTitle">
-            <div class="modal-header">
-                <h3 id="exportDataModalTitle">Export All Data</h3>
-                <button id="closeExportModalBtn" class="modal-close-btn" aria-label="Close Export Data Modal"><i class="fas fa-times"></i></button>
-            </div>
-            <p class="text-gray-400 mb-4">This will export all your projects, goals, and time entries into a single JSON file. You can use this file to import your data back into the app later.</p>
-            <div class="flex justify-end space-x-4 mt-6">
-                <button id="cancelExportBtn" class="btn-secondary" aria-label="Cancel Export">Cancel</button>
-                <button id="exportDataConfirmBtn" class="btn-primary" aria-label="Confirm Export">Export as JSON</button>
-            </div>
+<!-- ALERT MODAL -->
+<div class="overlay alert-ov" id="alertModal" data-no-overlay-close>
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="alertMsg">
+    <div class="alert-body" id="alertMsg">Are you sure?</div>
+    <div class="mfoot">
+      <button class="btn btn-s" id="alertCancel" style="display:none">CANCEL</button>
+      <button class="btn btn-p" id="alertOk">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- POMODORO SETTINGS MODAL -->
+<div class="overlay" id="pomoSettingsModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="mhead">
+      <div class="mtitle">TIMER SETTINGS</div>
+      <button class="mcls" data-close="pomoSettingsModal" aria-label="Close"><i class="fas fa-times" aria-hidden="true"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Work Session Duration</label>
+        <div class="frow">
+          <div class="field"><input type="number" id="psWork" min="1" max="180" placeholder="min" aria-label="Work minutes"> <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:2px">minutes</div></div>
+          <div class="field"><input type="number" id="psWorkSec" min="0" max="59" placeholder="sec" aria-label="Work seconds"> <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:2px">seconds</div></div>
         </div>
-    </div>
-
-    <!-- *** NEW: Import Data Modal *** -->
-    <div id="importDataModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full" role="dialog" aria-modal="true" aria-labelledby="importDataModalTitle">
-            <div class="modal-header">
-                <h3 id="importDataModalTitle">Import Data</h3>
-                <button id="closeImportModalBtn" class="modal-close-btn" aria-label="Close Import Data Modal"><i class="fas fa-times"></i></button>
-            </div>
-
-            <div class="form-group">
-                <label for="importFileInput">Select JSON Backup File</label>
-                <input type="file" id="importFileInput" accept=".json" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200">
-                <p id="importFileError" class="text-red-400 text-sm mt-1 hidden">Please select a valid JSON file.</p>
-            </div>
-
-            <div class="form-group">
-                <label>Import Mode:</label>
-                <div class="flex flex-col space-y-2">
-                    <label class="inline-flex items-center">
-                        <input type="radio" name="importMode" value="merge" checked aria-label="Merge with existing data">
-                        <span class="ml-2">Merge with existing data</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="radio" name="importMode" value="replace" aria-label="Replace all existing data">
-                        <span class="ml-2">Replace all existing data</span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="flex justify-end space-x-4 mt-6">
-                <button id="cancelImportBtn" class="btn-secondary" aria-label="Cancel Import">Cancel</button>
-                <button id="importDataConfirmBtn" class="btn-primary" aria-label="Confirm Import">Import</button>
-            </div>
+      </div>
+      <div class="field">
+        <label>Short Break Duration</label>
+        <div class="frow">
+          <div class="field"><input type="number" id="psShort" min="1" max="60" placeholder="min" aria-label="Short break minutes"> <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:2px">minutes</div></div>
+          <div class="field"><input type="number" id="psShortSec" min="0" max="59" placeholder="sec" aria-label="Short break seconds"> <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:2px">seconds</div></div>
         </div>
+      </div>
+      <div class="field">
+        <label>Long Break Duration</label>
+        <div class="frow">
+          <div class="field"><input type="number" id="psLong" min="1" max="120" placeholder="min" aria-label="Long break minutes"> <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:2px">minutes</div></div>
+          <div class="field"><input type="number" id="psLongSec" min="0" max="59" placeholder="sec" aria-label="Long break seconds"> <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:2px">seconds</div></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Sessions Before Long Break</label>
+        <input type="number" id="psCycle" min="1" max="12" placeholder="e.g. 4">
+      </div>
+      <hr class="mdivider">
+      <div class="toggle-row">
+        <div class="toggle-label"><span>Auto-advance</span> — automatically start next phase</div>
+        <label class="toggle">
+          <input type="checkbox" id="psAutoAdv" checked>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label"><span>Long break after cycle</span> — long break replaces last short break</div>
+        <label class="toggle">
+          <input type="checkbox" id="psLongBreak" checked>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label"><span>Include breaks</span> — off = work sessions only, no breaks</div>
+        <label class="toggle">
+          <input type="checkbox" id="psBreaks" checked>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <hr class="mdivider">
+      <div class="session-preview" id="psPreview">
+        <div class="sp-title">Session Preview</div>
+        <div class="sp-row" id="psPreviewBlocks"></div>
+        <div class="sp-stat" id="psPreviewStat"></div>
+      </div>
     </div>
-
-    <!-- Toast Notification Container -->
-    <div id="toastContainer" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[1000]"></div>
-
-
-    <script type="module">
-        // --- Main UI Elements ---
-        const projectSelect = document.getElementById('projectSelect');
-        const taskInput = document.getElementById('taskInput');
-        const playPauseButton = document.getElementById('playPauseButton');
-        const playPauseIcon = document.getElementById('playPauseIcon');
-        const timerDisplay = document.getElementById('timerDisplay');
-        const todayTotalDisplay = document.getElementById('todayTotalDisplay');
-        const weekTotalDisplay = document.getElementById('weekTotalDisplay');
-        const taskList = document.getElementById('taskList');
-        const noEntriesMessage = document.getElementById('noEntriesMessage');
-        const goalsList = document.getElementById('goalsList');
-        const noGoalsMessage = document.getElementById('noGoalsMessage');
-        const projectsList = document.getElementById('projectsList');
-        const noProjectsMessage = document.getElementById('noProjectsMessage');
-        const toastContainer = document.getElementById('toastContainer');
-
-        // --- Date Navigation ---
-        const prevDateBtn = document.getElementById('prevDateBtn');
-        const nextDateBtn = document.getElementById('nextDateBtn');
-        const goToTodayBtn = document.getElementById('goToTodayBtn');
-        const currentViewDateDisplay = document.getElementById('currentViewDateDisplay');
-        const currentViewDateDisplayHeader = document.getElementById('currentViewDateDisplayHeader');
-
-        // --- Buttons to Open Modals ---
-        const openCreateGoalModalBtn = document.getElementById('openCreateGoalModalBtn');
-        const openCreateProjectModalBtn = document.getElementById('openCreateProjectModalBtn');
-        const openAdvancedReportModalBtn = document.getElementById('openAdvancedReportModalBtn');
-        const openExportDataModalBtn = document.getElementById('openExportDataModalBtn');
-        const openImportDataModalBtn = document.getElementById('openImportDataModalBtn'); // New
-
-        // --- General Modal Elements ---
-        const customModal = document.getElementById('customModal');
-        const modalMessage = document.getElementById('modalMessage');
-        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
-        const modalCancelBtn = document.getElementById('modalCancelBtn');
-        const modalCloseBtn = document.getElementById('modalCloseBtn');
-
-        // --- Create Goal Modal Elements ---
-        const createGoalModal = document.getElementById('createGoalModal');
-        const closeCreateGoalModalBtn = document.getElementById('closeCreateGoalModalBtn');
-        const goalNameInput = document.getElementById('goalNameInput');
-        const goalNameError = document.getElementById('goalNameError');
-        const goalProjectSelect = document.getElementById('goalProjectSelect');
-        const forTypeSelect = document.getElementById('forTypeSelect');
-        const forHoursInput = document.getElementById('forHoursInput');
-        const forMinutesInput = document.getElementById('forMinutesInput');
-        const forTimeError = document.getElementById('forTimeError');
-        const forFrequencySelect = document.getElementById('forFrequencySelect');
-        const untilDateInput = document.getElementById('untilDateInput');
-        const noEndDateCheckbox = document.getElementById('noEndDateCheckbox');
-        const untilDateError = document.getElementById('untilDateError');
-        const cancelGoalBtn = document.getElementById('cancelGoalBtn');
-        const createGoalBtnModal = document.getElementById('createGoalBtnModal');
-
-        // --- Create Project Modal Elements ---
-        const createProjectModal = document.getElementById('createProjectModal');
-        const closeCreateProjectModalBtn = document.getElementById('closeCreateProjectModalBtn');
-        const projectNameInput = document.getElementById('projectNameInput');
-        const projectNameError = document.getElementById('projectNameError');
-        const cancelProjectBtn = document.getElementById('cancelProjectBtn');
-        const createProjectBtnModal = document.getElementById('createProjectBtnModal');
-
-        // --- Advanced Report Modal Elements ---
-        const advancedReportModal = document.getElementById('advancedReportModal');
-        const closeReportModalBtn = document.getElementById('closeReportModalBtn');
-        const reportProjectSelect = document.getElementById('reportProjectSelect');
-        const reportStartDateInput = document.getElementById('reportStartDateInput');
-        const reportEndDateInput = document.getElementById('reportEndDateInput');
-        const reportDateError = document.getElementById('reportDateError');
-        const generateReportBtn = document.getElementById('generateReportBtn');
-        const reportResultsList = document.getElementById('reportResultsList');
-        const reportTotalDisplay = document.getElementById('reportTotalDisplay');
-
-        // --- Edit Time Entry Modal Elements ---
-        const editTimeEntryModal = document.getElementById('editTimeEntryModal');
-        const closeTimeEntryEditModalBtn = document.getElementById('closeTimeEntryEditModalBtn');
-        const editTimeEntryId = document.getElementById('editTimeEntryId');
-        const editTaskInput = document.getElementById('editTaskInput');
-        const editTaskError = document.getElementById('editTaskError');
-        const editTimeEntryProjectSelect = document.getElementById('editTimeEntryProjectSelect');
-        const cancelTimeEntryEditBtn = document.getElementById('cancelTimeEntryEditBtn');
-        const saveTimeEntryBtn = document.getElementById('saveTimeEntryBtn');
-
-        // --- Edit Goal Modal Elements ---
-        const editGoalModal = document.getElementById('editGoalModal');
-        const closeGoalEditModalBtn = document.getElementById('closeGoalEditModalBtn');
-        const editGoalId = document.getElementById('editGoalId');
-        const editGoalNameInput = document.getElementById('editGoalNameInput');
-        const editGoalNameError = document.getElementById('editGoalNameError');
-        const editGoalProjectSelect = document.getElementById('editGoalProjectSelect');
-        const editForTypeSelect = document.getElementById('editForTypeSelect');
-        const editForHoursInput = document.getElementById('editForHoursInput');
-        const editForMinutesInput = document.getElementById('editForMinutesInput');
-        const editForTimeError = document.getElementById('editForTimeError');
-        const editForFrequencySelect = document.getElementById('editForFrequencySelect');
-        const editUntilDateInput = document.getElementById('editUntilDateInput');
-        const editNoEndDateCheckbox = document.getElementById('editNoEndDateCheckbox');
-        const editUntilDateError = document.getElementById('editUntilDateError');
-        const cancelGoalEditBtn = document.getElementById('cancelGoalEditBtn');
-        const saveGoalEditBtn = document.getElementById('saveGoalEditBtn');
-
-        // --- Edit Project Modal Elements ---
-        const editProjectModal = document.getElementById('editProjectModal');
-        const closeProjectEditModalBtn = document.getElementById('closeProjectEditModalBtn');
-        const editProjectId = document.getElementById('editProjectId');
-        const editProjectNameInput = document.getElementById('editProjectNameInput');
-        const editProjectNameError = document.getElementById('editProjectNameError');
-        const editProjectDuplicateError = document.getElementById('editProjectDuplicateError');
-        const cancelProjectEditBtn = document.getElementById('cancelProjectEditBtn');
-        const saveProjectEditBtn = document.getElementById('saveProjectEditBtn');
-
-        // --- Export Data Modal Elements ---
-        const exportDataModal = document.getElementById('exportDataModal');
-        const closeExportModalBtn = document.getElementById('closeExportModalBtn');
-        const cancelExportBtn = document.getElementById('cancelExportBtn');
-        const exportDataConfirmBtn = document.getElementById('exportDataConfirmBtn');
-
-        // --- Import Data Modal Elements (New) ---
-        const importDataModal = document.getElementById('importDataModal');
-        const closeImportModalBtn = document.getElementById('closeImportModalBtn');
-        const importFileInput = document.getElementById('importFileInput');
-        const importFileError = document.getElementById('importFileError');
-        const cancelImportBtn = document.getElementById('cancelImportBtn');
-        const importDataConfirmBtn = document.getElementById('importDataConfirmBtn');
-
-        // --- State Variables ---
-        let timerInterval = null;
-        let startTime = null;
-        let currentTask = null;
-        let currentDisplayedDate = new Date();
-        let timeEntries = [];
-        let goals = [];
-        let projects = [];
-
-        // --- Utility Functions ---
-        
-        // UPDATED: Function to sanitize inputs to only allow numbers
-        function sanitizeNumericInput(inputElement, max = null) {
-            let value = inputElement.value.replace(/\D/g, ''); // Remove all non-digit characters
-            if (max !== null) {
-                const numericValue = parseInt(value, 10);
-                if (!isNaN(numericValue) && numericValue > max) {
-                    value = max.toString(); // Cap the value at the max
-                }
-            }
-            inputElement.value = value;
-        }
-
-        function toggleModal(modalElement, show) {
-            if (show) {
-                modalElement.classList.remove('hidden');
-                modalElement.classList.add('flex');
-                setFocusToFirstElement(modalElement);
-            } else {
-                modalElement.classList.add('hidden');
-                modalElement.classList.remove('flex');
-            }
-        }
-
-        function showCustomModal(message, type = 'alert', onConfirm = null) {
-            modalMessage.textContent = message;
-            modalConfirmBtn.onclick = null;
-            modalCancelBtn.onclick = null;
-            modalCloseBtn.onclick = null;
-
-            if (type === 'confirm') {
-                modalConfirmBtn.classList.remove('hidden');
-                modalCancelBtn.classList.remove('hidden');
-                modalCloseBtn.classList.add('hidden');
-                modalConfirmBtn.onclick = () => { toggleModal(customModal, false); if (onConfirm) onConfirm(true); };
-                modalCancelBtn.onclick = () => { toggleModal(customModal, false); if (onConfirm) onConfirm(false); };
-            } else {
-                modalConfirmBtn.classList.add('hidden');
-                modalCancelBtn.classList.add('hidden');
-                modalCloseBtn.classList.remove('hidden');
-                modalCloseBtn.onclick = () => { toggleModal(customModal, false); if (onConfirm) onConfirm(); };
-            }
-            toggleModal(customModal, true);
-        }
-
-        function showToast(message, type = 'success', duration = 3000) {
-            const toast = document.createElement('div');
-            toast.className = `toast-notification ${type}`;
-            toast.textContent = message;
-            toastContainer.appendChild(toast);
-            void toast.offsetWidth;
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-                toast.addEventListener('transitionend', () => toast.remove());
-            }, duration);
-        }
-
-        function setFocusToFirstElement(modalElement) {
-            const focusable = modalElement.querySelectorAll('button, [href], input:not([type="hidden"]):not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])');
-            if (focusable[0]) focusable[0].focus();
-        }
-
-        function hideError(errorElement, inputElement) {
-            errorElement.classList.add('hidden');
-            inputElement.classList.remove('border-red-500');
-        }
-
-        function showError(errorElement, inputElement, message) {
-            errorElement.textContent = message;
-            errorElement.classList.remove('hidden');
-            inputElement.classList.add('border-red-500');
-        }
-
-        // --- Local Storage Functions ---
-        function saveToLocalStorage() {
-            try {
-                localStorage.setItem('timeTrackerEntries', JSON.stringify(timeEntries));
-                localStorage.setItem('timeTrackerGoals', JSON.stringify(goals));
-                localStorage.setItem('timeTrackerProjects', JSON.stringify(projects));
-                if (currentTask) {
-                    localStorage.setItem('currentTrackingState', JSON.stringify({ ...currentTask, startTime: startTime.toISOString() }));
-                } else {
-                    localStorage.removeItem('currentTrackingState');
-                }
-            } catch (e) {
-                console.error("Error saving to local storage:", e);
-                showToast("Failed to save data.", 'error');
-            }
-        }
-
-        function loadFromLocalStorage() {
-            try {
-                timeEntries = JSON.parse(localStorage.getItem('timeTrackerEntries')) || [];
-                goals = JSON.parse(localStorage.getItem('timeTrackerGoals')) || [];
-                projects = JSON.parse(localStorage.getItem('timeTrackerProjects')) || [];
-                const state = JSON.parse(localStorage.getItem('currentTrackingState'));
-                if (state) {
-                    startTime = new Date(state.startTime);
-                    currentTask = { id: state.id, task: state.task, projectId: state.projectId, projectName: state.projectName };
-                    startTimerDisplay();
-                    taskInput.value = state.task;
-                    projectSelect.value = state.projectId || '';
-                    playPauseIcon.classList.replace('fa-play', 'fa-pause');
-                    taskInput.disabled = true;
-                    projectSelect.disabled = true;
-                }
-            } catch (e) {
-                console.error("Error loading from local storage:", e);
-                showToast("Failed to load data.", 'error');
-            }
-        }
-
-        // --- Time Formatting and Calculations ---
-        function formatTime(ms) {
-            const totalSeconds = Math.floor(ms / 1000);
-            const h = Math.floor(totalSeconds / 3600);
-            const m = Math.floor((totalSeconds % 3600) / 60);
-            const s = totalSeconds % 60;
-            return [h, m, s].map(u => String(u).padStart(2, '0')).join(':');
-        }
-
-        function isSameDay(d1, d2) {
-            return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
-        }
-
-        function getStartOfWeek(date) {
-            const d = new Date(date);
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-            d.setDate(diff);
-            d.setHours(0, 0, 0, 0);
-            return d;
-        }
-
-        function isSameWeek(d1, d2) {
-            return isSameDay(getStartOfWeek(d1), getStartOfWeek(d2));
-        }
-
-        function isSameMonth(d1, d2) {
-            return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth();
-        }
-
-        function formatDateForDisplay(date) {
-            if (isSameDay(date, new Date())) return "Today";
-            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        }
-
-        // --- Render Functions ---
-        function rerenderAll() {
-            renderProjects(); // Must be first to populate selects
-            renderEntries();
-            renderGoals();
-            updateTotals();
-        }
-
-        function renderEntries() {
-            const entriesForDisplay = timeEntries
-                .filter(entry => entry.startTime && isSameDay(new Date(entry.startTime), currentDisplayedDate))
-                .sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-
-            taskList.innerHTML = '';
-            noEntriesMessage.style.display = entriesForDisplay.length === 0 ? 'block' : 'none';
-
-            entriesForDisplay.forEach(entry => {
-                const start = new Date(entry.startTime);
-                const end = entry.endTime ? new Date(entry.endTime) : null;
-                const entryDiv = document.createElement('div');
-                entryDiv.className = 'task-entry';
-                entryDiv.innerHTML = `
-                    <div class="task-entry-details">
-                        <div class="task-entry-description">${entry.task}</div>
-                        <div class="text-xs text-gray-500">${entry.projectName ? `Project: ${entry.projectName}` : 'No Project'}</div>
-                        <div class="task-entry-times">
-                            ${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            ${end ? ` - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="task-entry-duration">${formatTime(entry.durationMs)}</div>
-                        <button class="text-gray-400 hover:text-blue-400" onclick="openEditTimeEntryModal('${entry.id}')" aria-label="Edit Time Entry"><i class="fas fa-pencil-alt"></i></button>
-                        <button class="text-red-400 hover:text-red-600" onclick="deleteEntry('${entry.id}')" aria-label="Delete Time Entry"><i class="fas fa-trash-alt"></i></button>
-                    </div>`;
-                taskList.appendChild(entryDiv);
-            });
-            const dateStr = formatDateForDisplay(currentDisplayedDate);
-            currentViewDateDisplay.textContent = dateStr;
-            currentViewDateDisplayHeader.textContent = dateStr;
-        }
-
-        function updateTotals() {
-            const today = new Date();
-            let totalTodayMs = 0;
-            let totalWeekMs = 0;
-            timeEntries.forEach(entry => {
-                if (entry.startTime && typeof entry.durationMs === 'number') {
-                    const entryDate = new Date(entry.startTime);
-                    if (isSameDay(entryDate, today)) totalTodayMs += entry.durationMs;
-                    if (isSameWeek(entryDate, today)) totalWeekMs += entry.durationMs;
-                }
-            });
-            todayTotalDisplay.textContent = formatTime(totalTodayMs);
-            weekTotalDisplay.textContent = formatTime(totalWeekMs);
-        }
-
-        function renderGoals() {
-            goalsList.innerHTML = '';
-            noGoalsMessage.style.display = goals.length === 0 ? 'block' : 'none';
-            goals.forEach(goal => {
-                const now = new Date();
-                const lastReset = new Date(goal.lastResetDate);
-                let shouldReset = (goal.frequency === 'day' && !isSameDay(now, lastReset)) ||
-                                  (goal.frequency === 'week' && !isSameWeek(now, lastReset)) ||
-                                  (goal.frequency === 'month' && !isSameMonth(now, lastReset));
-                if (shouldReset) {
-                    goal.currentMs = 0;
-                    goal.lastResetDate = now.toISOString();
-                }
-
-                const progress = Math.min(100, (goal.currentMs / goal.targetMs) * 100 || 0);
-                const isEnded = goal.endDate && now > new Date(goal.endDate);
-                const goalTypeDisplay = goal.type === 'atMost' ? 'At most' : 'At least';
-                const goalDiv = document.createElement('div');
-                goalDiv.className = 'goal-item';
-                goalDiv.innerHTML = `
-                    <div class="goal-progress-circle" style="--progress: ${progress}%">
-                        <span>${Math.round(progress)}%</span>
-                    </div>
-                    <div class="flex-grow">
-                        <div class="font-semibold">${goal.name} (${goalTypeDisplay})</div>
-                        <div class="text-sm text-gray-400">
-                            ${goal.projectName ? `Project: ${goal.projectName}<br>` : ''}
-                            ${formatTime(goal.currentMs)} / ${formatTime(goal.targetMs)} per ${goal.frequency}
-                            ${goal.endDate ? ` (Until: ${new Date(goal.endDate).toLocaleDateString()})` : ''}
-                            ${isEnded ? ' <span class="text-red-400">(Ended)</span>' : ''}
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button class="text-gray-400 hover:text-blue-400" onclick="openEditGoalModal('${goal.id}')" aria-label="Edit Goal"><i class="fas fa-pencil-alt"></i></button>
-                        <button class="text-red-400 hover:text-red-600" onclick="deleteGoal('${goal.id}')" aria-label="Delete Goal"><i class="fas fa-trash-alt"></i></button>
-                    </div>`;
-                goalsList.appendChild(goalDiv);
-            });
-        }
-
-        function renderProjects() {
-            projectsList.innerHTML = '';
-            noProjectsMessage.style.display = projects.length === 0 ? 'block' : 'none';
-            projects.forEach(project => {
-                const totalMs = timeEntries.reduce((sum, entry) => entry.projectId === project.id ? sum + entry.durationMs : sum, 0);
-                const projectDiv = document.createElement('div');
-                projectDiv.className = 'project-item';
-                projectDiv.innerHTML = `
-                    <div class="flex-grow">
-                        <div class="font-semibold">${project.name}</div>
-                        <div class="text-sm text-gray-400">Total: ${formatTime(totalMs)}</div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button class="text-gray-400 hover:text-blue-400" onclick="openEditProjectModal('${project.id}')" aria-label="Edit Project"><i class="fas fa-pencil-alt"></i></button>
-                        <button class="text-red-400 hover:text-red-600" onclick="deleteProject('${project.id}')" aria-label="Delete Project"><i class="fas fa-trash-alt"></i></button>
-                    </div>`;
-                projectsList.appendChild(projectDiv);
-            });
-            populateProjectSelects();
-        }
-
-        function populateProjectSelects() {
-            const selects = [projectSelect, goalProjectSelect, reportProjectSelect, editTimeEntryProjectSelect, editGoalProjectSelect];
-            const currentProjectId = projectSelect.value;
-            
-            selects.forEach(sel => {
-                const firstOption = sel.options[0];
-                sel.innerHTML = '';
-                sel.appendChild(firstOption);
-            });
-
-            projects.forEach(project => {
-                const option = new Option(project.name, project.id);
-                selects.forEach(sel => sel.add(option.cloneNode(true)));
-            });
-            projectSelect.value = currentProjectId;
-        }
-
-        // --- Time Tracking Logic ---
-        function startTimerDisplay() {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if (startTime) timerDisplay.textContent = formatTime(new Date().getTime() - startTime.getTime());
-            }, 1000);
-        }
-
-        playPauseButton.addEventListener('click', () => {
-            if (!currentTask) { // Start
-                const taskDescription = taskInput.value.trim();
-                if (!taskDescription) {
-                    showToast("Please enter a task description.", 'error');
-                    return;
-                }
-                const selectedProjectId = projectSelect.value || null;
-                const selectedProjectName = selectedProjectId ? projectSelect.options[projectSelect.selectedIndex].text : null;
-                startTime = new Date();
-                currentTask = {
-                    id: Date.now().toString(),
-                    task: taskDescription,
-                    projectId: selectedProjectId,
-                    projectName: selectedProjectName,
-                    startTime: startTime.toISOString(),
-                    endTime: null,
-                    durationMs: 0
-                };
-                timeEntries.push(currentTask);
-                playPauseIcon.classList.replace('fa-play', 'fa-pause');
-                taskInput.disabled = true;
-                projectSelect.disabled = true;
-                startTimerDisplay();
-                showToast("Timer started!", 'success');
-            } else { // Stop
-                clearInterval(timerInterval);
-                timerInterval = null;
-                const endTime = new Date();
-                const elapsedMs = endTime.getTime() - startTime.getTime();
-                const index = timeEntries.findIndex(e => e.id === currentTask.id);
-                if (index !== -1) {
-                    timeEntries[index].endTime = endTime.toISOString();
-                    timeEntries[index].durationMs = elapsedMs;
-                }
-                updateGoalProgress(currentTask.projectId, elapsedMs);
-                currentTask = null;
-                startTime = null;
-                timerDisplay.textContent = '0:00:00';
-                taskInput.value = '';
-                projectSelect.value = '';
-                playPauseIcon.classList.replace('fa-pause', 'fa-play');
-                taskInput.disabled = false;
-                projectSelect.disabled = false;
-                showToast("Timer stopped!", 'success');
-            }
-            saveToLocalStorage();
-            rerenderAll();
-        });
-
-        // --- Date Navigation Logic ---
-        prevDateBtn.addEventListener('click', () => {
-            currentDisplayedDate.setDate(currentDisplayedDate.getDate() - 1);
-            renderEntries();
-        });
-        nextDateBtn.addEventListener('click', () => {
-            currentDisplayedDate.setDate(currentDisplayedDate.getDate() + 1);
-            renderEntries();
-        });
-        goToTodayBtn.addEventListener('click', () => {
-            currentDisplayedDate = new Date();
-            renderEntries();
-        });
-
-        // --- Goal Modal Logic ---
-        openCreateGoalModalBtn.addEventListener('click', () => {
-            goalNameInput.value = '';
-            forHoursInput.value = '';
-            forMinutesInput.value = '';
-            untilDateInput.value = '';
-            noEndDateCheckbox.checked = false;
-            untilDateInput.disabled = false;
-            goalProjectSelect.value = '';
-            forTypeSelect.value = 'atLeast';
-            hideError(goalNameError, goalNameInput);
-            hideError(forTimeError, forHoursInput);
-            hideError(forTimeError, forMinutesInput);
-            hideError(untilDateError, untilDateInput);
-            toggleModal(createGoalModal, true);
-        });
-
-        closeCreateGoalModalBtn.addEventListener('click', () => toggleModal(createGoalModal, false));
-        cancelGoalBtn.addEventListener('click', () => toggleModal(createGoalModal, false));
-        noEndDateCheckbox.addEventListener('change', () => {
-            untilDateInput.disabled = noEndDateCheckbox.checked;
-            if (noEndDateCheckbox.checked) {
-                untilDateInput.value = '';
-                hideError(untilDateError, untilDateInput);
-            }
-        });
-
-        createGoalBtnModal.addEventListener('click', () => {
-            const goalName = goalNameInput.value.trim();
-            const targetHours = parseInt(forHoursInput.value, 10) || 0;
-            const targetMinutes = parseInt(forMinutesInput.value, 10) || 0;
-            const totalTargetMs = (targetHours * 3600 + targetMinutes * 60) * 1000;
-            const endDate = noEndDateCheckbox.checked ? null : untilDateInput.value;
-            let isValid = true;
-
-            if (!goalName) { showError(goalNameError, goalNameInput, "Goal name is required."); isValid = false; } 
-            else { hideError(goalNameError, goalNameInput); }
-            if (totalTargetMs <= 0) { showError(forTimeError, forHoursInput, "Enter a positive time."); showError(forTimeError, forMinutesInput, ""); isValid = false; } 
-            else { hideError(forTimeError, forHoursInput); hideError(forTimeError, forMinutesInput); }
-            if (!noEndDateCheckbox.checked && !endDate) { showError(untilDateError, untilDateInput, "Select an end date or check 'No end date'."); isValid = false; } 
-            else { hideError(untilDateError, untilDateInput); }
-            if (!isValid) return;
-
-            const selectedGoalProjectId = goalProjectSelect.value || null;
-            const selectedGoalProjectName = selectedGoalProjectId ? goalProjectSelect.options[goalProjectSelect.selectedIndex].text : null;
-            goals.push({
-                id: Date.now().toString(),
-                name: goalName,
-                type: forTypeSelect.value,
-                targetMs: totalTargetMs,
-                frequency: forFrequencySelect.value,
-                endDate: endDate,
-                currentMs: 0,
-                lastResetDate: new Date().toISOString(),
-                projectId: selectedGoalProjectId,
-                projectName: selectedGoalProjectName
-            });
-            saveToLocalStorage();
-            rerenderAll();
-            toggleModal(createGoalModal, false);
-            showToast("Goal created successfully!", 'success');
-        });
-
-        function updateGoalProgress(completedProjectId, durationMs) {
-            goals.forEach(goal => {
-                if ((!goal.projectId && completedProjectId === null) || (goal.projectId && goal.projectId === completedProjectId)) {
-                    if (!goal.endDate || new Date() <= new Date(goal.endDate)) {
-                        goal.currentMs += durationMs;
-                    }
-                }
-            });
-            saveToLocalStorage();
-        }
-
-        // --- Project Modal Logic ---
-        openCreateProjectModalBtn.addEventListener('click', () => {
-            projectNameInput.value = '';
-            hideError(projectNameError, projectNameInput);
-            toggleModal(createProjectModal, true);
-        });
-        closeCreateProjectModalBtn.addEventListener('click', () => toggleModal(createProjectModal, false));
-        cancelProjectBtn.addEventListener('click', () => toggleModal(createProjectModal, false));
-        createProjectBtnModal.addEventListener('click', () => {
-            const projectName = projectNameInput.value.trim();
-            if (!projectName) {
-                showError(projectNameError, projectNameInput, "Project name is required.");
-                return;
-            }
-            if (projects.some(p => p.name.toLowerCase() === projectName.toLowerCase())) {
-                showError(projectNameError, projectNameInput, "A project with this name already exists.");
-                return;
-            }
-            projects.push({ id: Date.now().toString(), name: projectName });
-            saveToLocalStorage();
-            rerenderAll();
-            toggleModal(createProjectModal, false);
-            showToast("Project created successfully!", 'success');
-        });
-
-        // --- Advanced Report Modal Logic ---
-        openAdvancedReportModalBtn.addEventListener('click', () => {
-            reportProjectSelect.value = '';
-            reportStartDateInput.value = '';
-            reportEndDateInput.value = '';
-            hideError(reportDateError, reportStartDateInput);
-            reportResultsList.innerHTML = '<p class="text-gray-400 text-center py-4">Generate a report to see results here.</p>';
-            reportTotalDisplay.textContent = '0:00:00';
-            toggleModal(advancedReportModal, true);
-        });
-        closeReportModalBtn.addEventListener('click', () => toggleModal(advancedReportModal, false));
-        generateReportBtn.addEventListener('click', () => {
-            const filterProjectId = reportProjectSelect.value || null;
-            let startDate = reportStartDateInput.value ? new Date(reportStartDateInput.value) : null;
-            let endDate = reportEndDateInput.value ? new Date(reportEndDateInput.value) : null;
-            if (endDate) endDate.setHours(23, 59, 59, 999);
-
-            if (startDate && endDate && startDate > endDate) {
-                showError(reportDateError, reportStartDateInput, "Start date cannot be after end date.");
-                return;
-            } else {
-                hideError(reportDateError, reportStartDateInput);
-            }
-
-            const filteredEntries = timeEntries.filter(entry => {
-                const entryDate = new Date(entry.startTime);
-                return (!filterProjectId || entry.projectId === filterProjectId) &&
-                       (!startDate || entryDate >= startDate) &&
-                       (!endDate || entryDate <= endDate);
-            }).sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-            
-            reportResultsList.innerHTML = '';
-            let totalReportDurationMs = 0;
-            if (filteredEntries.length === 0) {
-                reportResultsList.innerHTML = '<p class="text-gray-400 text-center py-4">No entries found.</p>';
-            } else {
-                filteredEntries.forEach(entry => {
-                    totalReportDurationMs += entry.durationMs;
-                    const start = new Date(entry.startTime);
-                    const end = entry.endTime ? new Date(entry.endTime) : null;
-                    const entryDiv = document.createElement('div');
-                    entryDiv.className = 'report-entry';
-                    entryDiv.innerHTML = `
-                        <div class="report-entry-header"><span>${entry.task}</span><span>${formatTime(entry.durationMs)}</span></div>
-                        <div class="report-entry-details">
-                            ${entry.projectName ? `Project: ${entry.projectName} | ` : ''}
-                            ${start.toLocaleDateString()} ${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            ${end ? ` - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
-                        </div>`;
-                    reportResultsList.appendChild(entryDiv);
-                });
-            }
-            reportTotalDisplay.textContent = formatTime(totalReportDurationMs);
-            showToast("Report generated!", 'success');
-        });
-
-        // --- Edit Modals ---
-        window.openEditTimeEntryModal = function(id) {
-            const entry = timeEntries.find(e => e.id === id);
-            if (entry) {
-                editTimeEntryId.value = entry.id;
-                editTaskInput.value = entry.task;
-                editTimeEntryProjectSelect.value = entry.projectId || '';
-                hideError(editTaskError, editTaskInput);
-                toggleModal(editTimeEntryModal, true);
-            }
-        };
-        saveTimeEntryBtn.addEventListener('click', () => {
-            const id = editTimeEntryId.value;
-            const updatedTask = editTaskInput.value.trim();
-            if (!updatedTask) { showError(editTaskError, editTaskInput, "Task description cannot be empty."); return; }
-            
-            const index = timeEntries.findIndex(e => e.id === id);
-            if (index !== -1) {
-                const updatedProjectId = editTimeEntryProjectSelect.value || null;
-                timeEntries[index].task = updatedTask;
-                timeEntries[index].projectId = updatedProjectId;
-                timeEntries[index].projectName = updatedProjectId ? editTimeEntryProjectSelect.options[editTimeEntryProjectSelect.selectedIndex].text : null;
-                saveToLocalStorage();
-                rerenderAll();
-                toggleModal(editTimeEntryModal, false);
-                showToast("Entry updated!", 'success');
-            }
-        });
-
-        window.openEditGoalModal = function(id) {
-            const goal = goals.find(g => g.id === id);
-            if (goal) {
-                editGoalId.value = goal.id;
-                editGoalNameInput.value = goal.name;
-                editGoalProjectSelect.value = goal.projectId || '';
-                editForTypeSelect.value = goal.type || 'atLeast';
-                
-                const totalSeconds = goal.targetMs / 1000;
-                editForHoursInput.value = Math.floor(totalSeconds / 3600);
-                editForMinutesInput.value = Math.floor((totalSeconds % 3600) / 60);
-
-                editForFrequencySelect.value = goal.frequency;
-                editUntilDateInput.value = goal.endDate || '';
-                editNoEndDateCheckbox.checked = !goal.endDate;
-                editUntilDateInput.disabled = !goal.endDate;
-                
-                hideError(editGoalNameError, editGoalNameInput);
-                hideError(editForTimeError, editForHoursInput);
-                hideError(editForTimeError, editForMinutesInput);
-                hideError(editUntilDateError, editUntilDateInput);
-                toggleModal(editGoalModal, true);
-            }
-        };
-        saveGoalEditBtn.addEventListener('click', () => {
-            const id = editGoalId.value;
-            const updatedName = editGoalNameInput.value.trim();
-            const updatedHours = parseInt(editForHoursInput.value, 10) || 0;
-            const updatedMinutes = parseInt(editForMinutesInput.value, 10) || 0;
-            const updatedTargetMs = (updatedHours * 3600 + updatedMinutes * 60) * 1000;
-            const updatedEndDate = editNoEndDateCheckbox.checked ? null : editUntilDateInput.value;
-            let isValid = true;
-            
-            if (!updatedName) { showError(editGoalNameError, editGoalNameInput, "Goal name is required."); isValid = false; } 
-            else { hideError(editGoalNameError, editGoalNameInput); }
-            if (updatedTargetMs <= 0) { showError(editForTimeError, editForHoursInput, "Enter a positive time."); showError(editForTimeError, editForMinutesInput, ""); isValid = false; }
-            else { hideError(editForTimeError, editForHoursInput); hideError(editForTimeError, editForMinutesInput); }
-            if (!editNoEndDateCheckbox.checked && !updatedEndDate) { showError(editUntilDateError, editUntilDateInput, "Select an end date or check 'No end date'."); isValid = false; }
-            else { hideError(editUntilDateError, editUntilDateInput); }
-            if (!isValid) return;
-
-            const index = goals.findIndex(g => g.id === id);
-            if (index !== -1) {
-                const updatedProjectId = editGoalProjectSelect.value || null;
-                goals[index].name = updatedName;
-                goals[index].type = editForTypeSelect.value;
-                goals[index].targetMs = updatedTargetMs;
-                goals[index].frequency = editForFrequencySelect.value;
-                goals[index].endDate = updatedEndDate;
-                goals[index].projectId = updatedProjectId;
-                goals[index].projectName = updatedProjectId ? editGoalProjectSelect.options[editGoalProjectSelect.selectedIndex].text : null;
-                saveToLocalStorage();
-                rerenderAll();
-                toggleModal(editGoalModal, false);
-                showToast("Goal updated!", 'success');
-            }
-        });
-
-        window.openEditProjectModal = function(id) {
-            const project = projects.find(p => p.id === id);
-            if (project) {
-                editProjectId.value = project.id;
-                editProjectNameInput.value = project.name;
-                hideError(editProjectNameError, editProjectNameInput);
-                hideError(editProjectDuplicateError, editProjectNameInput);
-                toggleModal(editProjectModal, true);
-            }
-        };
-        saveProjectEditBtn.addEventListener('click', () => {
-            const id = editProjectId.value;
-            const updatedName = editProjectNameInput.value.trim();
-            if (!updatedName) { showError(editProjectNameError, editProjectNameInput, "Project name is required."); return; }
-            if (projects.some(p => p.name.toLowerCase() === updatedName.toLowerCase() && p.id !== id)) {
-                showError(editProjectDuplicateError, editProjectNameInput, "A project with this name already exists.");
-                return;
-            }
-
-            const index = projects.findIndex(p => p.id === id);
-            if (index !== -1) {
-                projects[index].name = updatedName;
-                timeEntries.forEach(e => { if (e.projectId === id) e.projectName = updatedName; });
-                goals.forEach(g => { if (g.projectId === id) g.projectName = updatedName; });
-                saveToLocalStorage();
-                rerenderAll();
-                toggleModal(editProjectModal, false);
-                showToast("Project updated!", 'success');
-            }
-        });
-
-        // --- Close/Cancel Buttons for Edit Modals ---
-        closeTimeEntryEditModalBtn.addEventListener('click', () => toggleModal(editTimeEntryModal, false));
-        cancelTimeEntryEditBtn.addEventListener('click', () => toggleModal(editTimeEntryModal, false));
-        closeGoalEditModalBtn.addEventListener('click', () => toggleModal(editGoalModal, false));
-        cancelGoalEditBtn.addEventListener('click', () => toggleModal(editGoalModal, false));
-        closeProjectEditModalBtn.addEventListener('click', () => toggleModal(editProjectModal, false));
-        cancelProjectEditBtn.addEventListener('click', () => toggleModal(editProjectModal, false));
-        editNoEndDateCheckbox.addEventListener('change', () => {
-            editUntilDateInput.disabled = editNoEndDateCheckbox.checked;
-            if (editNoEndDateCheckbox.checked) {
-                editUntilDateInput.value = '';
-                hideError(editUntilDateError, editUntilDateInput);
-            }
-        });
-
-        // --- Import/Export Logic ---
-        openExportDataModalBtn.addEventListener('click', () => toggleModal(exportDataModal, true));
-        closeExportModalBtn.addEventListener('click', () => toggleModal(exportDataModal, false));
-        cancelExportBtn.addEventListener('click', () => toggleModal(exportDataModal, false));
-        
-        openImportDataModalBtn.addEventListener('click', () => {
-            importFileInput.value = ''; // Reset file input
-            hideError(importFileError, importFileInput);
-            toggleModal(importDataModal, true);
-        });
-        closeImportModalBtn.addEventListener('click', () => toggleModal(importDataModal, false));
-        cancelImportBtn.addEventListener('click', () => toggleModal(importDataModal, false));
-
-        exportDataConfirmBtn.addEventListener('click', () => {
-            const allData = { projects, goals, timeEntries };
-            const filename = `time_tracker_backup_${new Date().toISOString().split('T')[0]}.json`;
-            exportToJson(allData, filename);
-            toggleModal(exportDataModal, false);
-        });
-        
-        importDataConfirmBtn.addEventListener('click', () => {
-            const file = importFileInput.files[0];
-            if (!file) {
-                showError(importFileError, importFileInput, "Please select a file to import.");
-                return;
-            }
-            hideError(importFileError, importFileInput);
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                try {
-                    const importedData = JSON.parse(event.target.result);
-                    const importMode = document.querySelector('input[name="importMode"]:checked').value;
-
-                    // Basic validation
-                    if (!importedData || !Array.isArray(importedData.timeEntries) || !Array.isArray(importedData.goals) || !Array.isArray(importedData.projects)) {
-                        throw new Error("Invalid file structure. Required data is missing.");
-                    }
-
-                    if (importMode === 'replace') {
-                        timeEntries = importedData.timeEntries;
-                        goals = importedData.goals;
-                        projects = importedData.projects;
-                        showToast("Data replaced successfully!", 'success');
-                    } else { // Merge
-                        const mergeById = (existing, incoming) => {
-                            const existingIds = new Set(existing.map(item => item.id));
-                            const newItems = incoming.filter(item => !existingIds.has(item.id));
-                            return [...existing, ...newItems];
-                        };
-                        timeEntries = mergeById(timeEntries, importedData.timeEntries);
-                        goals = mergeById(goals, importedData.goals);
-                        projects = mergeById(projects, importedData.projects);
-                        showToast("Data merged successfully!", 'success');
-                    }
-
-                    saveToLocalStorage();
-                    rerenderAll();
-                    toggleModal(importDataModal, false);
-
-                } catch (e) {
-                    console.error("Error importing data:", e);
-                    showToast(`Import failed: ${e.message}`, 'error', 5000);
-                }
-            };
-            reader.onerror = () => showToast("Error reading the file.", 'error');
-            reader.readAsText(file);
-        });
-
-        function exportToJson(data, filename) {
-            if (!data) return showToast("No data to export.", 'error');
-            triggerDownload(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8;' }), filename);
-        }
-
-        function triggerDownload(blob, filename) {
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showToast("Data export started!", 'success');
-        }
-
-        // --- Delete Functions ---
-        window.deleteEntry = function(id) {
-            showCustomModal("Are you sure you want to delete this time entry?", 'confirm', (confirmed) => {
-                if (confirmed) {
-                    timeEntries = timeEntries.filter(entry => entry.id !== id);
-                    saveToLocalStorage();
-                    rerenderAll();
-                    showToast("Time entry deleted.", 'success');
-                }
-            });
-        };
-        window.deleteGoal = function(id) {
-            showCustomModal("Are you sure you want to delete this goal?", 'confirm', (confirmed) => {
-                if (confirmed) {
-                    goals = goals.filter(goal => goal.id !== id);
-                    saveToLocalStorage();
-                    rerenderAll();
-                    showToast("Goal deleted.", 'success');
-                }
-            });
-        };
-        window.deleteProject = function(id) {
-            showCustomModal("Deleting a project will also delete all associated time entries and goals. Are you sure?", 'confirm', (confirmed) => {
-                if (confirmed) {
-                    projects = projects.filter(p => p.id !== id);
-                    timeEntries = timeEntries.filter(e => e.projectId !== id);
-                    goals = goals.filter(g => g.projectId !== id);
-                    saveToLocalStorage();
-                    rerenderAll();
-                    showToast("Project and associated data deleted.", 'success');
-                }
-            });
-        };
-
-        // --- Initial Load ---
-        window.onload = () => {
-            loadFromLocalStorage();
-            rerenderAll();
-            if (currentTask) {
-                startTimerDisplay();
-            }
-
-            // UPDATED: Add event listeners for the new text inputs
-            forHoursInput.addEventListener('input', () => sanitizeNumericInput(forHoursInput));
-            forMinutesInput.addEventListener('input', () => sanitizeNumericInput(forMinutesInput, 59));
-            editForHoursInput.addEventListener('input', () => sanitizeNumericInput(editForHoursInput));
-            editForMinutesInput.addEventListener('input', () => sanitizeNumericInput(editForMinutesInput, 59));
-        };
-    </script>
+    <div class="mfoot">
+      <button class="btn btn-s" data-close="pomoSettingsModal">CANCEL</button>
+      <button class="btn btn-p" id="savePomoSettings"><i class="fas fa-check" aria-hidden="true"></i> APPLY</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE GOAL -->
+<div class="overlay" id="createGoalModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cgTitle">
+    <div class="mhead"><div class="mtitle" id="cgTitle">NEW GOAL</div><button class="mcls" data-close="createGoalModal" aria-label="Close"><i class="fas fa-times" aria-hidden="true"></i></button></div>
+    <div class="modal-body">
+      <div class="field"><label for="gName">Goal Name</label><input type="text" id="gName" placeholder="e.g. Code every day"><div class="errmsg" id="gNameErr" role="alert">Name is required.</div></div>
+      <div class="field"><label for="gProj">Track Project (optional)</label><select id="gProj"><option value="">All Projects</option></select></div>
+      <div class="field"><label for="gType">Type</label><select id="gType"><option value="atLeast">At least</option><option value="atMost">At most</option></select></div>
+      <div class="field"><label>Target Time</label>
+        <div class="frow">
+          <div class="field"><input type="text" id="gHours" placeholder="hrs" inputmode="numeric" aria-label="Hours"></div>
+          <div class="field"><input type="text" id="gMins" placeholder="mins" inputmode="numeric" aria-label="Minutes"></div>
+          <div class="field"><select id="gFreq" aria-label="Frequency"><option value="day">/ day</option><option value="week">/ week</option><option value="month">/ month</option></select></div>
+        </div>
+        <div class="errmsg" id="gTimeErr" role="alert">Enter a positive time target.</div>
+      </div>
+      <div class="field"><label for="gUntil">Until</label><input type="date" id="gUntil">
+        <label class="cb-row"><input type="checkbox" id="gNoEnd"> No end date</label>
+        <div class="errmsg" id="gDateErr" role="alert">Select an end date or check no end date.</div>
+      </div>
+    </div>
+    <div class="mfoot"><button class="btn btn-s" data-close="createGoalModal">CANCEL</button><button class="btn btn-p" id="createGoalBtn">CREATE GOAL</button></div>
+  </div>
+</div>
+
+<!-- CREATE PROJECT -->
+<div class="overlay" id="createProjModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cpTitle">
+    <div class="mhead"><div class="mtitle" id="cpTitle">NEW PROJECT</div><button class="mcls" data-close="createProjModal" aria-label="Close"><i class="fas fa-times" aria-hidden="true"></i></button></div>
+    <div class="modal-body">
+      <div class="field"><label for="pName">Project Name</label><input type="text" id="pName" placeholder="e.g. Website Redesign"><div class="errmsg" id="pNameErr" role="alert">Name is required.</div></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-s" data-close="createProjModal">CANCEL</button><button class="btn btn-p" id="createProjBtn">CREATE PROJECT</button></div>
+  </div>
+</div>
+
+<!-- EDIT ENTRY -->
+<div class="overlay" id="editEntryModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="mhead"><div class="mtitle">EDIT ENTRY</div><button class="mcls" data-close="editEntryModal" aria-label="Close"><i class="fas fa-times" aria-hidden="true"></i></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="eeId">
+      <div class="field"><label for="eeTask">Task Description</label><input type="text" id="eeTask"><div class="errmsg" id="eeTaskErr" role="alert">Description is required.</div></div>
+      <div class="field"><label for="eeProj">Project</label><select id="eeProj"><option value="">— no project —</option></select></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-s" data-close="editEntryModal">CANCEL</button><button class="btn btn-p" id="saveEntryBtn">SAVE CHANGES</button></div>
+  </div>
+</div>
+
+<!-- EDIT GOAL -->
+<div class="overlay" id="editGoalModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="mhead"><div class="mtitle">EDIT GOAL</div><button class="mcls" data-close="editGoalModal" aria-label="Close"><i class="fas fa-times" aria-hidden="true"></i></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="egId">
+      <div class="field"><label for="egName">Goal Name</label><input type="text" id="egName"><div class="errmsg" id="egNameErr" role="alert">Name is required.</div></div>
+      <div class="field"><label for="egProj">Track Project</label><select id="egProj"><option value="">All Projects</option></select></div>
+      <div class="field"><label for="egType">Type</label><select id="egType"><option value="atLeast">At least</option><option value="atMost">At most</option></select></div>
+      <div class="field"><label>Target Time</label>
+        <div class="frow">
+          <div class="field"><input type="text" id="egHours" inputmode="numeric" placeholder="hrs" aria-label="Hours"></div>
+          <div class="field"><input type="text" id="egMins" inputmode="numeric" placeholder="mins" aria-label="Minutes"></div>
+          <div class="field"><select id="egFreq" aria-label="Frequency"><option value="day">/ day</option><option value="week">/ week</option><option value="month">/ month</option></select></div>
+        </div>
+        <div class="errmsg" id="egTimeErr" role="alert">Enter a positive time target.</div>
+      </div>
+      <div class="field"><label for="egUntil">Until</label><input type="date" id="egUntil">
+        <label class="cb-row"><input type="checkbox" id="egNoEnd"> No end date</label>
+        <div class="errmsg" id="egDateErr" role="alert">Select an end date or check no end date.</div>
+      </div>
+    </div>
+    <div class="mfoot"><button class="btn btn-s" data-close="editGoalModal">CANCEL</button><button class="btn btn-p" id="saveGoalBtn">SAVE CHANGES</button></div>
+  </div>
+</div>
+
+<!-- EDIT PROJECT -->
+<div class="overlay" id="editProjModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="mhead"><div class="mtitle">EDIT PROJECT</div><button class="mcls" data-close="editProjModal" aria-label="Close"><i class="fas fa-times" aria-hidden="true"></i></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="epId">
+      <div class="field"><label for="epName">Project Name</label><input type="text" id="epName"><div class="errmsg" id="epNameErr" role="alert">Name is required.</div><div class="errmsg" id="epDupErr" role="alert">Name already exists.</div></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-s" data-close="editProjModal">CANCEL</button><button class="btn btn-p" id="saveProjBtn">SAVE CHANGES</button></div>
+  </div>
+</div>
+
+<!-- REPORTS -->
+<div class="overlay" id="reportModal">
+  <div class="modal wide" role="dialog" aria-modal="true">
+    <div class="mhead"><div class="mtitle">ADVANCED REPORTS</div><button class="mcls" data-close="reportModal" aria-label="Close"><i class="fas fa-times" aria-hidden="true"></i></button></div>
+    <div class="modal-body">
+      <div class="field"><label for="rProj">Filter by Project</label><select id="rProj"><option value="">All Projects</option></select></div>
+      <div class="frow" style="margin-bottom:14px">
+        <div class="field"><label for="rStart">Start Date</label><input type="date" id="rStart"></div>
+        <div class="field"><label for="rEnd">End Date</label><input type="date" id="rEnd"></div>
+      </div>
+      <div class="errmsg" id="rDateErr" style="margin-bottom:10px" role="alert">Start date cannot be after end date.</div>
+      <button class="btn btn-p" id="genReportBtn" style="width:100%;justify-content:center;margin-bottom:14px"><i class="fas fa-bolt" aria-hidden="true"></i> GENERATE REPORT</button>
+      <div class="rlist" id="rList" aria-live="polite"><div class="empty">// run a report to see results</div></div>
+      <div class="rtotal" id="rTotal" style="display:none"><span>TOTAL</span><span id="rTotalVal">00:00:00</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT -->
+<div class="overlay" id="exportModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="mhead"><div class="mtitle">EXPORT DATA</div><button class="mcls" data-close="exportModal" aria-label="Close"><i class="fas fa-times" aria-hidden="true"></i></button></div>
+    <div class="modal-body"><p style="color:var(--fg-dim);font-size:13px;line-height:1.7">Exports all projects, goals, and time entries as a JSON backup. Use this to restore or migrate your data later.</p></div>
+    <div class="mfoot"><button class="btn btn-s" data-close="exportModal">CANCEL</button><button class="btn btn-p" id="confirmExportBtn"><i class="fas fa-download" aria-hidden="true"></i> EXPORT JSON</button></div>
+  </div>
+</div>
+
+<!-- IMPORT -->
+<div class="overlay" id="importModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="mhead"><div class="mtitle">IMPORT DATA</div><button class="mcls" data-close="importModal" aria-label="Close"><i class="fas fa-times" aria-hidden="true"></i></button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>JSON Backup File</label>
+        <div class="file-input-wrap">
+          <div class="file-input-label" id="fileInputLabel">
+            <i class="fas fa-folder-open" aria-hidden="true"></i>
+            <span class="file-name" id="fileNameDisplay">Choose a .json file…</span>
+          </div>
+          <input type="file" id="importFile" accept=".json" aria-label="JSON backup file">
+        </div>
+        <div class="errmsg" id="importFileErr" role="alert">Please select a valid JSON file.</div>
+      </div>
+      <div class="field"><label>Import Mode</label>
+        <div class="radio-grp">
+          <label class="radio-opt"><input type="radio" name="importMode" value="merge" checked> Merge with existing data</label>
+          <label class="radio-opt"><input type="radio" name="importMode" value="replace"> Replace all existing data</label>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot"><button class="btn btn-s" data-close="importModal">CANCEL</button><button class="btn btn-p" id="confirmImportBtn"><i class="fas fa-upload" aria-hidden="true"></i> IMPORT</button></div>
+  </div>
+</div>
+
+<div class="toasts" id="toastContainer" aria-live="assertive" aria-atomic="true"></div>
+
+<script>
+// === CONSTANTS ===
+const CIRC = 2 * Math.PI * 85; // r=85 → 534.07
+
+// Default pomodoro settings (overridden by saved settings)
+let pomoSettings = {
+  work:      25 * 60,
+  short:     5  * 60,
+  long:      15 * 60,
+  cycle:     4,      // sessions before long break
+  autoAdv:   true,   // auto-advance to next phase
+  longBreak: true,   // replace last short break with a long break
+  breaks:    true    // include breaks at all
+};
+
+const POMO_STROKE = { work: '#fb4934', short: '#b8bb26', long: '#83a598' };
+const PROJ_COLORS = ['#458588','#b16286','#689d6a','#d79921','#cc241d','#98971a'];
+
+// === STATE ===
+let mode = 'work', pomoSec = pomoSettings.work, pomoTotal = pomoSettings.work;
+let pomoRunning = false, pomoInterval = null, sessionsD = 0;
+let taskRunning = false, taskStart = null, taskInterval = null, activeEntry = null;
+let timeEntries = [], goals = [], projects = [], viewDate = new Date();
+let calViewDate = new Date(); // separate calendar navigation
+
+// === DOM ===
+const $ = id => document.getElementById(id);
+const ringFg = $('ringFg');
+const pomoDisp = $('pomoDisplay');
+const pomoSub = $('pomoSub');
+const pomoStartBtn = $('pomoStart');
+const entryList = $('entryList');
+const goalList = $('goalList');
+const projList = $('projList');
+const taskInput = $('taskInput');
+const projSelect = $('projSelect');
+const trackBtn = $('trackBtn');
+const liveTimer = $('liveTimer');
+
+// === UTILS ===
+const fmt = ms => {
+  const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+  return [h,m,sec].map(u=>String(u).padStart(2,'0')).join(':');
+};
+const fmtMS = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2);
+const sameDay = (a,b) => a.toDateString()===b.toDateString();
+const sowk = d => { const r=new Date(d),dy=r.getDay(); r.setDate(r.getDate()-dy+(dy===0?-6:1)); r.setHours(0,0,0,0); return r; };
+const sameWeek = (a,b) => sameDay(sowk(a),sowk(b));
+const sameMon = (a,b) => a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth();
+const sanitize = (el,max) => { el.value=el.value.replace(/\D/g,''); if(max!=null&&parseInt(el.value)>max) el.value=max; };
+const projColor = id => { const i=projects.findIndex(p=>p.id===id); return i>=0?PROJ_COLORS[i%PROJ_COLORS.length]:'#665c54'; };
+const parseDateLocal = str => { if(!str) return null; const [y,mo,d]=str.split('-').map(Number); const dt=new Date(y,mo-1,d); dt.setHours(0,0,0,0); return dt; };
+
+// Human-readable duration, e.g. "1h 25m"
+const fmtHuman = secs => {
+  const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
+  if(h>0) return `${h}h ${m}m`;
+  if(m>0) return `${m}m ${s>0?s+'s':''}`.trim();
+  return `${s}s`;
+};
+
+// === TOAST ===
+const toast = (msg,type='ok') => {
+  const t=document.createElement('div'); t.className=`toast ${type}`; t.textContent=msg;
+  $('toastContainer').appendChild(t);
+  setTimeout(()=>{ t.style.animation='tout .18s ease forwards'; t.addEventListener('animationend',()=>t.remove()); },2800);
+};
+
+// === MODAL ===
+const openM = id => {
+  $(id).classList.add('open');
+  requestAnimationFrame(()=>{
+    const el=$(id).querySelector('input,select,button:not(.mcls)');
+    if(el) el.focus();
+  });
+};
+const closeM = id => $(id).classList.remove('open');
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeM(b.dataset.close)));
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{
+  if(e.target===o && !o.hasAttribute('data-no-overlay-close')) o.classList.remove('open');
+}));
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') {
+    const open=[...document.querySelectorAll('.overlay.open')];
+    if(open.length){ const last=open[open.length-1]; if(!last.hasAttribute('data-no-overlay-close')) last.classList.remove('open'); }
+  }
+});
+
+// === ALERT ===
+let alertCb=null;
+const alert2 = (msg,isConfirm=false,cb=null) => {
+  $('alertMsg').textContent=msg;
+  $('alertCancel').style.display=isConfirm?'':'none';
+  $('alertOk').textContent=isConfirm?'CONFIRM':'OK';
+  alertCb=cb; openM('alertModal');
+  requestAnimationFrame(()=>(isConfirm?$('alertCancel'):$('alertOk')).focus());
+};
+$('alertOk').onclick=()=>{ closeM('alertModal'); if(alertCb) alertCb(true); };
+$('alertCancel').onclick=()=>{ closeM('alertModal'); if(alertCb) alertCb(false); };
+
+// === SOUND ===
+const playBell = () => {
+  try {
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const osc=ctx.createOscillator(), gain=ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type='sine'; osc.frequency.setValueAtTime(880,ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(440,ctx.currentTime+0.4);
+    gain.gain.setValueAtTime(0.3,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.8);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime+0.8);
+    setTimeout(()=>ctx.close(),1000);
+  } catch(e){}
+};
+
+// === STORAGE ===
+const save = () => {
+  try {
+    localStorage.setItem('tt_e',JSON.stringify(timeEntries));
+    localStorage.setItem('tt_g',JSON.stringify(goals));
+    localStorage.setItem('tt_p',JSON.stringify(projects));
+    localStorage.setItem('tt_ps',JSON.stringify(pomoSettings));
+    if(activeEntry) localStorage.setItem('tt_a',JSON.stringify({...activeEntry,startTime:taskStart.toISOString()}));
+    else localStorage.removeItem('tt_a');
+  } catch(e){ toast('Save failed','err'); }
+};
+const load = () => {
+  try {
+    timeEntries=JSON.parse(localStorage.getItem('tt_e'))||[];
+    goals=JSON.parse(localStorage.getItem('tt_g'))||[];
+    projects=JSON.parse(localStorage.getItem('tt_p'))||[];
+    const ps=JSON.parse(localStorage.getItem('tt_ps'));
+    if(ps) Object.assign(pomoSettings,ps);
+    const a=JSON.parse(localStorage.getItem('tt_a'));
+    if(a){
+      taskStart=new Date(a.startTime);
+      activeEntry={id:a.id,task:a.task,projectId:a.projectId,projectName:a.projectName};
+      taskRunning=true; taskInput.value=a.task; projSelect.value=a.projectId||'';
+      startLive();
+      taskInput.readOnly=true; projSelect.disabled=true;
+      trackBtn.innerHTML='<i class="fas fa-stop" aria-hidden="true"></i> STOP';
+      trackBtn.classList.add('on'); trackBtn.setAttribute('aria-label','Stop task timer');
+      liveTimer.classList.remove('off');
+    }
+  } catch(e){ toast('Load failed','err'); }
+};
+
+// === POMODORO ===
+ringFg.style.strokeDasharray = CIRC;
+
+const updateRing = () => {
+  const ratio=pomoSec/pomoTotal, offset=CIRC*(1-ratio);
+  ringFg.style.strokeDashoffset=offset; ringFg.style.stroke=POMO_STROKE[mode];
+};
+
+const updateDots = () => {
+  const container=$('pomoDots');
+  container.innerHTML='';
+  const cycle=pomoSettings.cycle||4;
+  const isBreak=(mode==='short'||mode==='long');
+  for(let i=0;i<cycle;i++){
+    const d=document.createElement('div'); d.className='dot';
+    const sessionIdx=sessionsD%cycle;
+    if(i<sessionIdx){ d.classList.add('done'); d.setAttribute('aria-label',`Session ${i+1}: complete`); }
+    else if(i===sessionIdx){
+      if(isBreak){ d.classList.add('break'); d.setAttribute('aria-label',`Session ${i+1}: break`); }
+      else { d.classList.add('cur'); d.setAttribute('aria-label',`Session ${i+1}: current`); }
+    } else { d.setAttribute('aria-label',`Session ${i+1}`); }
+    container.appendChild(d);
+  }
+};
+
+// Build a visual plan of the upcoming session cycle
+const updatePlan = () => {
+  const plan = $('pomoPlan');
+  plan.innerHTML = '';
+  // Hide plan in manual mode
+  plan.style.display = pomoSettings.autoAdv ? '' : 'none';
+  if (!pomoSettings.autoAdv) return;
+
+  const cycle = pomoSettings.cycle || 4;
+  const blocks = [];
+  for (let i = 0; i < cycle; i++) {
+    blocks.push({ type: 'work', sec: pomoSettings.work });
+    if (pomoSettings.breaks) {
+      if (i < cycle - 1) {
+        blocks.push({ type: 'short', sec: pomoSettings.short });
+      } else if (pomoSettings.longBreak) {
+        blocks.push({ type: 'long', sec: pomoSettings.long });
+      } else {
+        blocks.push({ type: 'short', sec: pomoSettings.short });
+      }
+    }
+  }
+  const totalSec = blocks.reduce((s, b) => s + b.sec, 0);
+  const show = blocks.slice(0, Math.min(9, blocks.length));
+  show.forEach(b => {
+    const el = document.createElement('div');
+    el.className = `plan-block ${b.type}`;
+    el.textContent = fmtHuman(b.sec);
+    el.title = b.type === 'work' ? 'Work session' : b.type === 'short' ? 'Short break' : 'Long break';
+    plan.appendChild(el);
+  });
+  if (blocks.length > 9) {
+    const el = document.createElement('div'); el.className = 'plan-block more';
+    el.textContent = `+${blocks.length - 9}`; plan.appendChild(el);
+  }
+  const tot = document.createElement('span'); tot.className = 'plan-total';
+  tot.textContent = `= ${fmtHuman(totalSec)} total`; plan.appendChild(tot);
+};
+
+const updateAutoBadge = () => {
+  const badge = $('autoBadge');
+  badge.textContent = pomoSettings.autoAdv ? 'AUTO ▶' : 'MANUAL';
+  badge.className = 'auto-badge' + (pomoSettings.autoAdv ? '' : ' off');
+};
+
+$('autoBadge').addEventListener('click', () => {
+  pomoSettings.autoAdv = !pomoSettings.autoAdv;
+  updateAutoBadge();
+  updatePlan();
+  save();
+  toast(pomoSettings.autoAdv ? 'Auto-advance ON' : 'Manual mode ON');
+});
+
+const setMode = (m, autostart=false) => {
+  mode=m;
+  pomoSec=(m==='work'?pomoSettings.work:m==='short'?pomoSettings.short:pomoSettings.long);
+  pomoTotal=pomoSec;
+  if(!autostart){
+    pomoRunning=false;
+    clearInterval(pomoInterval);
+    pomoStartBtn.innerHTML='<i class="fas fa-play" aria-hidden="true"></i>';
+    pomoStartBtn.setAttribute('aria-label','Start timer');
+    pomoStartBtn.classList.remove('run');
+  }
+  document.querySelectorAll('.pomo-tab').forEach(b=>{
+    const active=b.dataset.m===m;
+    b.classList.toggle('active',active);
+    b.setAttribute('aria-selected',active);
+  });
+  pomoDisp.textContent=fmtMS(pomoSec);
+  updateRing(); updateDots();
+  const cycle=pomoSettings.cycle||4;
+  if(m==='work') pomoSub.textContent=`SESSION ${(sessionsD%cycle)+1} OF ${cycle}`;
+  else if(m==='short') pomoSub.textContent=`SHORT BREAK · ${sessionsD} DONE`;
+  else pomoSub.textContent=`LONG BREAK · ${sessionsD} DONE`;
+  document.title=`${fmtMS(pomoSec)} — FOCUS`;
+  if(autostart){ startPomoInterval(); }
+};
+
+const startPomoInterval = () => {
+  clearInterval(pomoInterval);
+  pomoRunning=true;
+  pomoStartBtn.innerHTML='<i class="fas fa-pause" aria-hidden="true"></i>';
+  pomoStartBtn.setAttribute('aria-label','Pause timer');
+  pomoStartBtn.classList.add('run');
+  pomoInterval=setInterval(tickPomo,1000);
+};
+
+const tickPomo = () => {
+  pomoSec--;
+  pomoDisp.textContent=fmtMS(pomoSec);
+  updateRing();
+  document.title=`${fmtMS(pomoSec)} — FOCUS`;
+  if(pomoSec<=0){
+    clearInterval(pomoInterval); pomoRunning=false;
+    pomoStartBtn.innerHTML='<i class="fas fa-play" aria-hidden="true"></i>';
+    pomoStartBtn.setAttribute('aria-label','Start timer');
+    pomoStartBtn.classList.remove('run');
+    playBell();
+    const cycle = pomoSettings.cycle || 4;
+    if (mode === 'work') {
+      sessionsD++;
+      if (Notification.permission === 'granted') new Notification('FOCUS – Session complete!', { body: `Session ${sessionsD} done. Time for a break.` });
+      toast(`Session ${sessionsD} complete! Take a break.`, 'ok');
+      let nextMode;
+      if (!pomoSettings.breaks) {
+        nextMode = 'work';
+      } else if (sessionsD % cycle === 0 && pomoSettings.longBreak) {
+        nextMode = 'long';
+      } else {
+        nextMode = 'short';
+      }
+      if (pomoSettings.autoAdv) {
+        setTimeout(() => setMode(nextMode, true), 800);
+      } else {
+        setMode(nextMode);
+      }
+    } else {
+      if(Notification.permission==='granted') new Notification('FOCUS – Break over!',{body:'Time to focus.'});
+      toast('Break over! Time to focus.','ok');
+      if(pomoSettings.autoAdv){
+        setTimeout(()=>setMode('work',true),800);
+      } else {
+        setMode('work');
+      }
+    }
+  }
+};
+
+pomoStartBtn.addEventListener('click',()=>{
+  if(pomoRunning){
+    clearInterval(pomoInterval); pomoRunning=false;
+    pomoStartBtn.innerHTML='<i class="fas fa-play" aria-hidden="true"></i>';
+    pomoStartBtn.setAttribute('aria-label','Start timer');
+    pomoStartBtn.classList.remove('run');
+  } else {
+    if(Notification.permission==='default') Notification.requestPermission();
+    startPomoInterval();
+  }
+});
+$('pomoReset').addEventListener('click',()=>{ clearInterval(pomoInterval); pomoRunning=false; setMode(mode); });
+$('pomoSkip').addEventListener('click', () => {
+  clearInterval(pomoInterval); pomoRunning = false;
+  const cycle = pomoSettings.cycle || 4;
+  if (mode === 'work') sessionsD++;
+  let next;
+  if (mode === 'work') {
+    if (!pomoSettings.breaks) { next = 'work'; }
+    else if (sessionsD % cycle === 0 && pomoSettings.longBreak) { next = 'long'; }
+    else { next = 'short'; }
+  } else { next = 'work'; }
+  setMode(next); updateDots();
+});
+document.querySelectorAll('.pomo-tab').forEach(b=>b.addEventListener('click',()=>{ if(pomoRunning){ clearInterval(pomoInterval); pomoRunning=false; pomoStartBtn.innerHTML='<i class="fas fa-play" aria-hidden="true"></i>'; pomoStartBtn.classList.remove('run'); } setMode(b.dataset.m); }));
+
+// === POMODORO SETTINGS ===
+$('pomoSettingsBtn').addEventListener('click', () => {
+  $('psWork').value = Math.floor(pomoSettings.work / 60);
+  $('psWorkSec').value = pomoSettings.work % 60;
+  $('psShort').value = Math.floor(pomoSettings.short / 60);
+  $('psShortSec').value = pomoSettings.short % 60;
+  $('psLong').value = Math.floor(pomoSettings.long / 60);
+  $('psLongSec').value = pomoSettings.long % 60;
+  $('psCycle').value = pomoSettings.cycle;
+  $('psAutoAdv').checked = pomoSettings.autoAdv;
+  $('psLongBreak').checked = pomoSettings.longBreak !== false;
+  $('psBreaks').checked = pomoSettings.breaks !== false;
+  updateSettingsPreview();
+  openM('pomoSettingsModal');
+});
+
+const updateSettingsPreview = () => {
+  const wm = parseInt($('psWork').value) || 25, ws = parseInt($('psWorkSec').value) || 0;
+  const sm = parseInt($('psShort').value) || 5,  ss = parseInt($('psShortSec').value) || 0;
+  const lm = parseInt($('psLong').value) || 15,  ls = parseInt($('psLongSec').value) || 0;
+  const cy = parseInt($('psCycle').value) || 4;
+  const longBreak = $('psLongBreak').checked, breaks = $('psBreaks').checked;
+  const work = wm * 60 + ws, short = sm * 60 + ss, long = lm * 60 + ls;
+  const blocks = []; let total = 0;
+  for (let i = 0; i < cy; i++) {
+    blocks.push({ t: 'work', s: work }); total += work;
+    if (breaks) {
+      if (i < cy - 1) { blocks.push({ t: 'short', s: short }); total += short; }
+      else if (longBreak) { blocks.push({ t: 'long', s: long }); total += long; }
+      else { blocks.push({ t: 'short', s: short }); total += short; }
+    }
+  }
+  const pb = $('psPreviewBlocks'); pb.innerHTML = '';
+  blocks.slice(0, Math.min(11, blocks.length)).forEach(b => {
+    const el = document.createElement('div'); el.className = `plan-block ${b.t}`; el.textContent = fmtHuman(b.s); pb.appendChild(el);
+  });
+  if (blocks.length > 11) { const el = document.createElement('div'); el.className = 'plan-block more'; el.textContent = `+${blocks.length - 11}`; pb.appendChild(el); }
+  $('psPreviewStat').innerHTML = `<b>${cy} sessions</b> · total <b>${fmtHuman(total)}</b> (work: <b>${fmtHuman(work * cy)}</b>)`;
+};
+
+['psWork','psWorkSec','psShort','psShortSec','psLong','psLongSec','psCycle'].forEach(id => $(id).addEventListener('input', updateSettingsPreview));
+['psLongBreak','psBreaks','psAutoAdv'].forEach(id => $(id).addEventListener('change', updateSettingsPreview));
+
+$('savePomoSettings').addEventListener('click', () => {
+  const wm = parseInt($('psWork').value) || 25, ws = parseInt($('psWorkSec').value) || 0;
+  const sm = parseInt($('psShort').value) || 5,  ss = parseInt($('psShortSec').value) || 0;
+  const lm = parseInt($('psLong').value) || 15,  ls = parseInt($('psLongSec').value) || 0;
+  const cy = Math.max(1, Math.min(12, parseInt($('psCycle').value) || 4));
+  pomoSettings.work = Math.max(60, wm * 60 + ws);
+  pomoSettings.short = Math.max(30, sm * 60 + ss);
+  pomoSettings.long = Math.max(60, lm * 60 + ls);
+  pomoSettings.cycle = cy;
+  pomoSettings.autoAdv = $('psAutoAdv').checked;
+  pomoSettings.longBreak = $('psLongBreak').checked;
+  pomoSettings.breaks = $('psBreaks').checked;
+  clearInterval(pomoInterval); pomoRunning = false;
+  sessionsD = 0;
+  setMode('work');
+  updatePlan(); updateAutoBadge();
+  save(); closeM('pomoSettingsModal'); toast('Timer settings applied!');
+});
+
+// === KEYBOARD SHORTCUTS ===
+document.addEventListener('keydown', e => {
+  const tag=document.activeElement.tagName;
+  const inInput=(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT');
+  const modalOpen=!!document.querySelector('.overlay.open');
+  if(e.code==='Space' && !inInput && !modalOpen){ e.preventDefault(); pomoStartBtn.click(); }
+  if(e.code==='KeyR' && !inInput && !modalOpen){ e.preventDefault(); $('pomoReset').click(); }
+  if(e.code==='Enter' && e.ctrlKey && !modalOpen){ e.preventDefault(); trackBtn.click(); }
+});
+
+// === TASK TRACKER ===
+const updateRunningEntry = () => {
+  if(!taskRunning||!taskStart) return;
+  const elapsed=Date.now()-taskStart.getTime();
+  liveTimer.textContent=fmt(elapsed);
+  const durEl=entryList.querySelector('.e-dur.running');
+  if(durEl) durEl.textContent=fmt(elapsed);
+  updateTotals(elapsed);
+};
+
+const startLive = () => {
+  if(taskInterval) clearInterval(taskInterval);
+  taskInterval=setInterval(updateRunningEntry,1000);
+};
+
+taskInput.addEventListener('keydown', e => {
+  if(e.key==='Enter' && !taskRunning){ e.preventDefault(); trackBtn.click(); }
+});
+
+trackBtn.addEventListener('click',()=>{
+  if(!taskRunning){
+    const desc=taskInput.value.trim();
+    if(!desc){ toast('Enter a task description first.','err'); taskInput.focus(); return; }
+    const pid=projSelect.value||null, pname=pid?projSelect.options[projSelect.selectedIndex].text:null;
+    taskStart=new Date();
+    activeEntry={id:uid(),task:desc,projectId:pid,projectName:pname,startTime:taskStart.toISOString(),endTime:null,durationMs:0};
+    timeEntries.push(activeEntry); taskRunning=true;
+    taskInput.readOnly=true; projSelect.disabled=true;
+    trackBtn.innerHTML='<i class="fas fa-stop" aria-hidden="true"></i> STOP';
+    trackBtn.classList.add('on'); trackBtn.setAttribute('aria-label','Stop task timer');
+    liveTimer.classList.remove('off'); startLive();
+    toast('Timer started!'); save(); rerender();
+  } else {
+    clearInterval(taskInterval);
+    const end=new Date(), elapsed=end-taskStart;
+    const idx=timeEntries.findIndex(e=>e.id===activeEntry.id);
+    if(idx!==-1){ timeEntries[idx].endTime=end.toISOString(); timeEntries[idx].durationMs=elapsed; }
+    updateGoalProgress(activeEntry.projectId,elapsed);
+    activeEntry=null; taskStart=null; taskRunning=false;
+    taskInput.readOnly=false; projSelect.disabled=false;
+    taskInput.value=''; projSelect.value='';
+    trackBtn.innerHTML='<i class="fas fa-play" aria-hidden="true"></i> START';
+    trackBtn.classList.remove('on'); trackBtn.setAttribute('aria-label','Start task timer');
+    liveTimer.classList.add('off'); liveTimer.textContent='00:00:00';
+    toast('Timer stopped!'); save(); rerender();
+  }
+});
+
+window.addEventListener('beforeunload', e => {
+  if(taskRunning){ e.preventDefault(); e.returnValue='Timer is still running. Leave anyway?'; }
+});
+
+// === DATE NAV ===
+$('prevDateBtn').addEventListener('click',()=>{
+  const d=new Date(viewDate); d.setDate(d.getDate()-1); viewDate=d;
+  calViewDate=new Date(viewDate.getFullYear(),viewDate.getMonth(),1);
+  renderEntries(); renderCalendar();
+});
+$('nextDateBtn').addEventListener('click',()=>{
+  const d=new Date(viewDate); d.setDate(d.getDate()+1); viewDate=d;
+  calViewDate=new Date(viewDate.getFullYear(),viewDate.getMonth(),1);
+  renderEntries(); renderCalendar();
+});
+$('goTodayBtn').addEventListener('click',()=>{
+  viewDate=new Date();
+  calViewDate=new Date(viewDate.getFullYear(),viewDate.getMonth(),1);
+  renderEntries(); renderCalendar();
+});
+
+// === CALENDAR ===
+$('calPrevBtn').addEventListener('click',()=>{ calViewDate.setMonth(calViewDate.getMonth()-1); renderCalendar(); });
+$('calNextBtn').addEventListener('click',()=>{ calViewDate.setMonth(calViewDate.getMonth()+1); renderCalendar(); });
+$('calTodayBtn').addEventListener('click',()=>{ calViewDate=new Date(); calViewDate.setDate(1); renderCalendar(); });
+
+const renderCalendar = () => {
+  const y=calViewDate.getFullYear(), mo=calViewDate.getMonth();
+  $('calMonthLabel').textContent=new Date(y,mo,1).toLocaleDateString('en-US',{month:'long',year:'numeric'}).toUpperCase();
+
+  // Days of week header (Mon–Sun)
+  const dowRow=$('calDowRow'); dowRow.innerHTML='';
+  ['M','T','W','T','F','S','S'].forEach(d=>{
+    const el=document.createElement('div'); el.className='cal-dow'; el.textContent=d; dowRow.appendChild(el);
+  });
+
+  // Build day grid
+  const grid=$('calGrid'); grid.innerHTML='';
+  const firstDay=new Date(y,mo,1).getDay(); // 0=Sun
+  // Offset: Mon-based grid (Mon=0 … Sun=6)
+  const offset=(firstDay+6)%7;
+  const daysInMonth=new Date(y,mo+1,0).getDate();
+  const today=new Date();
+
+  // Collect days that have entries
+  const entryDays=new Set();
+  timeEntries.forEach(e=>{
+    if(!e.startTime) return;
+    const d=new Date(e.startTime);
+    if(d.getFullYear()===y&&d.getMonth()===mo) entryDays.add(d.getDate());
+  });
+
+  // Empty cells
+  for(let i=0;i<offset;i++){
+    const el=document.createElement('div'); el.className='cal-day empty'; grid.appendChild(el);
+  }
+
+  for(let d=1;d<=daysInMonth;d++){
+    const el=document.createElement('div'); el.className='cal-day';
+    const isToday=today.getFullYear()===y&&today.getMonth()===mo&&today.getDate()===d;
+    const isSelected=viewDate.getFullYear()===y&&viewDate.getMonth()===mo&&viewDate.getDate()===d;
+    if(isToday) el.classList.add('today');
+    if(isSelected) el.classList.add('selected');
+
+    const num=document.createElement('div'); num.className='cal-day-num'; num.textContent=d;
+    el.appendChild(num);
+
+    if(entryDays.has(d)){
+      const dot=document.createElement('div'); dot.className='cal-dot'; el.appendChild(dot);
+    }
+
+    el.addEventListener('click',()=>{
+      viewDate=new Date(y,mo,d);
+      renderEntries(); renderCalendar();
+    });
+    grid.appendChild(el);
+  }
+};
+
+// === RENDER ===
+const rerender = () => { renderProjects(); renderEntries(); renderGoals(); updateTotals(); renderCalendar(); };
+
+const renderEntries = () => {
+  const today=new Date();
+  const isToday=sameDay(viewDate,today);
+  const lbl=isToday?'TODAY':viewDate.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}).toUpperCase();
+  $('entryDateLabel').textContent=lbl;
+  $('dateLabel').textContent=viewDate.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+  const entries=timeEntries.filter(e=>e.startTime&&sameDay(new Date(e.startTime),viewDate)).sort((a,b)=>new Date(b.startTime)-new Date(a.startTime));
+  entryList.innerHTML='';
+  if(!entries.length){ entryList.innerHTML='<div class="empty" role="listitem">// no entries for this day</div>'; return; }
+  entries.forEach(e=>{
+    const isRunning=taskRunning&&activeEntry&&e.id===activeEntry.id;
+    const s=new Date(e.startTime);
+    const en=e.endTime?new Date(e.endTime):null;
+    const color=e.projectId?projColor(e.projectId):'#665c54';
+    const elapsed=isRunning?(Date.now()-taskStart.getTime()):e.durationMs;
+    const d=document.createElement('div'); d.className='entry'; d.setAttribute('role','listitem');
+    d.innerHTML=`<div class="e-bar" style="background:${color}"></div>
+      <div class="e-body">
+        <div class="e-task" title="${e.task}">${e.task}</div>
+        <div class="e-meta">${e.projectName||'no project'} · ${s.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}${en?' → '+en.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):isRunning?' → <span style="color:var(--green-b)">running</span>':''}</div>
+      </div>
+      <div class="e-dur${isRunning?' running':''}">${fmt(elapsed)}</div>
+      <div class="e-acts">
+        <button class="ea ed" onclick="openEE('${e.id}')" title="Edit entry" aria-label="Edit entry"><i class="fas fa-pen" aria-hidden="true"></i></button>
+        <button class="ea dl" onclick="delEntry('${e.id}')" title="Delete entry" aria-label="Delete entry"><i class="fas fa-trash" aria-hidden="true"></i></button>
+      </div>`;
+    entryList.appendChild(d);
+  });
+};
+
+const updateTotals = (liveElapsed = 0) => {
+  const now = new Date(); let td = 0, wk = 0, mo = 0;
+  timeEntries.forEach(e => {
+    if (!e.startTime || typeof e.durationMs !== 'number') return;
+    const d = new Date(e.startTime);
+    if (sameDay(d, now)) td += e.durationMs;
+    if (sameWeek(d, now)) wk += e.durationMs;
+    if (sameMon(d, now)) mo += e.durationMs;
+  });
+  if (taskRunning && taskStart && liveElapsed > 0) {
+    if (sameDay(taskStart, now)) td += liveElapsed;
+    if (sameWeek(taskStart, now)) wk += liveElapsed;
+    if (sameMon(taskStart, now)) mo += liveElapsed;
+  }
+  $('todayTotal').textContent = fmt(td);
+  $('weekTotal').textContent = fmt(wk);
+  $('monthTotal').textContent = fmt(mo);
+  // Daily average: total this week / number of days in week that have any entries
+  const weekDays = new Set();
+  timeEntries.forEach(e => { if (e.startTime && sameWeek(new Date(e.startTime), now)) weekDays.add(new Date(e.startTime).toDateString()); });
+  if (taskRunning && taskStart && sameWeek(taskStart, now)) weekDays.add(taskStart.toDateString());
+  const daysTracked = Math.max(1, weekDays.size);
+  $('dayAvg').textContent = fmt(Math.round(wk / daysTracked));
+};
+
+const renderGoals = () => {
+  goalList.innerHTML='';
+  if(!goals.length){ goalList.innerHTML='<div class="empty" role="listitem">// no goals set</div>'; return; }
+  const now=new Date();
+  goals.forEach(g=>{
+    const lr=new Date(g.lastResetDate);
+    const reset=(g.frequency==='day'&&!sameDay(now,lr))||(g.frequency==='week'&&!sameWeek(now,lr))||(g.frequency==='month'&&!sameMon(now,lr));
+    if(reset){ g.currentMs=0; g.lastResetDate=now.toISOString(); }
+    const pct=Math.min(100,(g.currentMs/g.targetMs)*100||0);
+    const circ=100.53, offset=circ*(1-pct/100);
+    const ended=g.endDate&&now>new Date(g.endDate);
+    const rawPct=(g.currentMs/g.targetMs)*100||0;
+    const exceeded=(g.type==='atMost')&&rawPct>100;
+    const displayPct=Math.round(Math.min(rawPct,999));
+    const d=document.createElement('div'); d.className='goal-item'; d.setAttribute('role','listitem');
+    d.innerHTML=`<div class="g-ring" aria-hidden="true">
+        <svg viewBox="0 0 38 38"><circle class="grb" cx="19" cy="19" r="16"/><circle class="grf${exceeded?' exceeded':''}" cx="19" cy="19" r="16" style="stroke-dashoffset:${offset}"/></svg>
+        <div class="g-pct${exceeded?' exceeded':''}">${displayPct}%</div></div>
+      <div class="g-body">
+        <div class="g-name">${g.name}${ended?' <span style="color:var(--red-b);font-size:8px">[ENDED]</span>':''}${exceeded?' <span style="color:var(--red-b);font-size:8px">[OVER]</span>':''}</div>
+        <div class="g-meta">${g.type==='atLeast'?'≥':'≤'} ${fmt(g.targetMs)} / ${g.frequency} · ${fmt(g.currentMs)} tracked${g.projectName?' · '+g.projectName:''}</div>
+      </div>
+      <div class="iacts">
+        <button class="ia ed" onclick="openEG('${g.id}')" title="Edit goal" aria-label="Edit goal"><i class="fas fa-pen" aria-hidden="true"></i></button>
+        <button class="ia dl" onclick="delGoal('${g.id}')" title="Delete goal" aria-label="Delete goal"><i class="fas fa-trash" aria-hidden="true"></i></button>
+      </div>`;
+    goalList.appendChild(d);
+  });
+};
+
+const renderProjects = () => {
+  projList.innerHTML='';
+  if(!projects.length){ projList.innerHTML='<div class="empty" role="listitem">// no projects</div>'; return; }
+  projects.forEach((p,i)=>{
+    const total=timeEntries.reduce((s,e)=>e.projectId===p.id?s+e.durationMs:s,0);
+    const color=PROJ_COLORS[i%PROJ_COLORS.length];
+    const d=document.createElement('div'); d.className='proj-item'; d.setAttribute('role','listitem');
+    d.innerHTML=`<div class="p-dot" style="background:${color}" aria-hidden="true"></div>
+      <div class="p-body"><div class="p-name">${p.name}</div><div class="p-total">${fmt(total)} tracked</div></div>
+      <div class="iacts">
+        <button class="ia ed" onclick="openEP('${p.id}')" title="Edit project" aria-label="Edit project"><i class="fas fa-pen" aria-hidden="true"></i></button>
+        <button class="ia dl" onclick="delProject('${p.id}')" title="Delete project" aria-label="Delete project"><i class="fas fa-trash" aria-hidden="true"></i></button>
+      </div>`;
+    projList.appendChild(d);
+  });
+  populateSelects();
+};
+
+const populateSelects = () => {
+  const selGroups=[
+    {el:projSelect, placeholder:'— no project —'},
+    {el:$('gProj'),  placeholder:'All Projects'},
+    {el:$('rProj'),  placeholder:'All Projects'},
+    {el:$('eeProj'), placeholder:'— no project —'},
+    {el:$('egProj'), placeholder:'All Projects'},
+  ];
+  selGroups.forEach(({el,placeholder})=>{
+    const v=el.value; el.innerHTML=`<option value="">${placeholder}</option>`;
+    projects.forEach(p=>el.add(new Option(p.name,p.id))); el.value=v;
+  });
+};
+
+// === GOAL PROGRESS ===
+const updateGoalProgress = (projId,ms) => {
+  goals.forEach(g=>{
+    if(!g.endDate||new Date()<=new Date(g.endDate)){
+      if(!g.projectId||g.projectId===projId) g.currentMs+=ms;
+    }
+  });
+  save();
+};
+
+// === ERROR HELPERS ===
+const showErr = (eid,iid) => { $(eid).classList.add('show'); if(iid) $(iid).classList.add('err'); };
+const hideErr = (eid,iid) => { $(eid).classList.remove('show'); if(iid) $(iid).classList.remove('err'); };
+const clearErrs = mid => { $(mid).querySelectorAll('.errmsg').forEach(e=>e.classList.remove('show')); $(mid).querySelectorAll('.err').forEach(e=>e.classList.remove('err')); };
+
+// === CREATE GOAL ===
+$('openGoalBtn').addEventListener('click',()=>{
+  ['gName','gHours','gMins','gUntil'].forEach(id=>$(id).value='');
+  $('gNoEnd').checked=false; $('gUntil').disabled=false; $('gProj').value=''; $('gType').value='atLeast';
+  clearErrs('createGoalModal'); openM('createGoalModal');
+});
+$('gNoEnd').addEventListener('change',function(){ $('gUntil').disabled=this.checked; if(this.checked) $('gUntil').value=''; });
+$('gHours').addEventListener('input',function(){ sanitize(this); });
+$('gMins').addEventListener('input',function(){ sanitize(this,59); });
+$('createGoalBtn').addEventListener('click',()=>{
+  const name=$('gName').value.trim(),h=parseInt($('gHours').value)||0,m=parseInt($('gMins').value)||0;
+  const ms=(h*3600+m*60)*1000,noEnd=$('gNoEnd').checked,end=noEnd?null:$('gUntil').value;
+  let ok=true;
+  if(!name){ showErr('gNameErr','gName'); ok=false; } else hideErr('gNameErr','gName');
+  if(ms<=0){ showErr('gTimeErr','gHours'); ok=false; } else hideErr('gTimeErr','gHours');
+  if(!noEnd&&!end){ showErr('gDateErr','gUntil'); ok=false; } else hideErr('gDateErr','gUntil');
+  if(!ok) return;
+  const pid=$('gProj').value||null,pname=pid?$('gProj').options[$('gProj').selectedIndex].text:null;
+  goals.push({id:uid(),name,type:$('gType').value,targetMs:ms,frequency:$('gFreq').value,endDate:end,currentMs:0,lastResetDate:new Date().toISOString(),projectId:pid,projectName:pname});
+  save(); rerender(); closeM('createGoalModal'); toast('Goal created!');
+});
+
+// === CREATE PROJECT ===
+$('openProjBtn').addEventListener('click',()=>{ $('pName').value=''; clearErrs('createProjModal'); openM('createProjModal'); });
+$('createProjBtn').addEventListener('click',()=>{
+  const name=$('pName').value.trim();
+  if(!name){ showErr('pNameErr','pName'); return; }
+  if(projects.some(p=>p.name.toLowerCase()===name.toLowerCase())){ $('pNameErr').textContent='Project already exists.'; showErr('pNameErr','pName'); return; }
+  hideErr('pNameErr','pName');
+  projects.push({id:uid(),name}); save(); rerender(); closeM('createProjModal'); toast('Project created!');
+});
+
+// === EDIT ENTRY ===
+window.openEE = id => {
+  const e=timeEntries.find(x=>x.id===id); if(!e) return;
+  if(taskRunning&&activeEntry&&e.id===activeEntry.id){ toast('Stop the timer first.','err'); return; }
+  $('eeId').value=e.id; $('eeTask').value=e.task; $('eeProj').value=e.projectId||'';
+  clearErrs('editEntryModal'); openM('editEntryModal');
+};
+$('saveEntryBtn').addEventListener('click',()=>{
+  const id=$('eeId').value,task=$('eeTask').value.trim();
+  if(!task){ showErr('eeTaskErr','eeTask'); return; } hideErr('eeTaskErr','eeTask');
+  const idx=timeEntries.findIndex(e=>e.id===id);
+  if(idx!==-1){
+    const pid=$('eeProj').value||null;
+    timeEntries[idx].task=task; timeEntries[idx].projectId=pid;
+    timeEntries[idx].projectName=pid?$('eeProj').options[$('eeProj').selectedIndex].text:null;
+    save(); rerender(); closeM('editEntryModal'); toast('Entry updated!');
+  }
+});
+
+// === EDIT GOAL ===
+window.openEG = id => {
+  const g=goals.find(x=>x.id===id); if(!g) return;
+  $('egId').value=g.id; $('egName').value=g.name; $('egProj').value=g.projectId||'';
+  $('egType').value=g.type||'atLeast'; $('egHours').value=Math.floor(g.targetMs/3600000);
+  $('egMins').value=Math.floor((g.targetMs%3600000)/60000); $('egFreq').value=g.frequency;
+  $('egUntil').value=g.endDate||''; $('egNoEnd').checked=!g.endDate; $('egUntil').disabled=!g.endDate;
+  clearErrs('editGoalModal'); openM('editGoalModal');
+};
+$('egNoEnd').addEventListener('change',function(){ $('egUntil').disabled=this.checked; if(this.checked) $('egUntil').value=''; });
+$('egHours').addEventListener('input',function(){ sanitize(this); });
+$('egMins').addEventListener('input',function(){ sanitize(this,59); });
+$('saveGoalBtn').addEventListener('click',()=>{
+  const id=$('egId').value,name=$('egName').value.trim(),h=parseInt($('egHours').value)||0,m=parseInt($('egMins').value)||0;
+  const ms=(h*3600+m*60)*1000,noEnd=$('egNoEnd').checked,end=noEnd?null:$('egUntil').value;
+  let ok=true;
+  if(!name){ showErr('egNameErr','egName'); ok=false; } else hideErr('egNameErr','egName');
+  if(ms<=0){ showErr('egTimeErr','egHours'); ok=false; } else hideErr('egTimeErr','egHours');
+  if(!noEnd&&!end){ showErr('egDateErr','egUntil'); ok=false; } else hideErr('egDateErr','egUntil');
+  if(!ok) return;
+  const idx=goals.findIndex(g=>g.id===id);
+  if(idx!==-1){
+    const pid=$('egProj').value||null;
+    goals[idx]={...goals[idx],name,type:$('egType').value,targetMs:ms,frequency:$('egFreq').value,endDate:end,projectId:pid,projectName:pid?$('egProj').options[$('egProj').selectedIndex].text:null};
+    save(); rerender(); closeM('editGoalModal'); toast('Goal updated!');
+  }
+});
+
+// === EDIT PROJECT ===
+window.openEP = id => {
+  const p=projects.find(x=>x.id===id); if(!p) return;
+  $('epId').value=p.id; $('epName').value=p.name;
+  clearErrs('editProjModal'); openM('editProjModal');
+};
+$('saveProjBtn').addEventListener('click',()=>{
+  const id=$('epId').value,name=$('epName').value.trim();
+  if(!name){ showErr('epNameErr','epName'); return; }
+  if(projects.some(p=>p.name.toLowerCase()===name.toLowerCase()&&p.id!==id)){ showErr('epDupErr','epName'); return; }
+  hideErr('epNameErr','epName'); hideErr('epDupErr','epName');
+  const idx=projects.findIndex(p=>p.id===id);
+  if(idx!==-1){
+    projects[idx].name=name;
+    timeEntries.forEach(e=>{ if(e.projectId===id) e.projectName=name; });
+    goals.forEach(g=>{ if(g.projectId===id) g.projectName=name; });
+    save(); rerender(); closeM('editProjModal'); toast('Project updated!');
+  }
+});
+
+// === DELETE ===
+window.delEntry = id => alert2('Delete this time entry?',true,ok=>{
+  if(!ok) return;
+  if(taskRunning&&activeEntry&&activeEntry.id===id){ toast("Stop the timer first.",'err'); return; }
+  timeEntries=timeEntries.filter(e=>e.id!==id); save(); rerender(); toast('Entry deleted.');
+});
+window.delGoal = id => alert2('Delete this goal?',true,ok=>{ if(!ok) return; goals=goals.filter(g=>g.id!==id); save(); rerender(); toast('Goal deleted.'); });
+window.delProject = id => {
+  const isRunning=taskRunning&&activeEntry&&activeEntry.projectId===id;
+  const msg=isRunning?'This project has a running timer. Stop it first, or delete anyway?':'Delete this project and all associated data?';
+  alert2(msg,true,ok=>{
+    if(!ok) return;
+    projects=projects.filter(p=>p.id!==id);
+    timeEntries=timeEntries.filter(e=>e.projectId!==id);
+    goals=goals.filter(g=>g.projectId!==id);
+    if(isRunning&&activeEntry){ activeEntry.projectId=null; activeEntry.projectName=null; }
+    save(); rerender(); toast('Project deleted.');
+  });
+};
+
+// === REPORTS ===
+$('openReportBtn').addEventListener('click',()=>{
+  $('rProj').value=''; $('rStart').value=''; $('rEnd').value='';
+  $('rList').innerHTML='<div class="empty">// run a report to see results</div>';
+  $('rTotal').style.display='none';
+  hideErr('rDateErr','rStart'); openM('reportModal');
+});
+$('genReportBtn').addEventListener('click',()=>{
+  const pid=$('rProj').value||null;
+  let s=$('rStart').value?parseDateLocal($('rStart').value):null;
+  let e=$('rEnd').value?parseDateLocal($('rEnd').value):null;
+  if(e) e.setHours(23,59,59,999);
+  if(s&&e&&s>e){ $('rDateErr').classList.add('show'); return; } $('rDateErr').classList.remove('show');
+  const filtered=timeEntries.filter(x=>{
+    const d=new Date(x.startTime);
+    return (!pid||x.projectId===pid)&&(!s||d>=s)&&(!e||d<=e);
+  }).sort((a,b)=>new Date(b.startTime)-new Date(a.startTime));
+  const rList=$('rList'); rList.innerHTML='';
+  if(!filtered.length){ rList.innerHTML='<div class="empty">// no entries match</div>'; $('rTotal').style.display='none'; return; }
+  let total=0;
+  filtered.forEach(x=>{
+    total+=x.durationMs;
+    const st=new Date(x.startTime),en=x.endTime?new Date(x.endTime):null;
+    const d=document.createElement('div'); d.className='rentry';
+    d.innerHTML=`<div class="rentry-h"><span>${x.task}</span><span style="color:var(--aqua-b)">${fmt(x.durationMs)}</span></div>
+      <div class="rentry-m">${x.projectName||'no project'} · ${st.toLocaleDateString()} ${st.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}${en?' → '+en.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):' → running'}</div>`;
+    rList.appendChild(d);
+  });
+  $('rTotalVal').textContent=fmt(total);
+  $('rTotal').style.display='flex';
+  toast('Report generated!');
+});
+
+// === EXPORT/IMPORT ===
+$('openExportBtn').addEventListener('click',()=>openM('exportModal'));
+$('confirmExportBtn').addEventListener('click',()=>{
+  const b=new Blob([JSON.stringify({projects,goals,timeEntries},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download=`focus_backup_${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  closeM('exportModal'); toast('Export started!');
+});
+$('openImportBtn').addEventListener('click',()=>{
+  $('importFile').value=''; $('fileNameDisplay').textContent='Choose a .json file…';
+  hideErr('importFileErr','importFile'); openM('importModal');
+});
+$('importFile').addEventListener('change',function(){
+  $('fileNameDisplay').textContent=this.files[0]?this.files[0].name:'Choose a .json file…';
+});
+$('confirmImportBtn').addEventListener('click',()=>{
+  const file=$('importFile').files[0];
+  if(!file){ $('importFileErr').classList.add('show'); return; } $('importFileErr').classList.remove('show');
+  const reader=new FileReader();
+  reader.onload=e=>{ try {
+    const data=JSON.parse(e.target.result);
+    if(!Array.isArray(data.timeEntries)||!Array.isArray(data.goals)||!Array.isArray(data.projects)) throw new Error('Invalid format');
+    const m=document.querySelector('input[name="importMode"]:checked').value;
+    if(m==='replace'){ timeEntries=data.timeEntries; goals=data.goals; projects=data.projects; toast('Data replaced!'); }
+    else { const merge=(a,b)=>{ const ids=new Set(a.map(x=>x.id)); return [...a,...b.filter(x=>!ids.has(x.id))]; }; timeEntries=merge(timeEntries,data.timeEntries); goals=merge(goals,data.goals); projects=merge(projects,data.projects); toast('Data merged!'); }
+    save(); rerender(); closeM('importModal');
+  } catch(err){ toast('Import failed: '+err.message,'err'); } };
+  reader.readAsText(file);
+});
+
+// === INIT ===
+window.onload = () => {
+  ringFg.style.strokeDasharray=CIRC;
+  load();
+  setMode('work');
+  updatePlan();
+  updateAutoBadge();
+  rerender();
+  calViewDate=new Date(viewDate.getFullYear(),viewDate.getMonth(),1);
+  renderCalendar();
+};
+</script>
 </body>
 </html>
