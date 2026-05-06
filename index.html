@@ -32,6 +32,7 @@
   --r:        6px;
   --rl:       10px;
   --t:        140ms ease;
+  --sidebar-w: 258px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
@@ -42,7 +43,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .app{max-width:1080px;margin:0 auto;padding:16px 20px;}
 
 /* HEADER */
-.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
+.header{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
 .logo{font-family:var(--mono);font-weight:800;font-size:18px;color:var(--yellow-b);letter-spacing:-0.5px;}
 .logo em{color:var(--fg-dim);font-style:normal;font-weight:400;}
 .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
@@ -61,7 +62,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .chip.avg .val{color:var(--aqua-b);}
 
 /* POMODORO */
-.pomo{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:18px 24px 16px;margin-bottom:10px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.pomo{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:14px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;}
 .pomo-tabs{display:flex;gap:3px;background:var(--bg);border-radius:var(--r);padding:3px;}
 .pomo-tab{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--fg-dim);background:transparent;border:none;cursor:pointer;padding:6px 13px;border-radius:calc(var(--r) - 2px);transition:var(--t);letter-spacing:.5px;}
 .pomo-tab.active{background:var(--bg2);color:var(--fg);}
@@ -70,11 +71,11 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .pomo-tab[data-m="long"].active{color:var(--blue-b);}
 
 .pomo-ring-wrap{position:relative;display:flex;align-items:center;justify-content:center;}
-.pomo-svg{width:190px;height:190px;transform:rotate(-90deg);}
+.pomo-svg{width:185px;height:185px;transform:rotate(-90deg);}
 .ring-bg{fill:none;stroke:var(--bg2);stroke-width:6;}
 .ring-fg{fill:none;stroke:var(--yellow-b);stroke-width:6;stroke-linecap:round;stroke-dasharray:534.07;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke .3s ease;}
-.pomo-time{position:absolute;font-family:var(--mono);font-size:40px;font-weight:800;color:var(--fg);letter-spacing:-2px;}
-.pomo-sub{font-family:var(--mono);font-size:10px;color:var(--fg-dim);letter-spacing:1px;text-align:center;margin-top:-4px;}
+.pomo-time{position:absolute;font-family:var(--mono);font-size:39px;font-weight:800;color:var(--fg);letter-spacing:-2px;}
+.pomo-sub{font-family:var(--mono);font-size:10px;color:var(--blue-b);letter-spacing:1px;text-align:center;}
 
 .pomo-ctrls{display:flex;align-items:center;gap:12px;}
 .pbtn{display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;border-radius:var(--r);font-weight:700;transition:var(--t);}
@@ -85,6 +86,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .pbtn-sm{width:34px;height:34px;font-size:13px;background:var(--bg2);color:var(--fg-dim);}
 .pbtn-sm:hover{background:var(--bg3);color:var(--fg);}
 .pbtn-sm.active-auto{background:var(--aqua);color:var(--bg);}
+.pbtn-sm.active-auto:hover{background:var(--aqua-b);color:var(--bg);}
 
 .pomo-dots{display:flex;gap:7px;}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--bg2);transition:background .3s ease;}
@@ -99,7 +101,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .plan-block.short{background:rgba(184,187,38,.15);color:var(--green-b);border:1px solid rgba(184,187,38,.3);}
 .plan-block.long{background:rgba(131,165,152,.15);color:var(--blue-b);border:1px solid rgba(131,165,152,.3);}
 .plan-block.more{background:var(--bg2);color:var(--fg-dim);border:1px solid var(--bg3);}
-.plan-total{font-family:var(--mono);font-size:9px;color:var(--fg-dim);white-space:nowrap;margin-left:4px;}
+.plan-total{font-family:var(--mono);font-size:9px;color:var(--yellow-b);font-weight:700;white-space:nowrap;margin-left:4px;}
 
 /* Auto-advance indicator */
 .auto-badge{font-family:var(--mono);font-size:9px;font-weight:700;color:var(--aqua-b);background:rgba(142,192,124,.1);border:1px solid rgba(142,192,124,.3);border-radius:3px;padding:2px 7px;letter-spacing:.5px;cursor:pointer;transition:var(--t);}
@@ -108,11 +110,12 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .auto-badge.off:hover{background:var(--bg2);}
 
 /* TASK INPUT */
-.task-bar{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.task-bar{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;transition:border-color var(--t);}
+.task-bar:focus-within{border-color:var(--bg3);}
 .task-bar select{background:var(--bg);border:1px solid var(--bg2);color:var(--fg);padding:6px 8px;border-radius:var(--r);font-family:var(--mono);font-size:11px;flex-shrink:1;min-width:100px;max-width:160px;cursor:pointer;outline:none;}
 .task-bar select option{background:var(--bg1);}
 .task-bar input{flex:1;min-width:120px;background:transparent;border:none;color:var(--fg);font-family:var(--body);font-size:15px;outline:none;padding:6px 0;}
-.task-bar input::placeholder{color:var(--bg3);}
+.task-bar input::placeholder{color:var(--blue-b);}
 .task-bar input[readonly]{color:var(--fg-dim);cursor:default;}
 .live{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--green-b);min-width:75px;text-align:right;}
 .live.off{display:none;}
@@ -120,13 +123,84 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .track-btn:hover{background:var(--green-b);}
 .track-btn.on{background:var(--red);}
 .track-btn.on:hover{background:var(--red-b);}
-.kbd-hint{font-family:var(--mono);font-size:9px;color:var(--bg3);white-space:nowrap;align-self:center;}
+.kbd-hint{font-family:var(--mono);font-size:9px;color:var(--gray);white-space:nowrap;align-self:center;letter-spacing:.3px;}
 @media(max-width:600px){.kbd-hint{display:none;}}
 
+/* Hide default number spinners — use custom styled ones */
+input[type=number]{-moz-appearance:textfield;}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+
+/* POMO GOAL — replace spinner with +/- buttons */
+.pg-set{display:flex;gap:4px;align-items:center;margin-top:8px;}
+.pg-set input{width:44px;background:var(--bg);border:1px solid var(--bg2);color:var(--fg);font-family:var(--mono);font-size:13px;font-weight:700;padding:5px 6px;border-radius:var(--r);outline:none;text-align:center;}
+.pg-set input:focus{border-color:var(--yellow);}
+.pg-nudge{width:26px;height:28px;background:var(--bg2);border:none;border-radius:var(--r);color:var(--fg);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);font-family:var(--mono);}
+.pg-nudge:hover{background:var(--bg3);}
+.pg-set .btn{padding:5px 10px;font-size:10px;}
+.pg-set-btn{padding:5px 10px;font-size:10px;margin-left:2px;}
+
+/* ENTRIES — grow freely, no fixed cap */
+
+/* POMO LOG — grow freely */
+.pomo-log-list{display:flex;flex-direction:column;gap:4px;overflow-y:auto;}
+
+/* GOALS / PROJECTS lists — grow with content */
+#goalList,#projList{overflow:visible;}
+
+/* Cards in sub-grid grow with content */
+.sub-grid .card{display:flex;flex-direction:column;}
+.sub-grid .card .pomo-log-list{flex:1;}
+
+/* gp-col cards grow with their lists */
+.gp-col .card{flex:0 0 auto;}
+/* gp-col fills the column */
+.gp-col{height:100%;}
+
+/* TOP ROW — pomo left, goals+projects right */
+.top-row{display:grid;grid-template-columns:1fr var(--sidebar-w);gap:10px;margin-bottom:10px;align-items:start;}
+@media(max-width:860px){.top-row{grid-template-columns:1fr;}}
+
 /* MAIN */
-.main{display:grid;grid-template-columns:1fr 315px;gap:10px;}
+.main{display:grid;grid-template-columns:1fr var(--sidebar-w);gap:10px;align-items:start;}
 @media(max-width:780px){.main{grid-template-columns:1fr;}}
-#goalList:empty::after,#projList:empty::after{content:'';display:block;min-height:30px;}
+
+/* ENTRY COL — left column of main */
+.entry-col{display:flex;flex-direction:column;gap:10px;}
+
+/* SUB-GRID — pomo log + pomo goal under entries */
+.sub-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:600px){.sub-grid{grid-template-columns:1fr;}}
+
+/* GOALS+PROJECTS panel beside pomo */
+.gp-col{display:flex;flex-direction:column;gap:10px;}
+#goalList:empty::after,#projList:empty::after{content:'';display:block;min-height:24px;}
+
+/* POMO LOG ITEMS */
+.pomo-log-item{display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);font-family:var(--mono);font-size:10px;}
+.pomo-log-item .pl-idx{color:var(--fg-dim);min-width:14px;}
+.pomo-log-item .pl-mode{font-weight:700;min-width:30px;}
+.pomo-log-item .pl-mode.work{color:var(--red-b);}
+.pomo-log-item .pl-mode.short{color:var(--green-b);}
+.pomo-log-item .pl-mode.long{color:var(--blue-b);}
+.pomo-log-item .pl-dur{color:var(--aqua-b);font-weight:700;margin-left:auto;}
+.pomo-log-item .pl-time{color:var(--fg-dim);font-size:9px;}
+
+/* POMO GOAL */
+.pg-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.pg-count{font-family:var(--mono);font-size:22px;font-weight:800;color:var(--yellow-b);}
+.pg-target{font-family:var(--mono);font-size:11px;color:var(--fg-dim);}
+.pg-bar-wrap{background:var(--bg);border-radius:4px;height:6px;overflow:hidden;margin-bottom:6px;}
+.pg-bar{height:100%;background:var(--yellow);border-radius:4px;transition:width .4s ease;}
+
+/* BREAK SELECTOR in settings */
+.break-slots{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
+.break-slot{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);}
+.break-slot-label{font-family:var(--mono);font-size:10px;color:var(--fg-dim);}
+.break-slot-label b{color:var(--fg);}
+.break-slot-label span{color:var(--green-b);}
+.break-slot-label span.long{color:var(--blue-b);}
+.break-slot input[type=checkbox]{accent-color:var(--aqua);width:14px;height:14px;cursor:pointer;}
 
 /* CARDS */
 .card{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:14px;}
@@ -137,8 +211,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .add-btn:hover{background:var(--aqua);color:var(--bg);}
 
 /* ENTRIES */
-.entries{display:flex;flex-direction:column;gap:5px;max-height:230px;overflow-y:auto;scrollbar-gutter:stable;padding-right:3px;}
-.empty{color:var(--bg3);font-family:var(--mono);font-size:11px;text-align:center;padding:22px 0;}
+.entries{display:flex;flex-direction:column;gap:5px;max-height:230px;overflow-y:auto;scrollbar-gutter:stable;padding-right:3px;scroll-behavior:smooth;}
+.empty{font-family:var(--mono);font-size:11px;text-align:center;padding:22px 0;color:var(--blue-b);}
 
 .entry{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:9px 11px;display:flex;align-items:center;gap:9px;transition:border-color var(--t);}
 .entry:hover{border-color:var(--bg3);}
@@ -164,7 +238,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .cal-nav-btns{display:flex;gap:3px;}
 .cal-nav{width:20px;height:20px;background:transparent;border:none;border-radius:3px;color:var(--fg-dim);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
 .cal-nav:hover{background:var(--bg2);color:var(--fg);}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
 .cal-dow{font-family:var(--mono);font-size:8px;font-weight:700;color:var(--fg-dim);text-align:center;padding:3px 0;letter-spacing:.5px;}
 .cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;transition:background var(--t);position:relative;gap:1px;}
 .cal-day:hover{background:var(--bg2);}
@@ -193,8 +267,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .g-meta{font-family:var(--mono);font-size:9px;color:var(--fg-dim);}
 .iacts{display:flex;gap:3px;}
 .ia{width:20px;height:20px;background:transparent;border:none;border-radius:3px;color:var(--bg3);font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
-.ia.ed:hover{color:var(--blue-b);}
-.ia.dl:hover{color:var(--red-b);}
+.ia.ed:hover{color:var(--blue-b);background:var(--bg2);}
+.ia.dl:hover{color:var(--red-b);background:var(--bg2);}
 
 /* PROJECTS */
 .proj-item{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:8px 10px;display:flex;align-items:center;gap:8px;margin-bottom:5px;}
@@ -235,7 +309,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .field label{display:block;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--fg-dim);margin-bottom:4px;}
 .field input[type=text],.field input[type=number],.field input[type=date],.field select{width:100%;background:var(--bg);border:1px solid var(--bg2);color:var(--fg);font-family:var(--mono);font-size:12px;padding:7px 10px;border-radius:var(--r);outline:none;transition:border-color var(--t);}
 .field input:focus,.field select:focus{border-color:var(--yellow);}
-.field input::placeholder{color:var(--bg3);}
+.field input::placeholder{color:var(--fg-dim);}
 .field select option{background:var(--bg1);}
 .field input.err,.field select.err{border-color:var(--red)!important;}
 .frow{display:flex;gap:6px;}
@@ -307,8 +381,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 @media(max-width:600px){
   .header{flex-direction:column;align-items:flex-start;}
   .header-right{flex-direction:column;align-items:flex-start;gap:10px;}
-  .pomo-time{font-size:34px;}
-  .pomo-svg{width:160px;height:160px;}
+  .pomo-time{font-size:32px;}
+  .pomo-svg{width:155px;height:155px;}
 }
 </style>
 </head>
@@ -334,44 +408,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
     </div>
   </div>
 
-  <!-- POMODORO -->
-  <div class="pomo" role="region" aria-label="Pomodoro timer">
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;">
-      <div class="pomo-tabs" role="tablist">
-        <button class="pomo-tab active" data-m="work" role="tab" aria-selected="true">WORK</button>
-        <button class="pomo-tab" data-m="short" role="tab" aria-selected="false">SHORT BREAK</button>
-        <button class="pomo-tab" data-m="long" role="tab" aria-selected="false">LONG BREAK</button>
-      </div>
-      <button class="auto-badge" id="autoBadge" title="Click to toggle Auto / Manual mode" aria-label="Toggle auto-advance mode">AUTO ▶</button>
-    </div>
-
-    <div class="pomo-ring-wrap" aria-hidden="true">
-      <svg class="pomo-svg" viewBox="0 0 190 190" aria-hidden="true">
-        <circle class="ring-bg" cx="95" cy="95" r="85"/>
-        <circle class="ring-fg" id="ringFg" cx="95" cy="95" r="85"/>
-      </svg>
-      <div class="pomo-time" id="pomoDisplay" aria-live="off">25:00</div>
-    </div>
-    <div class="pomo-sub" id="pomoSub">SESSION 1 OF 4</div>
-    <span class="sr-only" id="pomoLive" aria-live="polite" style="position:absolute;left:-9999px;"></span>
-
-    <div class="pomo-ctrls">
-      <button class="pbtn pbtn-sm" id="pomoReset" aria-label="Reset timer" title="Reset (R)"><i class="fas fa-redo" aria-hidden="true"></i></button>
-      <button class="pbtn pbtn-main" id="pomoStart" aria-label="Start timer" title="Start/Pause (Space)"><i class="fas fa-play" aria-hidden="true"></i></button>
-      <button class="pbtn pbtn-sm" id="pomoSkip" aria-label="Skip to next session" title="Skip"><i class="fas fa-forward-step" aria-hidden="true"></i></button>
-      <button class="pbtn pbtn-sm" id="pomoSettingsBtn" aria-label="Timer settings" title="Timer Settings"><i class="fas fa-sliders" aria-hidden="true"></i></button>
-    </div>
-
-    <div class="pomo-dots" id="pomoDots" aria-label="Session progress"></div>
-
-    <!-- Session plan display -->
-    <div class="pomo-plan" id="pomoPlan" aria-label="Session plan"></div>
-
-    <span class="kbd-hint" title="Keyboard shortcuts">Space: start/pause · R: reset · Ctrl+Enter: start/stop task</span>
-  </div>
-
   <!-- TASK INPUT -->
-  <div class="task-bar" role="region" aria-label="Task tracker">
+  <div class="task-bar" role="region" aria-label="Task tracker" style="margin-bottom:10px;">
     <select id="projSelect" aria-label="Select project"><option value="">— no project —</option></select>
     <input type="text" id="taskInput" placeholder="What are you working on right now?" aria-label="Task description" autocomplete="off">
     <span class="live off" id="liveTimer" aria-live="off">00:00:00</span>
@@ -380,20 +418,113 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
     </button>
   </div>
 
-  <!-- MAIN GRID -->
-  <div class="main">
-    <!-- ENTRIES -->
-    <div class="card">
-      <div class="chead">
-        <div class="ctitle">ENTRIES — <b id="entryDateLabel">TODAY</b></div>
+  <!-- TOP ROW: POMO (left) + GOALS & PROJECTS (right) -->
+  <div class="top-row" style="margin-bottom:10px;">
+
+    <!-- POMODORO -->
+    <div class="pomo" role="region" aria-label="Pomodoro timer">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;">
+        <div class="pomo-tabs" role="tablist">
+          <button class="pomo-tab active" data-m="work" role="tab" aria-selected="true">WORK</button>
+          <button class="pomo-tab" data-m="short" role="tab" aria-selected="false">SHORT</button>
+          <button class="pomo-tab" data-m="long" role="tab" aria-selected="false">LONG</button>
+        </div>
+        <button class="auto-badge" id="autoBadge" title="Click to toggle Auto / Manual mode" aria-label="Toggle auto-advance mode">AUTO ▶</button>
       </div>
-      <div class="entries" id="entryList" role="list" aria-label="Time entries"></div>
+
+      <div class="pomo-ring-wrap" aria-hidden="true">
+        <svg class="pomo-svg" viewBox="0 0 190 190" aria-hidden="true">
+          <circle class="ring-bg" cx="95" cy="95" r="85"/>
+          <circle class="ring-fg" id="ringFg" cx="95" cy="95" r="85"/>
+        </svg>
+        <div class="pomo-time" id="pomoDisplay" aria-live="off">25:00</div>
+      </div>
+      <div class="pomo-sub" id="pomoSub">SESSION 1 OF 4</div>
+      <span class="sr-only" id="pomoLive" aria-live="polite" style="position:absolute;left:-9999px;"></span>
+
+      <div class="pomo-ctrls">
+        <button class="pbtn pbtn-sm" id="pomoReset" aria-label="Reset timer" title="Reset (R)"><i class="fas fa-redo" aria-hidden="true"></i></button>
+        <button class="pbtn pbtn-main" id="pomoStart" aria-label="Start timer" title="Start/Pause (Space)"><i class="fas fa-play" aria-hidden="true"></i></button>
+        <button class="pbtn pbtn-sm" id="pomoSkip" aria-label="Skip to next session" title="Skip"><i class="fas fa-forward-step" aria-hidden="true"></i></button>
+        <button class="pbtn pbtn-sm" id="pomoSettingsBtn" aria-label="Timer settings" title="Timer Settings"><i class="fas fa-sliders" aria-hidden="true"></i></button>
+      </div>
+
+      <div class="pomo-dots" id="pomoDots" aria-label="Session progress"></div>
+      <div class="pomo-plan" id="pomoPlan" aria-label="Session plan"></div>
+      <span class="kbd-hint" title="Keyboard shortcuts">Space: start/pause · R: reset · Ctrl+Enter: track</span>
     </div>
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
+    <!-- GOALS + PROJECTS -->
+    <div class="gp-col">
+      <div class="card">
+        <div class="chead">
+          <div class="ctitle">GOALS</div>
+          <button class="add-btn" id="openGoalBtn" aria-label="Add goal" title="Add goal"><i class="fas fa-plus" aria-hidden="true"></i></button>
+        </div>
+        <div id="goalList" role="list"></div>
+      </div>
+      <div class="card">
+        <div class="chead">
+          <div class="ctitle">PROJECTS</div>
+          <button class="add-btn" id="openProjBtn" aria-label="Add project" title="Add project"><i class="fas fa-plus" aria-hidden="true"></i></button>
+        </div>
+        <div id="projList" role="list"></div>
+      </div>
+    </div>
 
-      <!-- CALENDAR -->
+  </div><!-- /top-row -->
+
+  <!-- MAIN GRID -->
+  <div class="main">
+
+    <!-- LEFT COL: Entries + sub-grid -->
+    <div class="entry-col">
+
+      <!-- ENTRIES -->
+      <div class="card">
+        <div class="chead">
+          <div class="ctitle">ENTRIES — <b id="entryDateLabel">TODAY</b></div>
+        </div>
+        <div class="entries" id="entryList" role="list" aria-label="Time entries"></div>
+      </div>
+
+      <!-- SUB-GRID: Pomo Log + Pomo Goal -->
+      <div class="sub-grid">
+
+        <!-- POMO SESSION LOG -->
+        <div class="card">
+          <div class="chead">
+            <div class="ctitle">POMO LOG</div>
+            <button class="add-btn" id="clearPomoLogBtn" title="Clear today's log" aria-label="Clear pomo log"><i class="fas fa-trash" aria-hidden="true"></i></button>
+          </div>
+          <div class="pomo-log-list" id="pomoLogList">
+            <div class="empty">// no sessions yet today</div>
+          </div>
+        </div>
+
+        <!-- POMO DAILY GOAL -->
+        <div class="card">
+          <div class="chead">
+            <div class="ctitle">DAILY GOAL</div>
+          </div>
+          <div class="pg-row">
+            <div class="pg-count"><span id="pgDone">0</span> <span style="font-size:13px;color:var(--fg-dim);">/ <span id="pgTarget">8</span></span></div>
+            <div class="pg-target" id="pgStatus">sessions</div>
+          </div>
+          <div class="pg-bar-wrap"><div class="pg-bar" id="pgBar" style="width:0%"></div></div>
+          <div class="pg-set">
+            <button class="pg-nudge" id="pgMinus" aria-label="Decrease goal">−</button>
+            <input type="number" id="pgGoalInput" min="1" max="24" value="8" aria-label="Daily session goal">
+            <button class="pg-nudge" id="pgPlus" aria-label="Increase goal">+</button>
+            <button class="btn btn-s pg-set-btn" id="pgSetBtn">SET</button>
+          </div>
+        </div>
+
+      </div><!-- /sub-grid -->
+    </div><!-- /entry-col -->
+
+    <!-- SIDEBAR: Calendar + Actions -->
+    <div class="sidebar">
       <div class="card">
         <div class="chead">
           <div class="ctitle">CALENDAR</div>
@@ -411,29 +542,16 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
       </div>
 
       <div class="card">
-        <div class="chead">
-          <div class="ctitle">GOALS</div>
-          <button class="add-btn" id="openGoalBtn" aria-label="Add goal" title="Add goal"><i class="fas fa-plus" aria-hidden="true"></i></button>
-        </div>
-        <div id="goalList" role="list"></div>
-      </div>
-      <div class="card">
-        <div class="chead">
-          <div class="ctitle">PROJECTS</div>
-          <button class="add-btn" id="openProjBtn" aria-label="Add project" title="Add project"><i class="fas fa-plus" aria-hidden="true"></i></button>
-        </div>
-        <div id="projList" role="list"></div>
-      </div>
-      <div class="card">
         <div class="act-btns">
           <button class="act-btn rpt" id="openReportBtn"><i class="fas fa-chart-bar" aria-hidden="true"></i> ADVANCED REPORTS</button>
           <button class="act-btn imp" id="openImportBtn"><i class="fas fa-upload" aria-hidden="true"></i> IMPORT DATA</button>
           <button class="act-btn exp" id="openExportBtn"><i class="fas fa-download" aria-hidden="true"></i> EXPORT DATA</button>
         </div>
       </div>
-    </div>
-  </div>
-</div>
+    </div><!-- /sidebar -->
+
+  </div><!-- /main -->
+</div><!-- /app -->
 
 <!-- ALERT MODAL -->
 <div class="overlay alert-ov" id="alertModal" data-no-overlay-close>
@@ -489,21 +607,17 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
         </label>
       </div>
       <div class="toggle-row">
-        <div class="toggle-label"><span>Long break after cycle</span> — long break replaces last short break</div>
+        <div class="toggle-label"><span>Long break after cycle</span> — last break becomes long break</div>
         <label class="toggle">
           <input type="checkbox" id="psLongBreak" checked>
           <div class="toggle-track"></div>
           <div class="toggle-thumb"></div>
         </label>
       </div>
-      <div class="toggle-row">
-        <div class="toggle-label"><span>Include breaks</span> — off = work sessions only, no breaks</div>
-        <label class="toggle">
-          <input type="checkbox" id="psBreaks" checked>
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
+      <hr class="mdivider">
+      <div style="font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--fg-dim);margin-bottom:4px;">SKIP SPECIFIC BREAKS</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--bg3);margin-bottom:6px;">Uncheck any break you want to skip in the cycle</div>
+      <div class="break-slots" id="psBreakSlots"></div>
       <hr class="mdivider">
       <div class="session-preview" id="psPreview">
         <div class="sp-title">Session Preview</div>
@@ -673,8 +787,13 @@ let pomoSettings = {
   cycle:     4,      // sessions before long break
   autoAdv:   true,   // auto-advance to next phase
   longBreak: true,   // replace last short break with a long break
-  breaks:    true    // include breaks at all
+  skipBreaks: []     // array of 1-based break slot indices to skip (e.g. [2,4] skips break after session 2 and 4)
 };
+
+// Pomo session log (today's completed sessions)
+let pomoLog = [];
+let pomoLogDate = new Date().toDateString();
+let pomoGoalTarget = 8; // daily work session target
 
 const POMO_STROKE = { work: '#fb4934', short: '#b8bb26', long: '#83a598' };
 const PROJ_COLORS = ['#458588','#b16286','#689d6a','#d79921','#cc241d','#98971a'];
@@ -784,6 +903,8 @@ const save = () => {
     localStorage.setItem('tt_g',JSON.stringify(goals));
     localStorage.setItem('tt_p',JSON.stringify(projects));
     localStorage.setItem('tt_ps',JSON.stringify(pomoSettings));
+    localStorage.setItem('tt_pl',JSON.stringify({log:pomoLog,date:pomoLogDate}));
+    localStorage.setItem('tt_pg',String(pomoGoalTarget));
     if(activeEntry) localStorage.setItem('tt_a',JSON.stringify({...activeEntry,startTime:taskStart.toISOString()}));
     else localStorage.removeItem('tt_a');
   } catch(e){ toast('Save failed','err'); }
@@ -795,6 +916,13 @@ const load = () => {
     projects=JSON.parse(localStorage.getItem('tt_p'))||[];
     const ps=JSON.parse(localStorage.getItem('tt_ps'));
     if(ps) Object.assign(pomoSettings,ps);
+    const plRaw=JSON.parse(localStorage.getItem('tt_pl'));
+    if(plRaw){
+      if(plRaw.date===new Date().toDateString()){ pomoLog=plRaw.log||[]; pomoLogDate=plRaw.date; }
+      else { pomoLog=[]; pomoLogDate=new Date().toDateString(); }
+    }
+    const pg=localStorage.getItem('tt_pg');
+    if(pg) pomoGoalTarget=parseInt(pg)||8;
     const a=JSON.parse(localStorage.getItem('tt_a'));
     if(a){
       taskStart=new Date(a.startTime);
@@ -834,11 +962,13 @@ const updateDots = () => {
   }
 };
 
+// Helper: should break at slot (1-based) be shown/taken?
+const breakEnabled = slot => !(pomoSettings.skipBreaks||[]).includes(slot);
+
 // Build a visual plan of the upcoming session cycle
 const updatePlan = () => {
   const plan = $('pomoPlan');
   plan.innerHTML = '';
-  // Hide plan in manual mode
   plan.style.display = pomoSettings.autoAdv ? '' : 'none';
   if (!pomoSettings.autoAdv) return;
 
@@ -846,14 +976,12 @@ const updatePlan = () => {
   const blocks = [];
   for (let i = 0; i < cycle; i++) {
     blocks.push({ type: 'work', sec: pomoSettings.work });
-    if (pomoSettings.breaks) {
-      if (i < cycle - 1) {
-        blocks.push({ type: 'short', sec: pomoSettings.short });
-      } else if (pomoSettings.longBreak) {
-        blocks.push({ type: 'long', sec: pomoSettings.long });
-      } else {
-        blocks.push({ type: 'short', sec: pomoSettings.short });
-      }
+    const slot = i + 1; // 1-based slot
+    if (breakEnabled(slot)) {
+      const isLast = (i === cycle - 1);
+      const type = (isLast && pomoSettings.longBreak) ? 'long' : 'short';
+      const sec  = type === 'long' ? pomoSettings.long : pomoSettings.short;
+      blocks.push({ type, sec });
     }
   }
   const totalSec = blocks.reduce((s, b) => s + b.sec, 0);
@@ -934,14 +1062,18 @@ const tickPomo = () => {
     pomoStartBtn.classList.remove('run');
     playBell();
     const cycle = pomoSettings.cycle || 4;
+    // Log the completed session
+    logPomoSession(mode, pomoTotal);
     if (mode === 'work') {
       sessionsD++;
       if (Notification.permission === 'granted') new Notification('FOCUS – Session complete!', { body: `Session ${sessionsD} done. Time for a break.` });
       toast(`Session ${sessionsD} complete! Take a break.`, 'ok');
+      const slot = sessionsD % cycle === 0 ? cycle : sessionsD % cycle;
+      const isLast = (sessionsD % cycle === 0);
       let nextMode;
-      if (!pomoSettings.breaks) {
-        nextMode = 'work';
-      } else if (sessionsD % cycle === 0 && pomoSettings.longBreak) {
+      if (!breakEnabled(slot)) {
+        nextMode = 'work'; // this break slot is skipped
+      } else if (isLast && pomoSettings.longBreak) {
         nextMode = 'long';
       } else {
         nextMode = 'short';
@@ -981,8 +1113,10 @@ $('pomoSkip').addEventListener('click', () => {
   if (mode === 'work') sessionsD++;
   let next;
   if (mode === 'work') {
-    if (!pomoSettings.breaks) { next = 'work'; }
-    else if (sessionsD % cycle === 0 && pomoSettings.longBreak) { next = 'long'; }
+    const slot = sessionsD % cycle === 0 ? cycle : sessionsD % cycle;
+    const isLast = (sessionsD % cycle === 0);
+    if (!breakEnabled(slot)) { next = 'work'; }
+    else if (isLast && pomoSettings.longBreak) { next = 'long'; }
     else { next = 'short'; }
   } else { next = 'work'; }
   setMode(next); updateDots();
@@ -990,6 +1124,24 @@ $('pomoSkip').addEventListener('click', () => {
 document.querySelectorAll('.pomo-tab').forEach(b=>b.addEventListener('click',()=>{ if(pomoRunning){ clearInterval(pomoInterval); pomoRunning=false; pomoStartBtn.innerHTML='<i class="fas fa-play" aria-hidden="true"></i>'; pomoStartBtn.classList.remove('run'); } setMode(b.dataset.m); }));
 
 // === POMODORO SETTINGS ===
+const renderBreakSlots = () => {
+  const cy = parseInt($('psCycle').value) || 4;
+  const longBreak = $('psLongBreak').checked;
+  const container = $('psBreakSlots');
+  container.innerHTML = '';
+  for (let i = 1; i <= cy; i++) {
+    const isLast = (i === cy);
+    const type = (isLast && longBreak) ? 'long' : 'short';
+    const skip = (pomoSettings.skipBreaks||[]).includes(i);
+    const slot = document.createElement('div');
+    slot.className = 'break-slot';
+    slot.innerHTML = `<div class="break-slot-label">Break after <b>Session ${i}</b> — <span class="${type==='long'?'long':''}">${type === 'long' ? 'LONG BREAK' : 'SHORT BREAK'}</span></div>
+      <input type="checkbox" data-slot="${i}" ${skip ? '' : 'checked'} title="Include this break">`;
+    container.appendChild(slot);
+  }
+  container.querySelectorAll('input[type=checkbox]').forEach(cb => cb.addEventListener('change', updateSettingsPreview));
+};
+
 $('pomoSettingsBtn').addEventListener('click', () => {
   $('psWork').value = Math.floor(pomoSettings.work / 60);
   $('psWorkSec').value = pomoSettings.work % 60;
@@ -1000,7 +1152,7 @@ $('pomoSettingsBtn').addEventListener('click', () => {
   $('psCycle').value = pomoSettings.cycle;
   $('psAutoAdv').checked = pomoSettings.autoAdv;
   $('psLongBreak').checked = pomoSettings.longBreak !== false;
-  $('psBreaks').checked = pomoSettings.breaks !== false;
+  renderBreakSlots();
   updateSettingsPreview();
   openM('pomoSettingsModal');
 });
@@ -1010,15 +1162,25 @@ const updateSettingsPreview = () => {
   const sm = parseInt($('psShort').value) || 5,  ss = parseInt($('psShortSec').value) || 0;
   const lm = parseInt($('psLong').value) || 15,  ls = parseInt($('psLongSec').value) || 0;
   const cy = parseInt($('psCycle').value) || 4;
-  const longBreak = $('psLongBreak').checked, breaks = $('psBreaks').checked;
+  const longBreak = $('psLongBreak').checked;
+  // Re-render break slots if cycle changed
+  const slotCount = $('psBreakSlots').querySelectorAll('.break-slot').length;
+  if (slotCount !== cy) renderBreakSlots();
+  // Read which slots are enabled
+  const enabledSlots = new Set();
+  $('psBreakSlots').querySelectorAll('input[type=checkbox]').forEach(cb => {
+    if (cb.checked) enabledSlots.add(parseInt(cb.dataset.slot));
+  });
   const work = wm * 60 + ws, short = sm * 60 + ss, long = lm * 60 + ls;
   const blocks = []; let total = 0;
   for (let i = 0; i < cy; i++) {
     blocks.push({ t: 'work', s: work }); total += work;
-    if (breaks) {
-      if (i < cy - 1) { blocks.push({ t: 'short', s: short }); total += short; }
-      else if (longBreak) { blocks.push({ t: 'long', s: long }); total += long; }
-      else { blocks.push({ t: 'short', s: short }); total += short; }
+    const slot = i + 1;
+    if (enabledSlots.has(slot)) {
+      const isLast = (slot === cy);
+      const type = (isLast && longBreak) ? 'long' : 'short';
+      const sec = type === 'long' ? long : short;
+      blocks.push({ t: type, s: sec }); total += sec;
     }
   }
   const pb = $('psPreviewBlocks'); pb.innerHTML = '';
@@ -1029,8 +1191,10 @@ const updateSettingsPreview = () => {
   $('psPreviewStat').innerHTML = `<b>${cy} sessions</b> · total <b>${fmtHuman(total)}</b> (work: <b>${fmtHuman(work * cy)}</b>)`;
 };
 
-['psWork','psWorkSec','psShort','psShortSec','psLong','psLongSec','psCycle'].forEach(id => $(id).addEventListener('input', updateSettingsPreview));
-['psLongBreak','psBreaks','psAutoAdv'].forEach(id => $(id).addEventListener('change', updateSettingsPreview));
+['psWork','psWorkSec','psShort','psShortSec','psLong','psLongSec'].forEach(id => $(id).addEventListener('input', updateSettingsPreview));
+['psAutoAdv'].forEach(id => $(id).addEventListener('change', updateSettingsPreview));
+$('psCycle').addEventListener('input', () => { renderBreakSlots(); updateSettingsPreview(); });
+$('psLongBreak').addEventListener('change', () => { renderBreakSlots(); updateSettingsPreview(); });
 
 $('savePomoSettings').addEventListener('click', () => {
   const wm = parseInt($('psWork').value) || 25, ws = parseInt($('psWorkSec').value) || 0;
@@ -1043,7 +1207,11 @@ $('savePomoSettings').addEventListener('click', () => {
   pomoSettings.cycle = cy;
   pomoSettings.autoAdv = $('psAutoAdv').checked;
   pomoSettings.longBreak = $('psLongBreak').checked;
-  pomoSettings.breaks = $('psBreaks').checked;
+  // Build skipBreaks from unchecked slots
+  pomoSettings.skipBreaks = [];
+  $('psBreakSlots').querySelectorAll('input[type=checkbox]').forEach(cb => {
+    if (!cb.checked) pomoSettings.skipBreaks.push(parseInt(cb.dataset.slot));
+  });
   clearInterval(pomoInterval); pomoRunning = false;
   sessionsD = 0;
   setMode('work');
@@ -1188,8 +1356,64 @@ const renderCalendar = () => {
   }
 };
 
+// === POMO LOG ===
+const logPomoSession = (m, sec) => {
+  const today = new Date().toDateString();
+  if (pomoLogDate !== today) { pomoLog = []; pomoLogDate = today; }
+  pomoLog.push({ mode: m, sec, at: new Date().toISOString() });
+  save(); renderPomoLog(); renderPomoGoal();
+};
+
+const renderPomoLog = () => {
+  const el = $('pomoLogList'); el.innerHTML = '';
+  if (!pomoLog.length) { el.innerHTML = '<div class="empty">// no sessions yet today</div>'; return; }
+  [...pomoLog].reverse().forEach((s, i) => {
+    const num = pomoLog.length - i;
+    const at = new Date(s.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const item = document.createElement('div'); item.className = 'pomo-log-item';
+    const label = s.mode === 'work' ? 'WRK' : s.mode === 'short' ? 'SHT' : 'LNG';
+    item.innerHTML = `<span class="pl-idx">#${num}</span><span class="pl-mode ${s.mode}">${label}</span><span class="pl-time">${at}</span><span class="pl-dur">${fmtHuman(s.sec)}</span>`;
+    el.appendChild(item);
+  });
+};
+
+const renderPomoGoal = () => {
+  const today = new Date().toDateString();
+  if (pomoLogDate !== today && pomoLog.length) { pomoLog = []; pomoLogDate = today; }
+  const done = pomoLog.filter(s => s.mode === 'work').length;
+  const pct = Math.min(100, (done / pomoGoalTarget) * 100);
+  $('pgDone').textContent = done;
+  $('pgTarget').textContent = pomoGoalTarget;
+  $('pgBar').style.width = pct + '%';
+  $('pgBar').style.background = done >= pomoGoalTarget ? 'var(--green-b)' : 'var(--yellow)';
+  $('pgStatus').textContent = done >= pomoGoalTarget ? '✓ GOAL MET!' : 'sessions today';
+  $('pgGoalInput').value = pomoGoalTarget;
+};
+
+$('pgSetBtn').addEventListener('click', () => {
+  const v = parseInt($('pgGoalInput').value);
+  if (v >= 1 && v <= 24) { pomoGoalTarget = v; save(); renderPomoGoal(); toast(`Daily goal set to ${v} sessions`); }
+});
+$('pgGoalInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('pgSetBtn').click(); });
+$('pgMinus').addEventListener('click', () => {
+  const v = Math.max(1, parseInt($('pgGoalInput').value) - 1);
+  $('pgGoalInput').value = v; pomoGoalTarget = v; save(); renderPomoGoal();
+});
+$('pgPlus').addEventListener('click', () => {
+  const v = Math.min(24, parseInt($('pgGoalInput').value) + 1);
+  $('pgGoalInput').value = v; pomoGoalTarget = v; save(); renderPomoGoal();
+});
+
+$('clearPomoLogBtn').addEventListener('click', () => {
+  alert2('Clear today\'s pomo log?', true, ok => {
+    if (!ok) return;
+    pomoLog = []; pomoLogDate = new Date().toDateString();
+    save(); renderPomoLog(); renderPomoGoal(); toast('Pomo log cleared.');
+  });
+});
+
 // === RENDER ===
-const rerender = () => { renderProjects(); renderEntries(); renderGoals(); updateTotals(); renderCalendar(); };
+const rerender = () => { renderProjects(); renderEntries(); renderGoals(); updateTotals(); renderCalendar(); renderPomoLog(); renderPomoGoal(); };
 
 const renderEntries = () => {
   const today=new Date();
@@ -1515,6 +1739,8 @@ window.onload = () => {
   updatePlan();
   updateAutoBadge();
   rerender();
+  renderPomoLog();
+  renderPomoGoal();
   calViewDate=new Date(viewDate.getFullYear(),viewDate.getMonth(),1);
   renderCalendar();
 };
