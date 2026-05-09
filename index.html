@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FOCUS — Pomodoro & Task Tracker</title>
-<link rel="icon" type="image/png" href="logo.png">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -66,6 +65,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .pomo{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:14px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;}
 .pomo-tabs{display:flex;gap:3px;background:var(--bg);border-radius:var(--r);padding:3px;}
 .pomo-tab{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--fg-dim);background:transparent;border:none;cursor:pointer;padding:6px 13px;border-radius:calc(var(--r) - 2px);transition:var(--t);letter-spacing:.5px;}
+.pomo-tab:hover:not(.active){color:var(--fg);background:rgba(255,255,255,.05);}
 .pomo-tab.active{background:var(--bg2);color:var(--fg);}
 .pomo-tab[data-m="work"].active{color:var(--red-b);}
 .pomo-tab[data-m="short"].active{color:var(--green-b);}
@@ -75,8 +75,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .pomo-svg{width:185px;height:185px;transform:rotate(-90deg);}
 .ring-bg{fill:none;stroke:var(--bg2);stroke-width:6;}
 .ring-fg{fill:none;stroke:var(--yellow-b);stroke-width:6;stroke-linecap:round;stroke-dasharray:534.07;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke .3s ease;}
-.pomo-time{position:absolute;font-family:var(--mono);font-size:39px;font-weight:800;color:var(--fg);letter-spacing:-2px;}
-.pomo-sub{font-family:var(--mono);font-size:10px;color:var(--blue-b);letter-spacing:1px;text-align:center;}
+.pomo-time-old-placeholder{display:none;}
+.pomo-sub{font-family:var(--mono);font-size:10px;color:var(--blue-b);letter-spacing:1px;text-align:center;user-select:none;}
 
 .pomo-ctrls{display:flex;align-items:center;gap:12px;}
 .pbtn{display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;border-radius:var(--r);font-weight:700;transition:var(--t);}
@@ -89,20 +89,33 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .pbtn-sm.active-auto{background:var(--aqua);color:var(--bg);}
 .pbtn-sm.active-auto:hover{background:var(--aqua-b);color:var(--bg);}
 
-.pomo-dots{display:flex;gap:7px;}
+.pomo-dots{display:flex;gap:7px;user-select:none;}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--bg2);transition:background .3s ease;}
 .dot.done{background:var(--red);}
 .dot.cur{background:var(--yellow-b);}
 .dot.break{background:var(--green-b);}
 
-/* Session plan strip */
-.pomo-plan{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:center;max-width:420px;}
-.plan-block{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;letter-spacing:.5px;white-space:nowrap;}
+/* Session plan strip — pointer drag */
+.pomo-plan{position:relative;display:flex;align-items:center;gap:4px;flex-wrap:nowrap;justify-content:center;max-width:100%;}
+.plan-block{font-family:var(--mono);font-size:9px;font-weight:700;padding:3px 20px 3px 8px;border-radius:3px;letter-spacing:.5px;white-space:nowrap;cursor:grab;position:relative;user-select:none;transition:transform .15s ease,opacity .15s ease,box-shadow .15s ease;}
 .plan-block.work{background:rgba(251,73,52,.15);color:var(--red-b);border:1px solid rgba(251,73,52,.3);}
 .plan-block.short{background:rgba(184,187,38,.15);color:var(--green-b);border:1px solid rgba(184,187,38,.3);}
 .plan-block.long{background:rgba(131,165,152,.15);color:var(--blue-b);border:1px solid rgba(131,165,152,.3);}
-.plan-block.more{background:var(--bg2);color:var(--fg-dim);border:1px solid var(--bg3);}
-.plan-total{font-family:var(--mono);font-size:9px;color:var(--yellow-b);font-weight:700;white-space:nowrap;margin-left:4px;}
+.plan-block.dragging{opacity:.2;transform:scale(.88);}
+.plan-block.shifting{transition:transform .15s ease;}
+.plan-block.plan-cur{box-shadow:0 0 0 2px rgba(250,189,47,.55);z-index:1;}
+.pb-del{position:absolute;top:50%;right:4px;transform:translateY(-50%);width:11px;height:11px;border-radius:50%;background:rgba(0,0,0,.4);color:currentColor;font-size:9px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;padding:0;opacity:0;transition:opacity var(--t);}
+.plan-block:hover .pb-del{opacity:1;}
+.plan-ghost{position:fixed;pointer-events:none;z-index:9999;font-family:var(--mono);font-size:9px;font-weight:700;padding:3px 8px;border-radius:3px;letter-spacing:.5px;white-space:nowrap;transform-origin:center center;box-shadow:0 8px 28px rgba(0,0,0,.55);transition:none;}
+.plan-ghost.work{background:rgba(251,73,52,.9);color:#fff;border:1px solid rgba(251,73,52,.8);}
+.plan-ghost.short{background:rgba(184,187,38,.9);color:#1d2021;border:1px solid rgba(184,187,38,.8);}
+.plan-ghost.long{background:rgba(131,165,152,.9);color:#fff;border:1px solid rgba(131,165,152,.8);}
+.plan-insert-line{position:absolute;top:50%;transform:translateY(-50%);width:2px;height:24px;background:var(--yellow-b);border-radius:2px;pointer-events:none;z-index:10;transition:left .08s ease;box-shadow:0 0 6px rgba(250,189,47,.6);}
+.plan-add-btn{width:18px;height:18px;border-radius:50%;background:transparent;border:1px dashed var(--bg3);color:var(--fg-dim);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);flex-shrink:0;font-family:var(--mono);}
+.plan-add-btn:hover{background:var(--aqua);color:var(--bg);border-color:var(--aqua);}
+.plan-total{font-family:var(--mono);font-size:9px;color:var(--yellow-b);font-weight:700;white-space:nowrap;}
+.plan-reset{cursor:pointer;color:var(--fg-dim);font-size:9px;font-family:var(--mono);background:none;border:none;padding:0 2px;transition:color var(--t);}
+.plan-reset:hover{color:var(--yellow-b);}
 
 /* Auto-advance indicator */
 .auto-badge{font-family:var(--mono);font-size:9px;font-weight:700;color:var(--aqua-b);background:rgba(142,192,124,.1);border:1px solid rgba(142,192,124,.3);border-radius:3px;padding:2px 7px;letter-spacing:.5px;cursor:pointer;transition:var(--t);}
@@ -143,11 +156,17 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 
 /* ENTRIES — grow freely, no fixed cap */
 
-/* POMO LOG — grow freely */
-.pomo-log-list{display:flex;flex-direction:column;gap:4px;overflow-y:auto;}
+/* POMO LOG — grow freely, cap at comfortable height */
+.pomo-log-list{display:flex;flex-direction:column;gap:4px;overflow-y:auto;max-height:220px;}
+.pomo-log-list::-webkit-scrollbar{width:4px;}
+.pomo-log-list::-webkit-scrollbar-track{background:transparent;}
+.pomo-log-list::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px;}
 
-/* GOALS / PROJECTS lists — grow with content */
-#goalList,#projList{overflow:visible;}
+/* GOALS / PROJECTS lists — show 2 items, scroll to see more */
+#goalList,#projList{overflow-y:auto;max-height:122px;scrollbar-gutter:stable;padding-right:3px;scroll-behavior:smooth;}
+#goalList::-webkit-scrollbar,#projList::-webkit-scrollbar{width:4px;}
+#goalList::-webkit-scrollbar-track,#projList::-webkit-scrollbar-track{background:transparent;}
+#goalList::-webkit-scrollbar-thumb,#projList::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px;}
 
 /* Cards in sub-grid grow with content */
 .sub-grid .card{display:flex;flex-direction:column;}
@@ -192,11 +211,12 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .pg-count{font-family:var(--mono);font-size:22px;font-weight:800;color:var(--yellow-b);}
 .pg-target{font-family:var(--mono);font-size:11px;color:var(--fg-dim);}
 .pg-bar-wrap{background:var(--bg);border-radius:4px;height:6px;overflow:hidden;margin-bottom:6px;}
-.pg-bar{height:100%;background:var(--yellow);border-radius:4px;transition:width .4s ease;}
+.pg-bar{height:100%;background:var(--yellow);border-radius:4px;transition:width .4s ease,background .4s ease;}
 
 /* BREAK SELECTOR in settings */
 .break-slots{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
-.break-slot{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);}
+.break-slot{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);transition:border-color var(--t);}
+.break-slot:hover{border-color:var(--bg3);}
 .break-slot-label{font-family:var(--mono);font-size:10px;color:var(--fg-dim);}
 .break-slot-label b{color:var(--fg);}
 .break-slot-label span{color:var(--green-b);}
@@ -212,11 +232,12 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .add-btn:hover{background:var(--aqua);color:var(--bg);}
 
 /* ENTRIES */
-.entries{display:flex;flex-direction:column;gap:5px;max-height:230px;overflow-y:auto;scrollbar-gutter:stable;padding-right:3px;scroll-behavior:smooth;}
+.entries{display:flex;flex-direction:column;gap:5px;max-height:288px;overflow-y:auto;scrollbar-gutter:stable;padding-right:3px;scroll-behavior:smooth;}
 .empty{font-family:var(--mono);font-size:11px;text-align:center;padding:22px 0;color:var(--blue-b);}
 
 .entry{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:9px 11px;display:flex;align-items:center;gap:9px;transition:border-color var(--t);}
 .entry:hover{border-color:var(--bg3);}
+.entry.running{border-color:rgba(152,151,26,.45);}
 .e-bar{width:3px;flex-shrink:0;align-self:stretch;min-height:32px;border-radius:3px;}
 .e-body{flex:1;min-width:0;}
 .e-task{font-size:13px;font-weight:700;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -225,8 +246,9 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .e-dur.running{color:var(--green-b);}
 .e-dur.running::before{content:'●';font-size:8px;vertical-align:middle;margin-right:4px;animation:blink 1s step-end infinite;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
-.e-acts{display:flex;gap:3px;flex-shrink:0;}
-.ea{width:24px;height:24px;background:transparent;border:none;border-radius:3px;color:var(--bg3);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
+.e-acts{display:flex;gap:3px;flex-shrink:0;opacity:0;transition:opacity var(--t);}
+.entry:hover .e-acts,.entry:focus-within .e-acts{opacity:1;}
+.ea{width:24px;height:24px;background:transparent;border:none;border-radius:3px;color:var(--fg-dim);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
 .ea.ed:hover{color:var(--blue-b);background:var(--bg2);}
 .ea.dl:hover{color:var(--red-b);background:var(--bg2);}
 
@@ -254,7 +276,8 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .cal-day.empty .cal-dot{display:none;}
 
 /* GOALS */
-.goal-item{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:8px 10px;display:flex;gap:9px;align-items:center;margin-bottom:5px;}
+.goal-item{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:8px 10px;display:flex;gap:9px;align-items:center;margin-bottom:5px;transition:border-color var(--t);}
+.goal-item:hover{border-color:var(--bg3);}
 .goal-item:last-child{margin-bottom:0;}
 .g-ring{position:relative;width:38px;height:38px;flex-shrink:0;}
 .g-ring svg{width:38px;height:38px;}
@@ -266,13 +289,18 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .g-body{flex:1;min-width:0;}
 .g-name{font-size:12px;font-weight:700;color:var(--fg);}
 .g-meta{font-family:var(--mono);font-size:9px;color:var(--fg-dim);}
-.iacts{display:flex;gap:3px;}
-.ia{width:20px;height:20px;background:transparent;border:none;border-radius:3px;color:var(--bg3);font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
+.iacts{display:flex;gap:3px;opacity:0;transition:opacity var(--t);}
+.goal-item:hover .iacts,.proj-item:hover .iacts{opacity:1;}
+.ia{width:20px;height:20px;background:transparent;border:none;border-radius:3px;color:var(--fg-dim);font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
 .ia.ed:hover{color:var(--blue-b);background:var(--bg2);}
 .ia.dl:hover{color:var(--red-b);background:var(--bg2);}
 
+/* Destructive add-btn (trash icon) gets red on hover */
+.add-btn.danger:hover{background:var(--red);color:var(--fg);}
+
 /* PROJECTS */
-.proj-item{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:8px 10px;display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.proj-item{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:8px 10px;display:flex;align-items:center;gap:8px;margin-bottom:5px;transition:border-color var(--t);}
+.proj-item:hover{border-color:var(--bg3);}
 .proj-item:last-child{margin-bottom:0;}
 .p-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 .p-body{flex:1;}
@@ -295,13 +323,15 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 /* MODALS */
 .overlay{position:fixed;inset:0;background:rgba(20,18,16,.88);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:100;}
 .overlay.open{display:flex;}
+@keyframes mopen{from{opacity:0;transform:scale(.97) translateY(6px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.overlay.open .modal{animation:mopen .18s ease forwards;}
 .modal{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);width:90%;max-width:420px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 48px rgba(0,0,0,.6);}
 .modal.wide{max-width:560px;}
 .mhead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;}
 .mtitle{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--yellow-b);}
 .mcls{width:26px;height:26px;background:var(--bg2);border:none;border-radius:var(--r);color:var(--fg-dim);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
 .mcls:hover{background:var(--bg3);color:var(--fg);}
-.modal-body{padding:14px 16px;overflow-y:auto;flex:1;}
+.modal-body{padding:14px 16px 20px;overflow-y:auto;flex:1;}
 .mfoot{padding:10px 16px;border-top:1px solid var(--bg2);display:flex;justify-content:flex-end;gap:7px;}
 
 /* FORM */
@@ -341,14 +371,40 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .sp-stat{font-family:var(--mono);font-size:10px;color:var(--fg-dim);}
 .sp-stat b{color:var(--yellow-b);}
 
+/* Duration stepper */
+.dur-row{display:flex;gap:10px;margin-bottom:14px;}
+.dur-field{flex:1;display:flex;flex-direction:column;gap:5px;}
+.dur-label{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.2px;color:var(--fg-dim);text-transform:uppercase;}
+.dur-stepper{display:flex;align-items:stretch;background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);overflow:hidden;transition:border-color var(--t);min-width:160px;}
+.dur-stepper:focus-within{border-color:var(--yellow);}
+.dur-btn{width:34px;flex-shrink:0;background:var(--bg2);border:none;color:var(--fg);font-size:18px;font-family:var(--mono);cursor:pointer;transition:background var(--t),color var(--t);display:flex;align-items:center;justify-content:center;line-height:1;user-select:none;}
+.dur-btn:hover{background:var(--bg3);}
+.dur-btn:active{background:var(--yellow);color:var(--bg);}
+.dur-num{flex:1;font-family:var(--mono);font-size:20px;font-weight:800;color:var(--fg);text-align:center;padding:7px 2px;background:transparent;border:none;outline:none;width:0;min-width:26px;}
+.dur-unit{font-family:var(--mono);font-size:10px;color:var(--fg-dim);align-self:center;padding-right:6px;}
+.dur-presets{display:flex;gap:3px;flex-wrap:wrap;}
+.dur-preset{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:var(--bg2);border:1px solid transparent;color:var(--fg-dim);cursor:pointer;transition:var(--t);letter-spacing:.3px;}
+.dur-preset:hover{background:var(--bg3);color:var(--fg);}
+.dur-preset.on{background:rgba(250,189,47,.2);color:var(--yellow-b);border-color:rgba(250,189,47,.4);}
+.cycle-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.cycle-stepper{display:flex;align-items:stretch;background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);overflow:hidden;transition:border-color var(--t);}
+.cycle-stepper:focus-within{border-color:var(--yellow);}
+.cycle-num{font-family:var(--mono);font-size:22px;font-weight:800;color:var(--fg);text-align:center;padding:7px 6px;background:transparent;border:none;outline:none;width:52px;}
+.cycle-label-text{font-family:var(--mono);font-size:11px;color:var(--fg-dim);}
+.cycle-label-text b{color:var(--fg);}
+.cycle-presets{display:flex;gap:3px;margin-top:5px;}
+.cycle-preset{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;background:var(--bg2);border:1px solid transparent;color:var(--fg-dim);cursor:pointer;transition:var(--t);}
+.cycle-preset:hover{background:var(--bg3);color:var(--fg);}
+.cycle-preset.on{background:rgba(250,189,47,.2);color:var(--yellow-b);border-color:rgba(250,189,47,.4);}
+
 /* Divider */
 .mdivider{border:none;border-top:1px solid var(--bg2);margin:12px 0;}
 
 /* File input */
 .file-input-wrap{position:relative;width:100%;}
 .file-input-wrap input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;}
-.file-input-label{display:flex;align-items:center;gap:8px;width:100%;background:var(--bg);border:1px solid var(--bg2);color:var(--fg-dim);font-family:var(--mono);font-size:11px;padding:7px 10px;border-radius:var(--r);cursor:pointer;transition:border-color var(--t);}
-.file-input-label:hover{border-color:var(--bg3);}
+.file-input-label{display:flex;align-items:center;gap:8px;width:100%;background:var(--bg);border:1px solid var(--bg2);color:var(--fg-dim);font-family:var(--mono);font-size:11px;padding:7px 10px;border-radius:var(--r);cursor:pointer;transition:border-color var(--t),background var(--t);}
+.file-input-label:hover{border-color:var(--bg3);background:var(--bg2);}
 .file-input-label i{color:var(--blue-b);}
 .file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
@@ -369,6 +425,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .rentry-m{font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:3px;}
 .rtotal{display:flex;justify-content:space-between;align-items:center;padding-top:11px;border-top:1px solid var(--bg2);font-family:var(--mono);font-weight:700;font-size:12px;color:var(--yellow-b);}
 .rlist{max-height:280px;overflow-y:auto;}
+#genReportBtn{width:100%;justify-content:center;margin-bottom:14px;}
 
 /* TOAST */
 .toasts{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:7px;align-items:center;}
@@ -378,7 +435,43 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 @keyframes tin{to{opacity:1;transform:translateY(0);}}
 @keyframes tout{to{opacity:0;transform:translateY(6px);}}
 
-/* RESPONSIVE */
+/* Inline seconds input inside dur-stepper */
+.dur-sec-input{flex:0.8;font-family:var(--mono);font-size:18px;font-weight:700;color:var(--fg);text-align:center;padding:7px 2px;background:transparent;border:none;border-left:1px solid var(--bg2);outline:none;width:0;min-width:22px;cursor:text;}
+.dur-sec-input:focus{color:var(--yellow-b);background:rgba(250,189,47,.04);}
+
+/* Dot separator between min and sec in stepper */
+.dur-sep{font-family:var(--mono);font-size:13px;color:var(--fg-dim);align-self:center;padding:0 2px;flex-shrink:0;user-select:none;}
+
+/* Break-slot type toggle button */
+.bs-type-btn{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;background:var(--bg2);border:1px solid transparent;color:var(--fg-dim);cursor:pointer;transition:var(--t);letter-spacing:.4px;flex-shrink:0;}
+.bs-type-btn:hover{background:var(--bg3);}
+.bs-type-btn.short{background:rgba(184,187,38,.15);color:var(--green-b);border-color:rgba(184,187,38,.3);}
+.bs-type-btn.long{background:rgba(131,165,152,.15);color:var(--blue-b);border-color:rgba(131,165,152,.3);}
+.break-slot-controls{display:flex;align-items:center;gap:6px;}
+.break-slot.skipped{opacity:0.42;}
+.break-slot.skipped .bs-type-btn{pointer-events:none;cursor:default;}
+
+/* Plan strip add-block dropdown */
+.plan-add-wrap{position:relative;flex-shrink:0;}
+.plan-add-menu{position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--r);display:flex;flex-direction:column;gap:1px;padding:4px;z-index:9000;box-shadow:0 4px 16px rgba(0,0,0,.5);white-space:nowrap;min-width:80px;}
+.plan-add-menu-item{font-family:var(--mono);font-size:9px;font-weight:700;padding:5px 10px;border-radius:3px;background:transparent;border:none;cursor:pointer;text-align:left;letter-spacing:.5px;transition:background var(--t);}
+.plan-add-menu-item.work{color:var(--red-b);}
+.plan-add-menu-item.short{color:var(--green-b);}
+.plan-add-menu-item.long{color:var(--blue-b);}
+.plan-add-menu-item:hover{background:var(--bg2);}
+
+/* Editable main timer */
+.pomo-time-wrap{position:absolute;display:flex;align-items:center;justify-content:center;}
+.pomo-time{font-family:var(--mono);font-size:39px;font-weight:800;color:var(--fg);letter-spacing:-2px;user-select:none;cursor:pointer;transition:color var(--t);}
+.pomo-time:hover{color:var(--yellow-b);}
+.pomo-time.editing{display:none;}
+.pomo-time-input{display:none;font-family:var(--mono);font-size:34px;font-weight:800;color:var(--yellow-b);letter-spacing:-1px;background:transparent;border:none;border-bottom:2px solid var(--yellow-b);outline:none;text-align:center;width:130px;}
+.pomo-time-input.editing{display:block;}
+
+/* plan-block more chip */
+.plan-block.more{background:rgba(168,153,132,.15);color:var(--fg-dim);border:1px solid rgba(168,153,132,.3);}
+
+
 @media(max-width:600px){
   .header{flex-direction:column;align-items:flex-start;}
   .header-right{flex-direction:column;align-items:flex-start;gap:10px;}
@@ -438,7 +531,10 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
           <circle class="ring-bg" cx="95" cy="95" r="85"/>
           <circle class="ring-fg" id="ringFg" cx="95" cy="95" r="85"/>
         </svg>
-        <div class="pomo-time" id="pomoDisplay" aria-live="off">25:00</div>
+        <div class="pomo-time-wrap">
+          <div class="pomo-time" id="pomoDisplay" title="Click to edit time" aria-live="off">25:00</div>
+          <input class="pomo-time-input" id="pomoTimeInput" type="text" maxlength="5" placeholder="MM:SS" aria-label="Edit timer">
+        </div>
       </div>
       <div class="pomo-sub" id="pomoSub">SESSION 1 OF 4</div>
       <span class="sr-only" id="pomoLive" aria-live="polite" style="position:absolute;left:-9999px;"></span>
@@ -496,7 +592,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
         <div class="card">
           <div class="chead">
             <div class="ctitle">POMO LOG</div>
-            <button class="add-btn" id="clearPomoLogBtn" title="Clear today's log" aria-label="Clear pomo log"><i class="fas fa-trash" aria-hidden="true"></i></button>
+            <button class="add-btn danger" id="clearPomoLogBtn" title="Clear today's log" aria-label="Clear pomo log"><i class="fas fa-trash" aria-hidden="true"></i></button>
           </div>
           <div class="pomo-log-list" id="pomoLogList">
             <div class="empty">// no sessions yet today</div>
@@ -573,31 +669,82 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
       <button class="mcls" data-close="pomoSettingsModal" aria-label="Close"><i class="fas fa-times" aria-hidden="true"></i></button>
     </div>
     <div class="modal-body">
-      <div class="field">
-        <label>Work Session Duration</label>
-        <div class="frow">
-          <div class="field"><input type="number" id="psWork" min="1" max="180" placeholder="min" aria-label="Work minutes"> <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:2px">minutes</div></div>
-          <div class="field"><input type="number" id="psWorkSec" min="0" max="59" placeholder="sec" aria-label="Work seconds"> <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:2px">seconds</div></div>
+
+      <!-- Work / Short / Long duration — MM:SS -->
+      <div class="dur-row">
+        <div class="dur-field">
+          <div class="dur-label">Work</div>
+          <div class="dur-stepper" id="stepWork">
+            <button class="dur-btn" data-step="-1" data-target="psWork" aria-label="Decrease">−</button>
+            <input class="dur-num" type="number" id="psWork" min="0" max="240" value="25" aria-label="Work minutes">
+            <span class="dur-unit">m</span><span class="dur-sep">·</span>
+            <input class="dur-num dur-sec-input" type="number" id="psWorkSec" min="0" max="59" value="0" aria-label="Work seconds">
+            <span class="dur-unit">s</span>
+            <button class="dur-btn" data-step="1" data-target="psWork" aria-label="Increase">+</button>
+          </div>
+          <div class="dur-presets" data-for="psWork">
+            <button class="dur-preset" data-val="15">15m</button>
+            <button class="dur-preset" data-val="25">25m</button>
+            <button class="dur-preset" data-val="30">30m</button>
+            <button class="dur-preset" data-val="45">45m</button>
+            <button class="dur-preset" data-val="50">50m</button>
+            <button class="dur-preset" data-val="90">90m</button>
+          </div>
+        </div>
+        <div class="dur-field">
+          <div class="dur-label">Short Break</div>
+          <div class="dur-stepper" id="stepShort">
+            <button class="dur-btn" data-step="-1" data-target="psShort" aria-label="Decrease">−</button>
+            <input class="dur-num" type="number" id="psShort" min="0" max="60" value="5" aria-label="Short break minutes">
+            <span class="dur-unit">m</span><span class="dur-sep">·</span>
+            <input class="dur-num dur-sec-input" type="number" id="psShortSec" min="0" max="59" value="0" aria-label="Short break seconds">
+            <span class="dur-unit">s</span>
+            <button class="dur-btn" data-step="1" data-target="psShort" aria-label="Increase">+</button>
+          </div>
+          <div class="dur-presets" data-for="psShort">
+            <button class="dur-preset" data-val="5">5m</button>
+            <button class="dur-preset" data-val="10">10m</button>
+            <button class="dur-preset" data-val="15">15m</button>
+          </div>
+        </div>
+        <div class="dur-field">
+          <div class="dur-label">Long Break</div>
+          <div class="dur-stepper" id="stepLong">
+            <button class="dur-btn" data-step="-1" data-target="psLong" aria-label="Decrease">−</button>
+            <input class="dur-num" type="number" id="psLong" min="0" max="120" value="15" aria-label="Long break minutes">
+            <span class="dur-unit">m</span><span class="dur-sep">·</span>
+            <input class="dur-num dur-sec-input" type="number" id="psLongSec" min="0" max="59" value="0" aria-label="Long break seconds">
+            <span class="dur-unit">s</span>
+            <button class="dur-btn" data-step="1" data-target="psLong" aria-label="Increase">+</button>
+          </div>
+          <div class="dur-presets" data-for="psLong">
+            <button class="dur-preset" data-val="10">10m</button>
+            <button class="dur-preset" data-val="15">15m</button>
+            <button class="dur-preset" data-val="20">20m</button>
+            <button class="dur-preset" data-val="30">30m</button>
+          </div>
         </div>
       </div>
-      <div class="field">
-        <label>Short Break Duration</label>
-        <div class="frow">
-          <div class="field"><input type="number" id="psShort" min="1" max="60" placeholder="min" aria-label="Short break minutes"> <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:2px">minutes</div></div>
-          <div class="field"><input type="number" id="psShortSec" min="0" max="59" placeholder="sec" aria-label="Short break seconds"> <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:2px">seconds</div></div>
+
+      <!-- Cycle -->
+      <div style="margin-bottom:14px;">
+        <div class="dur-label" style="margin-bottom:5px;">Sessions per cycle</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="cycle-stepper">
+            <button class="dur-btn" data-step="-1" data-target="psCycle" aria-label="Decrease">−</button>
+            <input class="cycle-num" type="number" id="psCycle" min="1" max="12" value="4" aria-label="Cycle count">
+            <button class="dur-btn" data-step="1" data-target="psCycle" aria-label="Increase">+</button>
+          </div>
+          <div class="cycle-presets">
+            <button class="cycle-preset" data-val="2">2</button>
+            <button class="cycle-preset" data-val="3">3</button>
+            <button class="cycle-preset" data-val="4">4</button>
+            <button class="cycle-preset" data-val="5">5</button>
+            <button class="cycle-preset" data-val="6">6</button>
+          </div>
         </div>
       </div>
-      <div class="field">
-        <label>Long Break Duration</label>
-        <div class="frow">
-          <div class="field"><input type="number" id="psLong" min="1" max="120" placeholder="min" aria-label="Long break minutes"> <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:2px">minutes</div></div>
-          <div class="field"><input type="number" id="psLongSec" min="0" max="59" placeholder="sec" aria-label="Long break seconds"> <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:2px">seconds</div></div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Sessions Before Long Break</label>
-        <input type="number" id="psCycle" min="1" max="12" placeholder="e.g. 4">
-      </div>
+
       <hr class="mdivider">
       <div class="toggle-row">
         <div class="toggle-label"><span>Auto-advance</span> — automatically start next phase</div>
@@ -607,17 +754,9 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
           <div class="toggle-thumb"></div>
         </label>
       </div>
-      <div class="toggle-row">
-        <div class="toggle-label"><span>Long break after cycle</span> — last break becomes long break</div>
-        <label class="toggle">
-          <input type="checkbox" id="psLongBreak" checked>
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
       <hr class="mdivider">
       <div style="font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--fg-dim);margin-bottom:4px;">SKIP SPECIFIC BREAKS</div>
-      <div style="font-family:var(--mono);font-size:9px;color:var(--bg3);margin-bottom:6px;">Uncheck any break you want to skip in the cycle</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-bottom:6px;">Uncheck to skip a break · click SHORT / LONG to change type</div>
       <div class="break-slots" id="psBreakSlots"></div>
       <hr class="mdivider">
       <div class="session-preview" id="psPreview">
@@ -731,7 +870,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
         <div class="field"><label for="rEnd">End Date</label><input type="date" id="rEnd"></div>
       </div>
       <div class="errmsg" id="rDateErr" style="margin-bottom:10px" role="alert">Start date cannot be after end date.</div>
-      <button class="btn btn-p" id="genReportBtn" style="width:100%;justify-content:center;margin-bottom:14px"><i class="fas fa-bolt" aria-hidden="true"></i> GENERATE REPORT</button>
+      <button class="btn btn-p" id="genReportBtn"><i class="fas fa-bolt" aria-hidden="true"></i> GENERATE REPORT</button>
       <div class="rlist" id="rList" aria-live="polite"><div class="empty">// run a report to see results</div></div>
       <div class="rtotal" id="rTotal" style="display:none"><span>TOTAL</span><span id="rTotalVal">00:00:00</span></div>
     </div>
@@ -785,10 +924,11 @@ let pomoSettings = {
   work:      25 * 60,
   short:     5  * 60,
   long:      15 * 60,
-  cycle:     4,      // sessions before long break
-  autoAdv:   true,   // auto-advance to next phase
-  longBreak: true,   // replace last short break with a long break
-  skipBreaks: []     // array of 1-based break slot indices to skip (e.g. [2,4] skips break after session 2 and 4)
+  cycle:     4,
+  autoAdv:   true,
+  longBreak: false,
+  skipBreaks: [],
+  customPlan: null   // null = auto-generate from cycle/breaks; array of type strings = custom order
 };
 
 // Pomo session log (today's completed sessions)
@@ -802,6 +942,7 @@ const PROJ_COLORS = ['#458588','#b16286','#689d6a','#d79921','#cc241d','#98971a'
 // === STATE ===
 let mode = 'work', pomoSec = pomoSettings.work, pomoTotal = pomoSettings.work;
 let pomoRunning = false, pomoInterval = null, sessionsD = 0;
+let planIdx = 0, planDrag = null; // planDrag: active pointer drag state
 let taskRunning = false, taskStart = null, taskInterval = null, activeEntry = null;
 let timeEntries = [], goals = [], projects = [], viewDate = new Date();
 let calViewDate = new Date(); // separate calendar navigation
@@ -966,40 +1107,271 @@ const updateDots = () => {
 // Helper: should break at slot (1-based) be shown/taken?
 const breakEnabled = slot => !(pomoSettings.skipBreaks||[]).includes(slot);
 
-// Build a visual plan of the upcoming session cycle
-const updatePlan = () => {
-  const plan = $('pomoPlan');
-  plan.innerHTML = '';
-  plan.style.display = pomoSettings.autoAdv ? '' : 'none';
+// === CUSTOM PLAN ===
+const getPlanTypes = () => {
+  if (pomoSettings.customPlan && pomoSettings.customPlan.length > 0)
+    return [...pomoSettings.customPlan];
+  const cycle = pomoSettings.cycle || 4;
+  const types = [];
+  for (let i = 0; i < cycle; i++) {
+    types.push('work');
+    const slot = i + 1;
+    if (breakEnabled(slot)) types.push('short');
+  }
+  return types;
+};
+const planSecFor = t => t === 'work' ? pomoSettings.work : t === 'short' ? pomoSettings.short : pomoSettings.long;
+const isCustomPlan = () => !!(pomoSettings.customPlan && pomoSettings.customPlan.length > 0);
+const initCustomPlan = () => { if (!isCustomPlan()) pomoSettings.customPlan = getPlanTypes(); };
+
+// Write all derived values back to pomoSettings so settings modal is fully in sync
+const syncSettingsFromPlan = () => {
+  const plan = pomoSettings.customPlan;
+  if (!plan || !plan.length) return;
+  const workCount = plan.filter(t => t === 'work').length;
+  if (workCount > 0) pomoSettings.cycle = workCount;
+  pomoSettings.longBreak = plan.includes('long');
+  // skipBreaks not derivable with free-stacking — leave unchanged
+};
+
+// Only rule: plan must contain at least one work block
+const isPlanValid = plan => !!(plan && plan.includes('work'));
+
+const cycleBlockType = idx => {
+  initCustomPlan();
+  const order = ['work','short','long'];
+  const original = pomoSettings.customPlan[idx];
+  let next = original;
+  for (let i = 0; i < order.length; i++) {
+    next = order[(order.indexOf(next) + 1) % order.length];
+    const trial = [...pomoSettings.customPlan]; trial[idx] = next;
+    if (isPlanValid(trial)) { pomoSettings.customPlan[idx] = next; break; }
+  }
+  if (pomoSettings.customPlan[idx] === original) { toast('Need at least one work block — add more first'); return; }
+  syncSettingsFromPlan(); save(); renderPlanStrip();
+};
+const removeBlock = idx => {
+  initCustomPlan();
+  if (pomoSettings.customPlan.length <= 1) return;
+  const trial = [...pomoSettings.customPlan]; trial.splice(idx, 1);
+  if (!isPlanValid(trial)) { toast('Need at least one work block in the session'); return; }
+  pomoSettings.customPlan.splice(idx, 1);
+  if (planIdx >= pomoSettings.customPlan.length) planIdx = 0;
+  syncSettingsFromPlan(); save(); renderPlanStrip();
+};
+const addBlock = (type = 'short') => {
+  initCustomPlan();
+  // Only rule: plan must contain at least one work block. Adding any type is fine.
+  pomoSettings.customPlan.push(type);
+  syncSettingsFromPlan(); save(); renderPlanStrip();
+};
+const resetPlan = () => { pomoSettings.customPlan = null; planIdx = 0; save(); renderPlanStrip(); toast('Plan reset to auto'); };
+
+const advancePlan = (autostart = false) => {
+  const types = getPlanTypes();
+  if (!types.length) return;
+  planIdx = (planIdx + 1) % types.length;
+  if (types[planIdx] === 'work') sessionsD++;
+  renderPlanStrip(); updateDots();
+  setMode(types[planIdx], autostart);
+};
+
+const renderPlanStrip = () => {
+  const container = $('pomoPlan');
+  container.innerHTML = '';
   if (!pomoSettings.autoAdv) return;
 
-  const cycle = pomoSettings.cycle || 4;
-  const blocks = [];
-  for (let i = 0; i < cycle; i++) {
-    blocks.push({ type: 'work', sec: pomoSettings.work });
-    const slot = i + 1; // 1-based slot
-    if (breakEnabled(slot)) {
-      const isLast = (i === cycle - 1);
-      const type = (isLast && pomoSettings.longBreak) ? 'long' : 'short';
-      const sec  = type === 'long' ? pomoSettings.long : pomoSettings.short;
-      blocks.push({ type, sec });
-    }
-  }
-  const totalSec = blocks.reduce((s, b) => s + b.sec, 0);
-  const show = blocks.slice(0, Math.min(9, blocks.length));
-  show.forEach(b => {
-    const el = document.createElement('div');
-    el.className = `plan-block ${b.type}`;
-    el.textContent = fmtHuman(b.sec);
-    el.title = b.type === 'work' ? 'Work session' : b.type === 'short' ? 'Short break' : 'Long break';
-    plan.appendChild(el);
+  const types = getPlanTypes();
+  const totalSec = types.reduce((s, t) => s + planSecFor(t), 0);
+  const custom = isCustomPlan();
+  const blockEls = [];
+
+  // Insertion line (hidden until drag starts)
+  const insertLine = document.createElement('div');
+  insertLine.className = 'plan-insert-line';
+  insertLine.style.display = 'none';
+  container.appendChild(insertLine);
+
+  // Render blocks
+  types.forEach((type, idx) => {
+    const block = document.createElement('div');
+    block.className = `plan-block ${type}${idx === planIdx ? ' plan-cur' : ''}`;
+    block.title = `${type === 'work' ? 'Work' : type === 'short' ? 'Short break' : 'Long break'} · click to change`;
+    block.textContent = fmtHuman(planSecFor(type));
+    block.dataset.idx = idx;
+
+    const del = document.createElement('button');
+    del.className = 'pb-del'; del.textContent = '×'; del.title = 'Remove';
+    del.setAttribute('tabindex', '-1');
+    del.addEventListener('click', e => { e.stopPropagation(); removeBlock(idx); });
+    block.appendChild(del);
+
+    // Click to cycle (only if not dragging)
+    block.addEventListener('click', e => {
+      if (planDrag) return;
+      if (!e.target.classList.contains('pb-del')) cycleBlockType(idx);
+    });
+
+    // Pointer drag
+    block.addEventListener('pointerdown', e => {
+      if (e.target.classList.contains('pb-del') || e.button !== 0) return;
+      e.preventDefault();
+      block.setPointerCapture(e.pointerId);
+
+      const rect = block.getBoundingClientRect();
+      // Ghost follows cursor
+      const ghost = document.createElement('div');
+      ghost.className = `plan-ghost ${type}`;
+      ghost.textContent = fmtHuman(planSecFor(type));
+      ghost.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;`;
+      document.body.appendChild(ghost);
+
+      planDrag = {
+        srcIdx: idx,
+        insertIdx: idx,
+        ghost,
+        offsetX: e.clientX - rect.left,
+        offsetY: e.clientY - rect.top,
+        moved: false
+      };
+
+      block.classList.add('dragging');
+      insertLine.style.display = '';
+    });
+
+    block.addEventListener('pointermove', e => {
+      if (!planDrag || planDrag.srcIdx !== idx) return;
+      planDrag.moved = true;
+      const { ghost, offsetX, offsetY } = planDrag;
+
+      // Move ghost
+      const gx = e.clientX - offsetX, gy = e.clientY - offsetY;
+      ghost.style.left = gx + 'px';
+      ghost.style.top = gy + 'px';
+      ghost.style.transform = `rotate(${(e.clientX - (gx + ghost.offsetWidth/2)) * 0.02}deg) scale(1.08)`;
+
+      // Find insertion index by checking cursor X against block midpoints
+      const containerRect = container.getBoundingClientRect();
+      let insertIdx = types.length;
+      for (let i = 0; i < blockEls.length; i++) {
+        if (i === planDrag.srcIdx) continue;
+        const r = blockEls[i].getBoundingClientRect();
+        if (e.clientX < r.left + r.width / 2) { insertIdx = i; break; }
+      }
+      planDrag.insertIdx = insertIdx;
+
+      // Shift non-dragging blocks to open a gap
+      const srcRect = blockEls[planDrag.srcIdx].getBoundingClientRect();
+      const gapW = srcRect.width + 4; // block width + gap
+      blockEls.forEach((b, i) => {
+        if (i === planDrag.srcIdx) return;
+        b.classList.add('shifting');
+        // Logical index in the "without dragged item" list
+        const logicalI = i < planDrag.srcIdx ? i : i - 1;
+        const shift = logicalI >= insertIdx ? gapW : 0;
+        b.style.transform = `translateX(${shift}px)`;
+      });
+
+      // Position insertion line
+      let lineX;
+      const nonDrag = blockEls.filter((_, i) => i !== planDrag.srcIdx);
+      if (insertIdx === 0 || nonDrag.length === 0) {
+        const firstEl = nonDrag[0] || blockEls[0];
+        lineX = firstEl.getBoundingClientRect().left - containerRect.left - 4;
+      } else {
+        const beforeEl = nonDrag[Math.min(insertIdx, nonDrag.length) - 1];
+        const br = beforeEl.getBoundingClientRect();
+        lineX = br.right - containerRect.left + 2;
+      }
+      insertLine.style.left = Math.max(0, lineX) + 'px';
+    });
+
+    const endDrag = e => {
+      if (!planDrag || planDrag.srcIdx !== idx) return;
+      const { srcIdx, insertIdx, ghost, moved } = planDrag;
+
+      ghost.remove();
+      insertLine.style.display = 'none';
+      blockEls.forEach(b => { b.style.transform = ''; b.classList.remove('shifting','dragging'); });
+      planDrag = null;
+
+      if (!moved) return; // treat as click — cycleBlockType handles it
+
+      // Commit reorder
+      if (srcIdx !== insertIdx && srcIdx !== insertIdx - 1) {
+        initCustomPlan();
+        const plan = pomoSettings.customPlan;
+        const [item] = plan.splice(srcIdx, 1);
+        const adj = insertIdx > srcIdx ? insertIdx - 1 : insertIdx;
+        const trial = [...plan]; trial.splice(adj, 0, item);
+        if (isPlanValid(trial)) {
+          plan.splice(adj, 0, item);
+          if (planIdx === srcIdx) planIdx = adj;
+          syncSettingsFromPlan(); save();
+        } else {
+          plan.splice(srcIdx, 0, item); // put back
+          toast("Must keep at least one work block");
+        }
+      }
+      renderPlanStrip();
+      // If settings modal is open, keep it in sync with drag results
+      if ($('pomoSettingsModal').classList.contains('open')) {
+        const workCount = (pomoSettings.customPlan || []).filter(t => t === 'work').length;
+        $('psCycle').value = Math.max(1, workCount);
+        renderBreakSlots();
+        updateSettingsPreview();
+      }
+    };
+
+    block.addEventListener('pointerup', endDrag);
+    block.addEventListener('pointercancel', endDrag);
+
+    container.appendChild(block);
+    blockEls.push(block);
   });
-  if (blocks.length > 9) {
-    const el = document.createElement('div'); el.className = 'plan-block more';
-    el.textContent = `+${blocks.length - 9}`; plan.appendChild(el);
+
+  // + add button with type dropdown
+  const addWrap = document.createElement('div');
+  addWrap.className = 'plan-add-wrap';
+  const addBtn = document.createElement('button');
+  addBtn.className = 'plan-add-btn'; addBtn.title = 'Add block'; addBtn.textContent = '+';
+  addBtn.setAttribute('aria-label', 'Add block');
+  let addMenuOpen = false;
+  addBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const existing = addWrap.querySelector('.plan-add-menu');
+    if (existing) { existing.remove(); addMenuOpen = false; return; }
+    const menu = document.createElement('div');
+    menu.className = 'plan-add-menu';
+    [['WORK', 'work'], ['SHORT', 'short'], ['LONG', 'long']].forEach(([label, type]) => {
+      const item = document.createElement('button');
+      item.className = `plan-add-menu-item ${type}`;
+      item.textContent = label;
+      item.addEventListener('click', ev => { ev.stopPropagation(); menu.remove(); addMenuOpen = false; addBlock(type); });
+      menu.appendChild(item);
+    });
+    addWrap.appendChild(menu);
+    addMenuOpen = true;
+    setTimeout(() => {
+      const close = ev => { if (!addWrap.contains(ev.target)) { menu.remove(); addMenuOpen = false; document.removeEventListener('click', close); } };
+      document.addEventListener('click', close);
+    }, 0);
+  });
+  addWrap.appendChild(addBtn);
+  container.appendChild(addWrap);
+
+  // Total
+  const tot = document.createElement('span');
+  tot.className = 'plan-total'; tot.textContent = `= ${fmtHuman(totalSec)} total`;
+  container.appendChild(tot);
+
+  // Reset (only when customised)
+  if (custom) {
+    const rst = document.createElement('button');
+    rst.className = 'plan-reset'; rst.textContent = '↺'; rst.title = 'Reset to auto';
+    rst.addEventListener('click', resetPlan);
+    container.appendChild(rst);
   }
-  const tot = document.createElement('span'); tot.className = 'plan-total';
-  tot.textContent = `= ${fmtHuman(totalSec)} total`; plan.appendChild(tot);
 };
 
 const updateAutoBadge = () => {
@@ -1011,7 +1383,7 @@ const updateAutoBadge = () => {
 $('autoBadge').addEventListener('click', () => {
   pomoSettings.autoAdv = !pomoSettings.autoAdv;
   updateAutoBadge();
-  updatePlan();
+  renderPlanStrip();
   save();
   toast(pomoSettings.autoAdv ? 'Auto-advance ON' : 'Manual mode ON');
 });
@@ -1062,36 +1434,19 @@ const tickPomo = () => {
     pomoStartBtn.setAttribute('aria-label','Start timer');
     pomoStartBtn.classList.remove('run');
     playBell();
-    const cycle = pomoSettings.cycle || 4;
     // Log the completed session
     logPomoSession(mode, pomoTotal);
     if (mode === 'work') {
-      sessionsD++;
-      if (Notification.permission === 'granted') new Notification('FOCUS – Session complete!', { body: `Session ${sessionsD} done. Time for a break.` });
-      toast(`Session ${sessionsD} complete! Take a break.`, 'ok');
-      const slot = sessionsD % cycle === 0 ? cycle : sessionsD % cycle;
-      const isLast = (sessionsD % cycle === 0);
-      let nextMode;
-      if (!breakEnabled(slot)) {
-        nextMode = 'work'; // this break slot is skipped
-      } else if (isLast && pomoSettings.longBreak) {
-        nextMode = 'long';
-      } else {
-        nextMode = 'short';
-      }
-      if (pomoSettings.autoAdv) {
-        setTimeout(() => setMode(nextMode, true), 800);
-      } else {
-        setMode(nextMode);
-      }
+      if (Notification.permission === 'granted') new Notification('FOCUS – Session complete!', { body: 'Take a break.' });
+      toast(`Session complete! Take a break.`, 'ok');
     } else {
-      if(Notification.permission==='granted') new Notification('FOCUS – Break over!',{body:'Time to focus.'});
-      toast('Break over! Time to focus.','ok');
-      if(pomoSettings.autoAdv){
-        setTimeout(()=>setMode('work',true),800);
-      } else {
-        setMode('work');
-      }
+      if (Notification.permission === 'granted') new Notification('FOCUS – Break over!', { body: 'Time to focus.' });
+      toast('Break over! Time to focus.', 'ok');
+    }
+    if (pomoSettings.autoAdv) {
+      setTimeout(() => advancePlan(true), 800);
+    } else {
+      advancePlan(false);
     }
   }
 };
@@ -1108,115 +1463,456 @@ pomoStartBtn.addEventListener('click',()=>{
   }
 });
 $('pomoReset').addEventListener('click',()=>{ clearInterval(pomoInterval); pomoRunning=false; setMode(mode); });
-$('pomoSkip').addEventListener('click', () => {
-  clearInterval(pomoInterval); pomoRunning = false;
-  const cycle = pomoSettings.cycle || 4;
-  if (mode === 'work') sessionsD++;
-  let next;
-  if (mode === 'work') {
-    const slot = sessionsD % cycle === 0 ? cycle : sessionsD % cycle;
-    const isLast = (sessionsD % cycle === 0);
-    if (!breakEnabled(slot)) { next = 'work'; }
-    else if (isLast && pomoSettings.longBreak) { next = 'long'; }
-    else { next = 'short'; }
-  } else { next = 'work'; }
-  setMode(next); updateDots();
-});
-document.querySelectorAll('.pomo-tab').forEach(b=>b.addEventListener('click',()=>{ if(pomoRunning){ clearInterval(pomoInterval); pomoRunning=false; pomoStartBtn.innerHTML='<i class="fas fa-play" aria-hidden="true"></i>'; pomoStartBtn.classList.remove('run'); } setMode(b.dataset.m); }));
 
-// === POMODORO SETTINGS ===
-const renderBreakSlots = () => {
-  const cy = parseInt($('psCycle').value) || 4;
-  const longBreak = $('psLongBreak').checked;
-  const container = $('psBreakSlots');
-  container.innerHTML = '';
-  for (let i = 1; i <= cy; i++) {
-    const isLast = (i === cy);
-    const type = (isLast && longBreak) ? 'long' : 'short';
-    const skip = (pomoSettings.skipBreaks||[]).includes(i);
-    const slot = document.createElement('div');
-    slot.className = 'break-slot';
-    slot.innerHTML = `<div class="break-slot-label">Break after <b>Session ${i}</b> — <span class="${type==='long'?'long':''}">${type === 'long' ? 'LONG BREAK' : 'SHORT BREAK'}</span></div>
-      <input type="checkbox" data-slot="${i}" ${skip ? '' : 'checked'} title="Include this break">`;
-    container.appendChild(slot);
-  }
-  container.querySelectorAll('input[type=checkbox]').forEach(cb => cb.addEventListener('change', updateSettingsPreview));
+// === CLICK-TO-EDIT MAIN TIMER ===
+const pomoInput = $('pomoTimeInput');
+
+const enterTimerEdit = () => {
+  if (pomoRunning) return; // only when paused/stopped
+  pomoDisp.classList.add('editing');
+  pomoInput.classList.add('editing');
+  pomoInput.value = fmtMS(pomoSec);
+  pomoInput.select();
 };
 
+const commitTimerEdit = () => {
+  const raw = pomoInput.value.trim();
+  const match = raw.match(/^(\d{1,2}):?(\d{2})$/) || raw.match(/^(\d+)$/);
+  if (match) {
+    let mins, secs;
+    if (match[2] !== undefined) { mins = parseInt(match[1]); secs = parseInt(match[2]); }
+    else { mins = parseInt(match[1]); secs = 0; }
+    const total = Math.max(1, mins * 60 + Math.min(secs, 59));
+    pomoSec = total; pomoTotal = total;
+  }
+  pomoDisp.classList.remove('editing');
+  pomoInput.classList.remove('editing');
+  pomoDisp.textContent = fmtMS(pomoSec);
+  updateRing();
+  document.title = `${fmtMS(pomoSec)} — FOCUS`;
+};
+
+pomoDisp.addEventListener('click', enterTimerEdit);
+pomoInput.addEventListener('blur', commitTimerEdit);
+pomoInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); commitTimerEdit(); }
+  if (e.key === 'Escape') {
+    pomoDisp.classList.remove('editing');
+    pomoInput.classList.remove('editing');
+  }
+});
+$('pomoSkip').addEventListener('click', () => {
+  clearInterval(pomoInterval); pomoRunning = false;
+  if (mode === 'work') { logPomoSession(mode, pomoTotal - pomoSec); }
+  advancePlan(false);
+});
+document.querySelectorAll('.pomo-tab').forEach(b=>b.addEventListener('click',()=>{
+  if(pomoRunning){ clearInterval(pomoInterval); pomoRunning=false; pomoStartBtn.innerHTML='<i class="fas fa-play" aria-hidden="true"></i>'; pomoStartBtn.classList.remove('run'); }
+  const m = b.dataset.m;
+  // Snap planIdx to first matching block in plan
+  const types = getPlanTypes();
+  const found = types.findIndex((t, i) => t === m && i >= planIdx);
+  if (found !== -1) planIdx = found;
+  else { const first = types.findIndex(t => t === m); if (first !== -1) planIdx = first; }
+  setMode(m); renderPlanStrip();
+}));
+
+// === POMODORO SETTINGS ===
+// Immediately commit break slot UI state → customPlan → plan strip (live sync)
+const applySlotsToPlan = () => {
+  const cy = parseInt($('psCycle').value) || 4;
+  const slots = $('psBreakSlots').querySelectorAll('.break-slot');
+  const newPlan = [];
+  for (let i = 0; i < cy; i++) {
+    newPlan.push('work');
+    if (i < slots.length) {
+      const cb      = slots[i].querySelector('input[type=checkbox]');
+      const typeBtn = slots[i].querySelector('.bs-type-btn');
+      if (cb && cb.checked) newPlan.push(typeBtn ? typeBtn.dataset.type : 'short');
+    }
+  }
+  pomoSettings.customPlan = newPlan;
+  syncSettingsFromPlan();
+  save();
+  updateSettingsPreview(); // this will renderPlanStrip internally
+};
+
+const renderBreakSlots = () => {
+  const cy = parseInt($('psCycle').value) || 4;
+  const container = $('psBreakSlots');
+
+  // Preserve user-edited states from already-rendered slots before clearing
+  const existingStates = {};
+  container.querySelectorAll('.break-slot').forEach((slot, i) => {
+    const cb  = slot.querySelector('input[type=checkbox]');
+    const btn = slot.querySelector('.bs-type-btn');
+    existingStates[i] = {
+      enabled: cb  ? cb.checked          : true,
+      type:    btn ? btn.dataset.type : 'short'
+    };
+  });
+
+  container.innerHTML = '';
+
+  for (let i = 0; i < cy; i++) {
+    let breakType = 'short';
+    let enabled   = true;
+
+    if (i in existingStates) {
+      // Keep whatever the user already set in this session
+      breakType = existingStates[i].type;
+      enabled   = existingStates[i].enabled;
+    } else if (isCustomPlan()) {
+      // Derive from the live customPlan: find the break (if any) after the i-th work block
+      const plan = pomoSettings.customPlan;
+      let workCount = 0;
+      let found = false;
+      for (let j = 0; j < plan.length; j++) {
+        if (plan[j] === 'work') {
+          workCount++;
+          if (workCount === i + 1) {
+            if (j + 1 < plan.length && (plan[j+1] === 'short' || plan[j+1] === 'long')) {
+              breakType = plan[j+1];
+              enabled   = true;
+            } else {
+              enabled = false;
+            }
+            found = true;
+            break;
+          }
+        }
+      }
+      if (!found) { enabled = false; }
+    } else {
+      // Simple model: derive from skipBreaks array
+      const skip = pomoSettings.skipBreaks || [];
+      enabled = !skip.includes(i + 1);
+    }
+
+    const slot = document.createElement('div');
+    slot.className = 'break-slot' + (enabled ? '' : ' skipped');
+
+    const label = document.createElement('div');
+    label.className = 'break-slot-label';
+    label.innerHTML = `Break after <b>Session ${i + 1}</b>`;
+
+    const controls = document.createElement('div');
+    controls.className = 'break-slot-controls';
+
+    // SHORT / LONG toggle button — also shows the duration
+    const typeBtn = document.createElement('button');
+    const getDurLabel = t => fmtHuman(t === 'short' ? pomoSettings.short : pomoSettings.long);
+    typeBtn.className = `bs-type-btn ${breakType}`;
+    typeBtn.textContent = (breakType === 'long' ? 'LONG' : 'SHORT') + ' · ' + getDurLabel(breakType);
+    typeBtn.dataset.type = breakType;
+    typeBtn.title = 'Click to toggle SHORT / LONG break';
+    typeBtn.disabled = !enabled;   // Fix: can't change type of a skipped break
+    typeBtn.addEventListener('click', () => {
+      const newType = typeBtn.dataset.type === 'short' ? 'long' : 'short';
+      typeBtn.dataset.type = newType;
+      typeBtn.textContent = (newType === 'long' ? 'LONG' : 'SHORT') + ' · ' + getDurLabel(newType);
+      typeBtn.className = `bs-type-btn ${newType}`;
+      applySlotsToPlan();
+    });
+
+    // Enabled checkbox
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = enabled;
+    cb.dataset.slot = String(i + 1);
+    cb.title = 'Include this break';
+    cb.style.accentColor = 'var(--aqua)';
+    cb.addEventListener('change', () => {
+      // Fix: toggle disabled state on type button + slot dimming
+      const isNowEnabled = cb.checked;
+      typeBtn.disabled = !isNowEnabled;
+      slot.classList.toggle('skipped', !isNowEnabled);
+      applySlotsToPlan();
+    });
+
+    controls.appendChild(typeBtn);
+    controls.appendChild(cb);
+
+    slot.appendChild(label);
+    slot.appendChild(controls);
+    container.appendChild(slot);
+  }
+};
+
+// Snapshot of settings before modal is opened — used to restore on Cancel
+let _origPomoSettings = null;
+
 $('pomoSettingsBtn').addEventListener('click', () => {
+  // Save snapshot for Cancel
+  _origPomoSettings = {
+    work: pomoSettings.work, short: pomoSettings.short, long: pomoSettings.long,
+    cycle: pomoSettings.cycle, autoAdv: pomoSettings.autoAdv,
+    customPlan: pomoSettings.customPlan ? [...pomoSettings.customPlan] : null,
+    skipBreaks: [...(pomoSettings.skipBreaks || [])]
+  };
+
   $('psWork').value = Math.floor(pomoSettings.work / 60);
   $('psWorkSec').value = pomoSettings.work % 60;
   $('psShort').value = Math.floor(pomoSettings.short / 60);
   $('psShortSec').value = pomoSettings.short % 60;
   $('psLong').value = Math.floor(pomoSettings.long / 60);
   $('psLongSec').value = pomoSettings.long % 60;
-  $('psCycle').value = pomoSettings.cycle;
+  // Sync cycle count from customPlan if one exists (so form always matches reality)
+  if (isCustomPlan()) {
+    const workCount = pomoSettings.customPlan.filter(t => t === 'work').length;
+    $('psCycle').value = Math.max(1, workCount);
+  } else {
+    $('psCycle').value = pomoSettings.cycle;
+  }
   $('psAutoAdv').checked = pomoSettings.autoAdv;
-  $('psLongBreak').checked = pomoSettings.longBreak !== false;
+  refreshAllPresets();
+  $('psBreakSlots').innerHTML = ''; // Fix: clear stale DOM so slots always re-derive from customPlan on fresh open
   renderBreakSlots();
   updateSettingsPreview();
   openM('pomoSettingsModal');
 });
 
-const updateSettingsPreview = () => {
-  const wm = parseInt($('psWork').value) || 25, ws = parseInt($('psWorkSec').value) || 0;
-  const sm = parseInt($('psShort').value) || 5,  ss = parseInt($('psShortSec').value) || 0;
-  const lm = parseInt($('psLong').value) || 15,  ls = parseInt($('psLongSec').value) || 0;
-  const cy = parseInt($('psCycle').value) || 4;
-  const longBreak = $('psLongBreak').checked;
-  // Re-render break slots if cycle changed
-  const slotCount = $('psBreakSlots').querySelectorAll('.break-slot').length;
-  if (slotCount !== cy) renderBreakSlots();
-  // Read which slots are enabled
-  const enabledSlots = new Set();
-  $('psBreakSlots').querySelectorAll('input[type=checkbox]').forEach(cb => {
-    if (cb.checked) enabledSlots.add(parseInt(cb.dataset.slot));
-  });
-  const work = wm * 60 + ws, short = sm * 60 + ss, long = lm * 60 + ls;
-  const blocks = []; let total = 0;
-  for (let i = 0; i < cy; i++) {
-    blocks.push({ t: 'work', s: work }); total += work;
-    const slot = i + 1;
-    if (enabledSlots.has(slot)) {
-      const isLast = (slot === cy);
-      const type = (isLast && longBreak) ? 'long' : 'short';
-      const sec = type === 'long' ? long : short;
-      blocks.push({ t: type, s: sec }); total += sec;
-    }
+// Cancel: restore snapshot so live changes are reverted
+const cancelPomoSettings = () => {
+  if (_origPomoSettings) {
+    pomoSettings.work  = _origPomoSettings.work;
+    pomoSettings.short = _origPomoSettings.short;
+    pomoSettings.long  = _origPomoSettings.long;
+    pomoSettings.cycle = _origPomoSettings.cycle;
+    pomoSettings.autoAdv = _origPomoSettings.autoAdv;
+    pomoSettings.customPlan = _origPomoSettings.customPlan;
+    pomoSettings.skipBreaks = _origPomoSettings.skipBreaks;
+    _origPomoSettings = null;
+    if (!pomoRunning) setMode(mode);
+    renderPlanStrip(); save();
   }
-  const pb = $('psPreviewBlocks'); pb.innerHTML = '';
-  blocks.slice(0, Math.min(11, blocks.length)).forEach(b => {
-    const el = document.createElement('div'); el.className = `plan-block ${b.t}`; el.textContent = fmtHuman(b.s); pb.appendChild(el);
-  });
-  if (blocks.length > 11) { const el = document.createElement('div'); el.className = 'plan-block more'; el.textContent = `+${blocks.length - 11}`; pb.appendChild(el); }
-  $('psPreviewStat').innerHTML = `<b>${cy} sessions</b> · total <b>${fmtHuman(total)}</b> (work: <b>${fmtHuman(work * cy)}</b>)`;
+  // Modal closed by the generic data-close handler (runs before or after this)
+};
+// Wire both the X close and the Cancel button to also restore originals
+document.querySelectorAll('[data-close="pomoSettingsModal"]').forEach(b => {
+  b.addEventListener('click', cancelPomoSettings);
+});
+
+let _previewRendering = false; // guard against infinite loop
+const updateSettingsPreview = () => {
+  if (_previewRendering) return;
+  _previewRendering = true;
+  try {
+    const wm = parseInt($('psWork').value)||25,  ws = parseInt($('psWorkSec').value)||0;
+    const sm = parseInt($('psShort').value)||5,   ss = parseInt($('psShortSec').value)||0;
+    const lm = parseInt($('psLong').value)||15,   ls = parseInt($('psLongSec').value)||0;
+    const cy = parseInt($('psCycle').value)||4;
+
+    // === LIVE APPLY durations immediately — plan strip reflects changes before APPLY ===
+    const newWork  = Math.max(60, wm*60+ws);
+    const newShort = Math.max(30, sm*60+ss);
+    const newLong  = Math.max(60, lm*60+ls);
+    pomoSettings.work  = newWork;
+    pomoSettings.short = newShort;
+    pomoSettings.long  = newLong;
+
+    const secFor = t => t==='work'?newWork:t==='short'?newShort:newLong;
+
+    // Keep break-slot count in sync with cycle field
+    const slotCount = $('psBreakSlots').querySelectorAll('.break-slot').length;
+    if (slotCount !== cy) renderBreakSlots();
+
+    // === Build preview types ===
+    // If a customPlan exists (from drag or previous apply), use it directly.
+    // Otherwise build from cycle + slot states (type + enabled).
+    let finalTypes;
+    if (isCustomPlan()) {
+      finalTypes = [...pomoSettings.customPlan];
+    } else {
+      finalTypes = [];
+      const slots = $('psBreakSlots').querySelectorAll('.break-slot');
+      for (let i = 0; i < cy; i++) {
+        finalTypes.push('work');
+        if (i < slots.length) {
+          const cb      = slots[i].querySelector('input[type=checkbox]');
+          const typeBtn = slots[i].querySelector('.bs-type-btn');
+          if (cb && cb.checked) finalTypes.push(typeBtn ? typeBtn.dataset.type : 'short');
+        }
+      }
+    }
+
+    const blocks = finalTypes.map(t => ({ t, s: secFor(t) }));
+    const total = blocks.reduce((s,b)=>s+b.s, 0);
+    const workTotal = blocks.filter(b=>b.t==='work').reduce((s,b)=>s+b.s, 0);
+    const sessions = blocks.filter(b=>b.t==='work').length;
+
+    const pb = $('psPreviewBlocks'); pb.innerHTML = '';
+    blocks.slice(0, 11).forEach(b => {
+      const el = document.createElement('div');
+      el.className = `plan-block ${b.t}`;
+      el.textContent = fmtHuman(b.s);
+      pb.appendChild(el);
+    });
+    if (blocks.length > 11) {
+      const el = document.createElement('div');
+      el.className = 'plan-block more';
+      el.textContent = `+${blocks.length - 11}`;
+      pb.appendChild(el);
+    }
+    $('psPreviewStat').innerHTML = `<b>${sessions} sessions</b> · total <b>${fmtHuman(total)}</b> (work: <b>${fmtHuman(workTotal)}</b>)`;
+
+    // === LIVE SYNC: update the main timer ring/display ===
+    if (!pomoRunning) {
+      const livePreviewSec = mode === 'work' ? newWork : mode === 'short' ? newShort : newLong;
+      pomoSec = livePreviewSec; pomoTotal = livePreviewSec;
+      pomoDisp.textContent = fmtMS(pomoSec);
+      updateRing();
+      document.title = `${fmtMS(pomoSec)} — FOCUS`;
+    }
+
+    // Fix 6: refresh duration labels inside type buttons whenever steppers change
+    $('psBreakSlots').querySelectorAll('.bs-type-btn').forEach(btn => {
+      const t = btn.dataset.type;
+      const dur = fmtHuman(t === 'short' ? newShort : newLong);
+      btn.textContent = (t === 'long' ? 'LONG' : 'SHORT') + ' · ' + dur;
+    });
+
+    // === LIVE SYNC: update plan strip so outside reflects inside immediately ===
+    renderPlanStrip();
+  } finally {
+    _previewRendering = false;
+  }
 };
 
-['psWork','psWorkSec','psShort','psShortSec','psLong','psLongSec'].forEach(id => $(id).addEventListener('input', updateSettingsPreview));
-['psAutoAdv'].forEach(id => $(id).addEventListener('change', updateSettingsPreview));
-$('psCycle').addEventListener('input', () => { renderBreakSlots(); updateSettingsPreview(); });
-$('psLongBreak').addEventListener('change', () => { renderBreakSlots(); updateSettingsPreview(); });
+// === STEPPER WIRING ===
+const clampInput = el => {
+  const v = parseInt(el.value) || 0;
+  el.value = Math.max(parseInt(el.min)||0, Math.min(parseInt(el.max)||999, v));
+};
+
+// Hold-to-repeat state
+let stepHoldTimer = null, stepHoldInterval = null;
+const doStep = (targetId, delta) => {
+  const el = $(targetId); if (!el) return;
+  const secEl = $(targetId + 'Sec');
+  if (secEl) {
+    // Step the total duration by 1 minute, preserving seconds
+    let totalSecs = (parseInt(el.value) || 0) * 60 + (parseInt(secEl.value) || 0);
+    totalSecs = Math.max(0, totalSecs + delta * 60);
+    const maxMins = parseInt(el.max) || 999;
+    const clampedTotal = Math.min(maxMins * 60 + 59, totalSecs);
+    el.value = Math.floor(clampedTotal / 60);
+    secEl.value = clampedTotal % 60;
+  } else {
+    el.value = (parseInt(el.value) || 0) + delta;
+    clampInput(el);
+  }
+  refreshPresets(targetId);
+  updateSettingsPreview();
+};
+const startStep = (targetId, delta) => {
+  doStep(targetId, delta);
+  stepHoldTimer = setTimeout(() => {
+    stepHoldInterval = setInterval(() => doStep(targetId, delta), 55);
+  }, 280);
+};
+const stopStep = () => {
+  clearTimeout(stepHoldTimer); clearInterval(stepHoldInterval);
+  stepHoldTimer = stepHoldInterval = null;
+};
+
+document.querySelectorAll('.dur-btn').forEach(btn => {
+  const delta = parseInt(btn.dataset.step);
+  const target = btn.dataset.target;
+  btn.addEventListener('pointerdown', e => { e.preventDefault(); startStep(target, delta); });
+  btn.addEventListener('pointerup', stopStep);
+  btn.addEventListener('pointerleave', stopStep);
+  btn.addEventListener('pointercancel', stopStep);
+});
+
+// Preset chips
+const refreshPresets = (targetId) => {
+  const val = parseInt($(targetId)?.value);
+  document.querySelectorAll(`.dur-presets[data-for="${targetId}"] .dur-preset, .cycle-presets .cycle-preset`).forEach(p => {
+    if (p.closest(`[data-for="${targetId}"]`) || targetId === 'psCycle')
+      p.classList.toggle('on', parseInt(p.dataset.val) === val);
+  });
+};
+const refreshAllPresets = () => ['psWork','psShort','psLong','psCycle'].forEach(refreshPresets);
+
+document.querySelectorAll('.dur-preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.closest('.dur-presets').dataset.for;
+    $(targetId).value = btn.dataset.val;
+    refreshPresets(targetId);
+    updateSettingsPreview();
+  });
+});
+document.querySelectorAll('.cycle-preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    $('psCycle').value = btn.dataset.val;
+    refreshPresets('psCycle');
+    renderBreakSlots();
+    updateSettingsPreview();
+  });
+});
+
+['psWork','psShort','psLong'].forEach(id => {
+  const minEl = $(id); if (!minEl) return;
+  const secEl = $(id + 'Sec');
+
+  minEl.addEventListener('input', () => {
+    clampInput(minEl);
+    refreshPresets(id);
+    updateSettingsPreview();
+  });
+
+  if (secEl) {
+    secEl.addEventListener('input', () => {
+      let s = parseInt(secEl.value);
+      if (isNaN(s)) { updateSettingsPreview(); return; }
+      if (s >= 60) {
+        // Carry over extra seconds into minutes
+        const carry = Math.floor(s / 60);
+        const maxMins = parseInt(minEl.max) || 999;
+        minEl.value = Math.min(maxMins, (parseInt(minEl.value) || 0) + carry);
+        secEl.value = s % 60;
+        refreshPresets(id);
+      } else if (s < 0) {
+        // Borrow from minutes
+        const mins = parseInt(minEl.value) || 0;
+        if (mins > 0) { minEl.value = mins - 1; secEl.value = 59; }
+        else { secEl.value = 0; }
+        refreshPresets(id);
+      }
+      updateSettingsPreview();
+    });
+  }
+});
+$('psAutoAdv').addEventListener('change', updateSettingsPreview);
+$('psCycle').addEventListener('input', () => { refreshPresets('psCycle'); renderBreakSlots(); updateSettingsPreview(); });
 
 $('savePomoSettings').addEventListener('click', () => {
-  const wm = parseInt($('psWork').value) || 25, ws = parseInt($('psWorkSec').value) || 0;
-  const sm = parseInt($('psShort').value) || 5,  ss = parseInt($('psShortSec').value) || 0;
-  const lm = parseInt($('psLong').value) || 15,  ls = parseInt($('psLongSec').value) || 0;
-  const cy = Math.max(1, Math.min(12, parseInt($('psCycle').value) || 4));
-  pomoSettings.work = Math.max(60, wm * 60 + ws);
-  pomoSettings.short = Math.max(30, sm * 60 + ss);
-  pomoSettings.long = Math.max(60, lm * 60 + ls);
-  pomoSettings.cycle = cy;
+  const cy = Math.max(1, Math.min(12, parseInt($('psCycle').value)||4));
+  pomoSettings.cycle   = cy;
   pomoSettings.autoAdv = $('psAutoAdv').checked;
-  pomoSettings.longBreak = $('psLongBreak').checked;
-  // Build skipBreaks from unchecked slots
-  pomoSettings.skipBreaks = [];
-  $('psBreakSlots').querySelectorAll('input[type=checkbox]').forEach(cb => {
-    if (!cb.checked) pomoSettings.skipBreaks.push(parseInt(cb.dataset.slot));
-  });
+  // customPlan + durations already live-applied by updateSettingsPreview / applySlotsToPlan
+  // If no customPlan was built yet (modal opened with all defaults), build it now from slots
+  if (!isCustomPlan()) {
+    const newPlan = [], newSkip = [];
+    const slots = $('psBreakSlots').querySelectorAll('.break-slot');
+    for (let i = 0; i < cy; i++) {
+      newPlan.push('work');
+      if (i < slots.length) {
+        const cb      = slots[i].querySelector('input[type=checkbox]');
+        const typeBtn = slots[i].querySelector('.bs-type-btn');
+        if (cb && cb.checked) newPlan.push(typeBtn ? typeBtn.dataset.type : 'short');
+        else newSkip.push(i + 1);
+      }
+    }
+    pomoSettings.customPlan = newPlan;
+    pomoSettings.skipBreaks = newSkip;
+  }
+  _origPomoSettings = null; // clear snapshot — user confirmed
+  sessionsD = 0; planIdx = 0;
   clearInterval(pomoInterval); pomoRunning = false;
-  sessionsD = 0;
   setMode('work');
-  updatePlan(); updateAutoBadge();
+  renderPlanStrip(); updateAutoBadge();
   save(); closeM('pomoSettingsModal'); toast('Timer settings applied!');
 });
 
@@ -1432,7 +2128,7 @@ const renderEntries = () => {
     const en=e.endTime?new Date(e.endTime):null;
     const color=e.projectId?projColor(e.projectId):'#665c54';
     const elapsed=isRunning?(Date.now()-taskStart.getTime()):e.durationMs;
-    const d=document.createElement('div'); d.className='entry'; d.setAttribute('role','listitem');
+    const d=document.createElement('div'); d.className='entry'+(isRunning?' running':''); d.setAttribute('role','listitem');
     d.innerHTML=`<div class="e-bar" style="background:${color}"></div>
       <div class="e-body">
         <div class="e-task" title="${e.task}">${e.task}</div>
@@ -1737,7 +2433,7 @@ window.onload = () => {
   ringFg.style.strokeDasharray=CIRC;
   load();
   setMode('work');
-  updatePlan();
+  renderPlanStrip();
   updateAutoBadge();
   rerender();
   renderPomoLog();
