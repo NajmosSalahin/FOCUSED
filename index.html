@@ -75,8 +75,13 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .pomo-svg{width:185px;height:185px;transform:rotate(-90deg);}
 .ring-bg{fill:none;stroke:var(--bg2);stroke-width:6;}
 .ring-fg{fill:none;stroke:var(--yellow-b);stroke-width:6;stroke-linecap:round;stroke-dasharray:534.07;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke .3s ease;}
-.pomo-time-old-placeholder{display:none;}
 .pomo-sub{font-family:var(--mono);font-size:10px;color:var(--blue-b);letter-spacing:1px;text-align:center;user-select:none;}
+.pomo-time-wrap{position:absolute;display:flex;align-items:center;justify-content:center;}
+.pomo-time{font-family:var(--mono);font-size:39px;font-weight:800;color:var(--fg);letter-spacing:-2px;user-select:none;cursor:pointer;transition:color var(--t);}
+.pomo-time:hover{color:var(--yellow-b);}
+.pomo-time.editing{display:none;}
+.pomo-time-input{display:none;font-family:var(--mono);font-size:34px;font-weight:800;color:var(--yellow-b);letter-spacing:-1px;background:transparent;border:none;border-bottom:2px solid var(--yellow-b);outline:none;text-align:center;width:130px;}
+.pomo-time-input.editing{display:block;}
 
 .pomo-ctrls{display:flex;align-items:center;gap:12px;}
 .pbtn{display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;border-radius:var(--r);font-weight:700;transition:var(--t);}
@@ -101,6 +106,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .plan-block.work{background:rgba(251,73,52,.15);color:var(--red-b);border:1px solid rgba(251,73,52,.3);}
 .plan-block.short{background:rgba(184,187,38,.15);color:var(--green-b);border:1px solid rgba(184,187,38,.3);}
 .plan-block.long{background:rgba(131,165,152,.15);color:var(--blue-b);border:1px solid rgba(131,165,152,.3);}
+.plan-block.more{background:rgba(168,153,132,.15);color:var(--fg-dim);border:1px solid rgba(168,153,132,.3);}
 .plan-block.dragging{opacity:.2;transform:scale(.88);}
 .plan-block.shifting{transition:transform .15s ease;}
 .plan-block.plan-cur{box-shadow:0 0 0 2px rgba(250,189,47,.55);z-index:1;}
@@ -116,6 +122,13 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .plan-total{font-family:var(--mono);font-size:9px;color:var(--yellow-b);font-weight:700;white-space:nowrap;}
 .plan-reset{cursor:pointer;color:var(--fg-dim);font-size:9px;font-family:var(--mono);background:none;border:none;padding:0 2px;transition:color var(--t);}
 .plan-reset:hover{color:var(--yellow-b);}
+.plan-add-wrap{position:relative;flex-shrink:0;}
+.plan-add-menu{position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--r);display:flex;flex-direction:column;gap:1px;padding:4px;z-index:9000;box-shadow:0 4px 16px rgba(0,0,0,.5);white-space:nowrap;min-width:80px;}
+.plan-add-menu-item{font-family:var(--mono);font-size:9px;font-weight:700;padding:5px 10px;border-radius:3px;background:transparent;border:none;cursor:pointer;text-align:left;letter-spacing:.5px;transition:background var(--t);}
+.plan-add-menu-item.work{color:var(--red-b);}
+.plan-add-menu-item.short{color:var(--green-b);}
+.plan-add-menu-item.long{color:var(--blue-b);}
+.plan-add-menu-item:hover{background:var(--bg2);}
 
 /* Auto-advance indicator */
 .auto-badge{font-family:var(--mono);font-size:9px;font-weight:700;color:var(--aqua-b);background:rgba(142,192,124,.1);border:1px solid rgba(142,192,124,.3);border-radius:3px;padding:2px 7px;letter-spacing:.5px;cursor:pointer;transition:var(--t);}
@@ -151,10 +164,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .pg-set input:focus{border-color:var(--yellow);}
 .pg-nudge{width:26px;height:28px;background:var(--bg2);border:none;border-radius:var(--r);color:var(--fg);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);font-family:var(--mono);}
 .pg-nudge:hover{background:var(--bg3);}
-.pg-set .btn{padding:5px 10px;font-size:10px;}
 .pg-set-btn{padding:5px 10px;font-size:10px;margin-left:2px;}
-
-/* ENTRIES — grow freely, no fixed cap */
 
 /* POMO LOG — grow freely, cap at comfortable height */
 .pomo-log-list{display:flex;flex-direction:column;gap:4px;overflow-y:auto;max-height:220px;}
@@ -219,9 +229,14 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .break-slot:hover{border-color:var(--bg3);}
 .break-slot-label{font-family:var(--mono);font-size:10px;color:var(--fg-dim);}
 .break-slot-label b{color:var(--fg);}
-.break-slot-label span{color:var(--green-b);}
-.break-slot-label span.long{color:var(--blue-b);}
 .break-slot input[type=checkbox]{accent-color:var(--aqua);width:14px;height:14px;cursor:pointer;}
+.break-slot-controls{display:flex;align-items:center;gap:6px;}
+.break-slot.skipped{opacity:.42;}
+.break-slot.skipped .bs-type-btn{pointer-events:none;cursor:default;}
+.bs-type-btn{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;background:var(--bg2);border:1px solid transparent;color:var(--fg-dim);cursor:pointer;transition:var(--t);letter-spacing:.4px;flex-shrink:0;}
+.bs-type-btn:hover{background:var(--bg3);}
+.bs-type-btn.short{background:rgba(184,187,38,.15);color:var(--green-b);border-color:rgba(184,187,38,.3);}
+.bs-type-btn.long{background:rgba(131,165,152,.15);color:var(--blue-b);border-color:rgba(131,165,152,.3);}
 
 /* CARDS */
 .card{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:14px;}
@@ -386,7 +401,9 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .dur-preset{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:var(--bg2);border:1px solid transparent;color:var(--fg-dim);cursor:pointer;transition:var(--t);letter-spacing:.3px;}
 .dur-preset:hover{background:var(--bg3);color:var(--fg);}
 .dur-preset.on{background:rgba(250,189,47,.2);color:var(--yellow-b);border-color:rgba(250,189,47,.4);}
-.cycle-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.dur-sec-input{flex:0.8;font-family:var(--mono);font-size:18px;font-weight:700;color:var(--fg);text-align:center;padding:7px 2px;background:transparent;border:none;border-left:1px solid var(--bg2);outline:none;width:0;min-width:22px;cursor:text;}
+.dur-sec-input:focus{color:var(--yellow-b);background:rgba(250,189,47,.04);}
+.dur-sep{font-family:var(--mono);font-size:13px;color:var(--fg-dim);align-self:center;padding:0 2px;flex-shrink:0;user-select:none;}
 .cycle-stepper{display:flex;align-items:stretch;background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);overflow:hidden;transition:border-color var(--t);}
 .cycle-stepper:focus-within{border-color:var(--yellow);}
 .cycle-num{font-family:var(--mono);font-size:22px;font-weight:800;color:var(--fg);text-align:center;padding:7px 6px;background:transparent;border:none;outline:none;width:52px;}
@@ -435,42 +452,6 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 @keyframes tin{to{opacity:1;transform:translateY(0);}}
 @keyframes tout{to{opacity:0;transform:translateY(6px);}}
 
-/* Inline seconds input inside dur-stepper */
-.dur-sec-input{flex:0.8;font-family:var(--mono);font-size:18px;font-weight:700;color:var(--fg);text-align:center;padding:7px 2px;background:transparent;border:none;border-left:1px solid var(--bg2);outline:none;width:0;min-width:22px;cursor:text;}
-.dur-sec-input:focus{color:var(--yellow-b);background:rgba(250,189,47,.04);}
-
-/* Dot separator between min and sec in stepper */
-.dur-sep{font-family:var(--mono);font-size:13px;color:var(--fg-dim);align-self:center;padding:0 2px;flex-shrink:0;user-select:none;}
-
-/* Break-slot type toggle button */
-.bs-type-btn{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;background:var(--bg2);border:1px solid transparent;color:var(--fg-dim);cursor:pointer;transition:var(--t);letter-spacing:.4px;flex-shrink:0;}
-.bs-type-btn:hover{background:var(--bg3);}
-.bs-type-btn.short{background:rgba(184,187,38,.15);color:var(--green-b);border-color:rgba(184,187,38,.3);}
-.bs-type-btn.long{background:rgba(131,165,152,.15);color:var(--blue-b);border-color:rgba(131,165,152,.3);}
-.break-slot-controls{display:flex;align-items:center;gap:6px;}
-.break-slot.skipped{opacity:0.42;}
-.break-slot.skipped .bs-type-btn{pointer-events:none;cursor:default;}
-
-/* Plan strip add-block dropdown */
-.plan-add-wrap{position:relative;flex-shrink:0;}
-.plan-add-menu{position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--r);display:flex;flex-direction:column;gap:1px;padding:4px;z-index:9000;box-shadow:0 4px 16px rgba(0,0,0,.5);white-space:nowrap;min-width:80px;}
-.plan-add-menu-item{font-family:var(--mono);font-size:9px;font-weight:700;padding:5px 10px;border-radius:3px;background:transparent;border:none;cursor:pointer;text-align:left;letter-spacing:.5px;transition:background var(--t);}
-.plan-add-menu-item.work{color:var(--red-b);}
-.plan-add-menu-item.short{color:var(--green-b);}
-.plan-add-menu-item.long{color:var(--blue-b);}
-.plan-add-menu-item:hover{background:var(--bg2);}
-
-/* Editable main timer */
-.pomo-time-wrap{position:absolute;display:flex;align-items:center;justify-content:center;}
-.pomo-time{font-family:var(--mono);font-size:39px;font-weight:800;color:var(--fg);letter-spacing:-2px;user-select:none;cursor:pointer;transition:color var(--t);}
-.pomo-time:hover{color:var(--yellow-b);}
-.pomo-time.editing{display:none;}
-.pomo-time-input{display:none;font-family:var(--mono);font-size:34px;font-weight:800;color:var(--yellow-b);letter-spacing:-1px;background:transparent;border:none;border-bottom:2px solid var(--yellow-b);outline:none;text-align:center;width:130px;}
-.pomo-time-input.editing{display:block;}
-
-/* plan-block more chip */
-.plan-block.more{background:rgba(168,153,132,.15);color:var(--fg-dim);border:1px solid rgba(168,153,132,.3);}
-
 
 @media(max-width:600px){
   .header{flex-direction:column;align-items:flex-start;}
@@ -513,7 +494,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
   </div>
 
   <!-- TOP ROW: POMO (left) + GOALS & PROJECTS (right) -->
-  <div class="top-row" style="margin-bottom:10px;">
+  <div class="top-row">
 
     <!-- POMODORO -->
     <div class="pomo" role="region" aria-label="Pomodoro timer">
@@ -926,12 +907,10 @@ let pomoSettings = {
   long:      15 * 60,
   cycle:     4,
   autoAdv:   true,
-  longBreak: false,
   skipBreaks: [],
   customPlan: null   // null = auto-generate from cycle/breaks; array of type strings = custom order
 };
 
-// Pomo session log (today's completed sessions)
 let pomoLog = [];
 let pomoLogDate = new Date().toDateString();
 let pomoGoalTarget = 8; // daily work session target
@@ -1080,8 +1059,6 @@ const load = () => {
 };
 
 // === POMODORO ===
-ringFg.style.strokeDasharray = CIRC;
-
 const updateRing = () => {
   const ratio=pomoSec/pomoTotal, offset=CIRC*(1-ratio);
   ringFg.style.strokeDashoffset=offset; ringFg.style.stroke=POMO_STROKE[mode];
@@ -1130,8 +1107,7 @@ const syncSettingsFromPlan = () => {
   if (!plan || !plan.length) return;
   const workCount = plan.filter(t => t === 'work').length;
   if (workCount > 0) pomoSettings.cycle = workCount;
-  pomoSettings.longBreak = plan.includes('long');
-  // skipBreaks not derivable with free-stacking — leave unchanged
+  // skipBreaks: not derivable from a free-form plan — left unchanged
 };
 
 // Only rule: plan must contain at least one work block
@@ -1219,12 +1195,14 @@ const renderPlanStrip = () => {
       block.setPointerCapture(e.pointerId);
 
       const rect = block.getBoundingClientRect();
-      // Ghost follows cursor
       const ghost = document.createElement('div');
       ghost.className = `plan-ghost ${type}`;
       ghost.textContent = fmtHuman(planSecFor(type));
       ghost.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;`;
       document.body.appendChild(ghost);
+
+      // Snapshot natural (unshifted) rects once — used every frame for stable detection
+      const naturalRects = blockEls.map(b => b.getBoundingClientRect());
 
       planDrag = {
         srcIdx: idx,
@@ -1232,7 +1210,8 @@ const renderPlanStrip = () => {
         ghost,
         offsetX: e.clientX - rect.left,
         offsetY: e.clientY - rect.top,
-        moved: false
+        moved: false,
+        naturalRects
       };
 
       block.classList.add('dragging');
@@ -1242,46 +1221,59 @@ const renderPlanStrip = () => {
     block.addEventListener('pointermove', e => {
       if (!planDrag || planDrag.srcIdx !== idx) return;
       planDrag.moved = true;
-      const { ghost, offsetX, offsetY } = planDrag;
+      const { ghost, offsetX, offsetY, naturalRects } = planDrag;
+      const srcIdx = planDrag.srcIdx;
 
       // Move ghost
       const gx = e.clientX - offsetX, gy = e.clientY - offsetY;
       ghost.style.left = gx + 'px';
       ghost.style.top = gy + 'px';
-      ghost.style.transform = `rotate(${(e.clientX - (gx + ghost.offsetWidth/2)) * 0.02}deg) scale(1.08)`;
+      ghost.style.transform = `rotate(${(e.clientX - (gx + ghost.offsetWidth / 2)) * 0.02}deg) scale(1.08)`;
 
-      // Find insertion index by checking cursor X against block midpoints
-      const containerRect = container.getBoundingClientRect();
+      // ── 1. Detect insertIdx from natural (unshifted) midpoints ──────────────
+      // Natural rects are frozen from pointerdown so this is stable every frame,
+      // regardless of how far CSS transitions have animated blocks since last frame.
       let insertIdx = types.length;
       for (let i = 0; i < blockEls.length; i++) {
-        if (i === planDrag.srcIdx) continue;
-        const r = blockEls[i].getBoundingClientRect();
+        if (i === srcIdx) continue;
+        const r = naturalRects[i];
         if (e.clientX < r.left + r.width / 2) { insertIdx = i; break; }
       }
       planDrag.insertIdx = insertIdx;
 
-      // Shift non-dragging blocks to open a gap
-      const srcRect = blockEls[planDrag.srcIdx].getBoundingClientRect();
-      const gapW = srcRect.width + 4; // block width + gap
+      // ── 2. Shift non-source blocks to open a gap ────────────────────────────
+      // logicalInsertIdx: insertIdx translated to without-source space so the
+      // logicalI comparison is in the same index space.
+      const logicalInsertIdx = insertIdx > srcIdx ? insertIdx - 1 : insertIdx;
+      const gapW = naturalRects[srcIdx].width + 4;
       blockEls.forEach((b, i) => {
-        if (i === planDrag.srcIdx) return;
+        if (i === srcIdx) return;
         b.classList.add('shifting');
-        // Logical index in the "without dragged item" list
-        const logicalI = i < planDrag.srcIdx ? i : i - 1;
-        const shift = logicalI >= insertIdx ? gapW : 0;
-        b.style.transform = `translateX(${shift}px)`;
+        const logicalI = i < srcIdx ? i : i - 1;
+        b.style.transform = `translateX(${logicalI >= logicalInsertIdx ? gapW : 0}px)`;
       });
 
-      // Position insertion line
+      // ── 3. Position insert line from natural rects + shift offsets ──────────
+      // No DOM read here — we compute exact visual positions analytically so the
+      // line never lags or jumps due to in-flight CSS transitions.
+      const containerRect = container.getBoundingClientRect();
       let lineX;
-      const nonDrag = blockEls.filter((_, i) => i !== planDrag.srcIdx);
-      if (insertIdx === 0 || nonDrag.length === 0) {
-        const firstEl = nonDrag[0] || blockEls[0];
-        lineX = firstEl.getBoundingClientRect().left - containerRect.left - 4;
+      if (logicalInsertIdx === 0) {
+        // Before all non-source blocks: left edge of the first one (all shifted right)
+        const firstNonSrc = naturalRects.findIndex((_, i) => i !== srcIdx);
+        lineX = firstNonSrc >= 0 ? naturalRects[firstNonSrc].left - containerRect.left - 4 : 4;
       } else {
-        const beforeEl = nonDrag[Math.min(insertIdx, nonDrag.length) - 1];
-        const br = beforeEl.getBoundingClientRect();
-        lineX = br.right - containerRect.left + 2;
+        // After the (logicalInsertIdx-1)-th non-source block in without-source order.
+        // Find its full-array index by iterating non-source blocks.
+        let count = 0, beforeFullIdx = -1;
+        for (let i = 0; i < blockEls.length; i++) {
+          if (i === srcIdx) continue;
+          if (count === logicalInsertIdx - 1) { beforeFullIdx = i; break; }
+          count++;
+        }
+        lineX = beforeFullIdx >= 0
+          ? naturalRects[beforeFullIdx].right - containerRect.left + 3
+          : naturalRects[naturalRects.length - 1].right - containerRect.left + 3;
       }
       insertLine.style.left = Math.max(0, lineX) + 'px';
     });
@@ -1336,24 +1328,22 @@ const renderPlanStrip = () => {
   const addBtn = document.createElement('button');
   addBtn.className = 'plan-add-btn'; addBtn.title = 'Add block'; addBtn.textContent = '+';
   addBtn.setAttribute('aria-label', 'Add block');
-  let addMenuOpen = false;
   addBtn.addEventListener('click', e => {
     e.stopPropagation();
     const existing = addWrap.querySelector('.plan-add-menu');
-    if (existing) { existing.remove(); addMenuOpen = false; return; }
+    if (existing) { existing.remove(); return; }
     const menu = document.createElement('div');
     menu.className = 'plan-add-menu';
     [['WORK', 'work'], ['SHORT', 'short'], ['LONG', 'long']].forEach(([label, type]) => {
       const item = document.createElement('button');
       item.className = `plan-add-menu-item ${type}`;
       item.textContent = label;
-      item.addEventListener('click', ev => { ev.stopPropagation(); menu.remove(); addMenuOpen = false; addBlock(type); });
+      item.addEventListener('click', ev => { ev.stopPropagation(); menu.remove(); addBlock(type); });
       menu.appendChild(item);
     });
     addWrap.appendChild(menu);
-    addMenuOpen = true;
     setTimeout(() => {
-      const close = ev => { if (!addWrap.contains(ev.target)) { menu.remove(); addMenuOpen = false; document.removeEventListener('click', close); } };
+      const close = ev => { if (!addWrap.contains(ev.target)) { menu.remove(); document.removeEventListener('click', close); } };
       document.addEventListener('click', close);
     }, 0);
   });
@@ -1606,7 +1596,7 @@ const renderBreakSlots = () => {
     typeBtn.textContent = (breakType === 'long' ? 'LONG' : 'SHORT') + ' · ' + getDurLabel(breakType);
     typeBtn.dataset.type = breakType;
     typeBtn.title = 'Click to toggle SHORT / LONG break';
-    typeBtn.disabled = !enabled;   // Fix: can't change type of a skipped break
+    typeBtn.disabled = !enabled;
     typeBtn.addEventListener('click', () => {
       const newType = typeBtn.dataset.type === 'short' ? 'long' : 'short';
       typeBtn.dataset.type = newType;
@@ -1621,9 +1611,7 @@ const renderBreakSlots = () => {
     cb.checked = enabled;
     cb.dataset.slot = String(i + 1);
     cb.title = 'Include this break';
-    cb.style.accentColor = 'var(--aqua)';
     cb.addEventListener('change', () => {
-      // Fix: toggle disabled state on type button + slot dimming
       const isNowEnabled = cb.checked;
       typeBtn.disabled = !isNowEnabled;
       slot.classList.toggle('skipped', !isNowEnabled);
@@ -1666,7 +1654,7 @@ $('pomoSettingsBtn').addEventListener('click', () => {
   }
   $('psAutoAdv').checked = pomoSettings.autoAdv;
   refreshAllPresets();
-  $('psBreakSlots').innerHTML = ''; // Fix: clear stale DOM so slots always re-derive from customPlan on fresh open
+  $('psBreakSlots').innerHTML = '';
   renderBreakSlots();
   updateSettingsPreview();
   openM('pomoSettingsModal');
