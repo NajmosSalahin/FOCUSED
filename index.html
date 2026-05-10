@@ -43,13 +43,17 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .app{max-width:1080px;margin:0 auto;padding:16px 20px;}
 
 /* HEADER */
-.header{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+.header{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:8px 12px;display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
+.header-row1{display:flex;align-items:center;}
+.header-row2{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.header-row3{display:flex;align-items:center;}
 .logo{font-family:var(--mono);font-weight:800;font-size:18px;color:var(--yellow-b);letter-spacing:-0.5px;}
 .logo em{color:var(--fg-dim);font-style:normal;font-weight:400;}
-.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.header-top{display:flex;align-items:center;justify-content:space-between;}
+.header-bottom{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.hw-widget{display:flex;align-items:center;gap:6px;}
 
 /* Clock + Weather widget */
-.hw-widget{display:flex;align-items:center;gap:6px;margin-left:4px;}
 .hw-chip{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--r);padding:4px 10px;font-family:var(--mono);font-size:11px;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:border-color var(--t);}
 .hw-chip#hwClockChip{cursor:pointer;user-select:none;}
 .hw-chip#hwClockChip:hover{border-color:var(--yellow);background:var(--bg2);}
@@ -501,8 +505,8 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 
 
 @media(max-width:600px){
-  .header{flex-direction:column;align-items:flex-start;}
-  .header-right{flex-direction:column;align-items:flex-start;gap:10px;}
+  .header-row2{flex-wrap:wrap;}
+  .header-row3{flex-wrap:wrap;}
   .pomo-time{font-size:32px;}
   .pomo-svg{width:155px;height:155px;}
 }
@@ -513,37 +517,39 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 
   <!-- HEADER -->
   <div class="header">
-    <div class="logo">FOCUS <em>/ pomodoro + tracker</em></div>
-    <div class="header-right">
+    <div class="header-row1">
+      <div class="logo">FOCUS <em>/ pomodoro + tracker</em></div>
+    </div>
+    <div class="header-row2">
       <div class="date-nav">
         <button id="prevDateBtn" aria-label="Previous day" title="Previous day"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
         <span class="date-label" id="dateLabel" aria-live="polite"></span>
         <button id="goTodayBtn" aria-label="Go to today" title="Go to today"><i class="fas fa-calendar-check" aria-hidden="true"></i></button>
         <button id="nextDateBtn" aria-label="Next day" title="Next day"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
       </div>
+      <div class="hw-chip" id="hwClockChip" title="Click to toggle 12/24h">
+        <span class="hw-clock" id="hwClock">--:--:--</span>
+      </div>
+      <div class="hw-chip hw-weather-chip" id="hwWeatherChip" title="Live weather">
+        <i class="hw-icon loading fas fa-circle-notch fa-spin" id="hwIcon"></i>
+        <span class="hw-temp" id="hwTemp">--°C</span>
+        <span class="hw-sep">·</span>
+        <i class="fas fa-droplet hw-hum" style="font-size:9px"></i>
+        <span class="hw-hum" id="hwHumidity">--%</span>
+        <span class="hw-sep">·</span>
+        <span class="hw-cond" id="hwCond">--</span>
+        <span class="hw-sep">·</span>
+        <i class="fas fa-location-dot hw-hum" style="font-size:9px"></i>
+        <span class="hw-city" id="hwCity">--</span>
+        <button class="hw-loc-btn" id="hwLocBtn" title="Change location" aria-label="Change location"><i class="fas fa-pen"></i></button>
+      </div>
+    </div>
+    <div class="header-row3">
       <div class="totals" aria-label="Time totals">
         <div class="chip"><span class="lbl">TODAY</span><span class="val" id="todayTotal" aria-live="polite">00:00:00</span></div>
         <div class="chip"><span class="lbl">WEEK</span><span class="val" id="weekTotal" aria-live="polite">00:00:00</span></div>
         <div class="chip"><span class="lbl">MONTH</span><span class="val" id="monthTotal" aria-live="polite">00:00:00</span></div>
         <div class="chip avg" title="Average daily tracked time this week"><span class="lbl">D.AVG</span><span class="val" id="dayAvg" aria-live="polite">00:00:00</span></div>
-      </div>
-      <div class="hw-widget" aria-label="Clock and weather">
-        <div class="hw-chip" id="hwClockChip" title="Click to toggle 12/24h">
-          <span class="hw-clock" id="hwClock">--:--:--</span>
-        </div>
-        <div class="hw-chip hw-weather-chip" id="hwWeatherChip" title="Live weather">
-          <i class="hw-icon loading fas fa-circle-notch fa-spin" id="hwIcon"></i>
-          <span class="hw-temp" id="hwTemp">--°C</span>
-          <span class="hw-sep">·</span>
-          <i class="fas fa-droplet hw-hum" style="font-size:9px"></i>
-          <span class="hw-hum" id="hwHumidity">--%</span>
-          <span class="hw-sep">·</span>
-          <span class="hw-cond" id="hwCond">--</span>
-          <span class="hw-sep">·</span>
-          <i class="fas fa-location-dot hw-hum" style="font-size:9px"></i>
-          <span class="hw-city" id="hwCity">--</span>
-          <button class="hw-loc-btn" id="hwLocBtn" title="Change location" aria-label="Change location"><i class="fas fa-pen"></i></button>
-        </div>
       </div>
     </div>
   </div>
