@@ -50,8 +50,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 
 /* Clock + Weather widget */
 .hw-widget{display:flex;align-items:center;gap:6px;margin-left:4px;}
-.hw-chip{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--r);padding:4px 10px;font-family:var(--mono);font-size:11px;display:flex;align-items:center;gap:6px;white-space:nowrap;}
-.hw-clock{font-weight:700;color:var(--fg);letter-spacing:.5px;min-width:60px;}
+.hw-chip{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--r);padding:4px 10px;font-family:var(--mono);font-size:11px;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:border-color var(--t);}
+.hw-chip#hwClockChip{cursor:pointer;user-select:none;}
+.hw-chip#hwClockChip:hover{border-color:var(--yellow);background:var(--bg2);}
+.hw-clock{font-weight:700;color:var(--fg);letter-spacing:.5px;min-width:58px;text-align:center;}
 .hw-icon{font-size:11px;}
 .hw-icon.clear{color:var(--yellow-b);}
 .hw-icon.cloud{color:var(--fg-dim);}
@@ -59,11 +61,24 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .hw-icon.snow{color:var(--aqua-b);}
 .hw-icon.storm{color:var(--purple-b);}
 .hw-icon.fog{color:var(--fg-dim);}
+.hw-icon.loading{color:var(--fg-dim);font-size:10px;}
 .hw-temp{color:var(--yellow-b);font-weight:700;}
 .hw-sep{color:var(--bg3);}
 .hw-hum{color:var(--blue-b);}
 .hw-cond{color:var(--fg-dim);}
-.hw-loading{color:var(--fg-dim);font-size:10px;}
+.hw-city{color:var(--fg-dim);max-width:72px;overflow:hidden;text-overflow:ellipsis;}
+.hw-loc-btn{background:none;border:none;color:var(--bg3);cursor:pointer;font-size:9px;padding:0;line-height:1;transition:color var(--t);flex-shrink:0;}
+.hw-loc-btn:hover{color:var(--yellow-b);}
+.hw-weather-chip{position:relative;}
+.hw-picker{position:absolute;top:calc(100% + 6px);right:0;background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--r);padding:6px;z-index:9999;width:230px;box-shadow:0 4px 20px rgba(0,0,0,.55);}
+.hw-search{width:100%;background:var(--bg);border:1px solid var(--bg2);border-radius:3px;color:var(--fg);font-family:var(--mono);font-size:11px;padding:5px 8px;outline:none;box-sizing:border-box;}
+.hw-search:focus{border-color:var(--yellow);}
+.hw-results{margin-top:4px;max-height:160px;overflow-y:auto;}
+.hw-result-item{padding:6px 8px;border-radius:3px;cursor:pointer;font-family:var(--mono);font-size:10px;color:var(--fg);display:flex;flex-direction:column;gap:1px;transition:background var(--t);}
+.hw-result-item:hover{background:var(--bg2);}
+.hw-result-hint{color:var(--fg-dim);cursor:default;}
+.hw-result-hint:hover{background:transparent;}
+.hw-result-sub{color:var(--fg-dim);font-size:9px;}
 
 /* DATE NAV */
 .date-nav{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;}
@@ -513,15 +528,21 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
         <div class="chip avg" title="Average daily tracked time this week"><span class="lbl">D.AVG</span><span class="val" id="dayAvg" aria-live="polite">00:00:00</span></div>
       </div>
       <div class="hw-widget" aria-label="Clock and weather">
-        <div class="hw-chip"><span class="hw-clock" id="hwClock">--:--:--</span></div>
-        <div class="hw-chip" id="hwWeatherChip" title="Live weather">
-          <i class="hw-icon hw-loading fas fa-circle-notch fa-spin" id="hwIcon"></i>
-          <span class="hw-temp" id="hwTemp">--°</span>
+        <div class="hw-chip" id="hwClockChip" title="Click to toggle 12/24h">
+          <span class="hw-clock" id="hwClock">--:--:--</span>
+        </div>
+        <div class="hw-chip hw-weather-chip" id="hwWeatherChip" title="Live weather">
+          <i class="hw-icon loading fas fa-circle-notch fa-spin" id="hwIcon"></i>
+          <span class="hw-temp" id="hwTemp">--°C</span>
           <span class="hw-sep">·</span>
           <i class="fas fa-droplet hw-hum" style="font-size:9px"></i>
           <span class="hw-hum" id="hwHumidity">--%</span>
           <span class="hw-sep">·</span>
           <span class="hw-cond" id="hwCond">--</span>
+          <span class="hw-sep">·</span>
+          <i class="fas fa-location-dot hw-hum" style="font-size:9px"></i>
+          <span class="hw-city" id="hwCity">--</span>
+          <button class="hw-loc-btn" id="hwLocBtn" title="Change location" aria-label="Change location"><i class="fas fa-pen"></i></button>
         </div>
       </div>
     </div>
@@ -2474,62 +2495,144 @@ window.onload = () => {
   renderCalendar();
 };
 // === CLOCK ===
-const hwClock = $('hwClock');
+let hwState = JSON.parse(localStorage.getItem('hwState') || 'null') || { is24h: true, lat: null, lon: null, city: null };
+const saveHwState = () => localStorage.setItem('hwState', JSON.stringify(hwState));
+
+const hwClockEl = $('hwClock');
+const pad = v => String(v).padStart(2, '0');
 const tickClock = () => {
   const n = new Date();
-  const pad = v => String(v).padStart(2,'0');
-  hwClock.textContent = `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+  if (hwState.is24h) {
+    hwClockEl.textContent = `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+  } else {
+    const h = n.getHours(), ampm = h >= 12 ? 'PM' : 'AM', h12 = h % 12 || 12;
+    hwClockEl.textContent = `${pad(h12)}:${pad(n.getMinutes())}:${pad(n.getSeconds())} ${ampm}`;
+  }
 };
 tickClock();
 setInterval(tickClock, 1000);
 
+$('hwClockChip').addEventListener('click', () => {
+  hwState.is24h = !hwState.is24h;
+  saveHwState();
+  tickClock();
+});
+
 // === WEATHER ===
 const WMO_ICON = code => {
-  if (code === 0)            return ['fa-sun',            'clear', 'CLEAR'];
-  if (code <= 3)             return ['fa-cloud-sun',      'cloud', 'CLOUDY'];
-  if (code <= 48)            return ['fa-smog',           'fog',   'FOGGY'];
-  if (code <= 55)            return ['fa-cloud-drizzle',  'rain',  'DRIZZLE'];
-  if (code <= 67)            return ['fa-cloud-rain',     'rain',  'RAIN'];
-  if (code <= 77)            return ['fa-snowflake',      'snow',  'SNOW'];
-  if (code <= 82)            return ['fa-cloud-showers-heavy','rain','SHOWERS'];
-  if (code <= 86)            return ['fa-snowflake',      'snow',  'SNOW'];
-  return                            ['fa-cloud-bolt',     'storm', 'STORM'];
+  if (code === 0)  return ['fa-sun',                  'clear',  'CLEAR'];
+  if (code <= 3)   return ['fa-cloud-sun',            'cloud',  'CLOUDY'];
+  if (code <= 48)  return ['fa-smog',                 'fog',    'FOGGY'];
+  if (code <= 55)  return ['fa-cloud-drizzle',        'rain',   'DRIZZLE'];
+  if (code <= 67)  return ['fa-cloud-rain',           'rain',   'RAIN'];
+  if (code <= 77)  return ['fa-snowflake',            'snow',   'SNOW'];
+  if (code <= 82)  return ['fa-cloud-showers-heavy',  'rain',   'SHOWERS'];
+  if (code <= 86)  return ['fa-snowflake',            'snow',   'SNOW'];
+  return                  ['fa-cloud-bolt',           'storm',  'STORM'];
 };
 
-const fetchWeather = (lat, lon) => {
+const applyWeatherData = d => {
+  const c = d.current;
+  const [icon, cls, label] = WMO_ICON(c.weather_code);
+  $('hwIcon').className    = `hw-icon fas fa-${icon} ${cls}`;
+  $('hwTemp').textContent  = `${Math.round(c.temperature_2m)}°C`;
+  $('hwHumidity').textContent = `${c.relative_humidity_2m}%`;
+  $('hwCond').textContent  = label;
+};
+
+const fetchWeather = (lat, lon) =>
   fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code&temperature_unit=celsius&timezone=auto`)
+    .then(r => r.json()).then(applyWeatherData)
+    .catch(() => { $('hwIcon').className = 'hw-icon fas fa-triangle-exclamation loading'; $('hwCond').textContent = 'ERR'; });
+
+const reverseGeocode = (lat, lon) =>
+  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
     .then(r => r.json())
-    .then(d => {
-      const c = d.current;
-      const [icon, cls, label] = WMO_ICON(c.weather_code);
-      const el = $('hwIcon');
-      el.className = `hw-icon fas fa-${icon} ${cls}`;
-      $('hwTemp').textContent  = `${Math.round(c.temperature_2m)}°C`;
-      $('hwHumidity').textContent = `${c.relative_humidity_2m}%`;
-      $('hwCond').textContent  = label;
-    })
-    .catch(() => {
-      $('hwIcon').className = 'hw-icon fas fa-question hw-loading';
-      $('hwCond').textContent = 'N/A';
-    });
+    .then(d => { const a = d.address; return a.city || a.town || a.village || a.county || a.state || 'Unknown'; });
+
+const setLocation = (lat, lon, city) => {
+  hwState.lat = lat; hwState.lon = lon; hwState.city = city;
+  saveHwState();
+  $('hwCity').textContent = city;
+  fetchWeather(lat, lon);
 };
 
+// ── Location picker ────────────────────────────────────────────────────────
+let hwPickerOpen = false, hwSearchTimeout = null;
+
+const closeLocPicker = () => {
+  hwPickerOpen = false;
+  const p = document.getElementById('hwPicker');
+  if (p) p.remove();
+  document.removeEventListener('click', hwOutside);
+};
+
+const hwOutside = e => { if (!$('hwWeatherChip').contains(e.target)) closeLocPicker(); };
+
+const openLocPicker = () => {
+  if (hwPickerOpen) { closeLocPicker(); return; }
+  hwPickerOpen = true;
+
+  const picker = document.createElement('div');
+  picker.id = 'hwPicker';
+  picker.className = 'hw-picker';
+  picker.innerHTML =
+    `<input class="hw-search" id="hwSearch" type="text" placeholder="Search city…" autocomplete="off" spellcheck="false">
+     <div class="hw-results" id="hwResults"><div class="hw-result-item hw-result-hint">Type to search…</div></div>`;
+  $('hwWeatherChip').appendChild(picker);
+
+  const input = $('hwSearch');
+  input.focus();
+
+  input.addEventListener('input', () => {
+    clearTimeout(hwSearchTimeout);
+    const q = input.value.trim();
+    if (q.length < 2) { $('hwResults').innerHTML = '<div class="hw-result-item hw-result-hint">Type to search…</div>'; return; }
+    $('hwResults').innerHTML = '<div class="hw-result-item hw-result-hint">Searching…</div>';
+    hwSearchTimeout = setTimeout(() => {
+      fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=1`)
+        .then(r => r.json())
+        .then(results => {
+          if (!results.length) { $('hwResults').innerHTML = '<div class="hw-result-item hw-result-hint">No results</div>'; return; }
+          $('hwResults').innerHTML = '';
+          results.forEach(r => {
+            const a = r.address;
+            const city = a.city || a.town || a.village || a.county || a.state || r.display_name.split(',')[0];
+            const sub  = [a.state, a.country].filter(Boolean).join(', ');
+            const item = document.createElement('div');
+            item.className = 'hw-result-item';
+            item.innerHTML = `<strong>${city}</strong><span class="hw-result-sub">${sub}</span>`;
+            item.addEventListener('click', () => { setLocation(parseFloat(r.lat), parseFloat(r.lon), city); closeLocPicker(); });
+            $('hwResults').appendChild(item);
+          });
+        })
+        .catch(() => { $('hwResults').innerHTML = '<div class="hw-result-item hw-result-hint">Search failed</div>'; });
+    }, 380);
+  });
+
+  input.addEventListener('keydown', e => { if (e.key === 'Escape') closeLocPicker(); });
+  setTimeout(() => document.addEventListener('click', hwOutside), 0);
+};
+
+$('hwLocBtn').addEventListener('click', e => { e.stopPropagation(); openLocPicker(); });
+
+// ── Init ───────────────────────────────────────────────────────────────────
 const initWeather = () => {
-  if (!navigator.geolocation) {
-    $('hwCond').textContent = 'NO GPS';
-    $('hwIcon').className = 'hw-icon fas fa-location-slash hw-loading';
+  if (hwState.lat !== null) {
+    $('hwCity').textContent = hwState.city || '…';
+    fetchWeather(hwState.lat, hwState.lon);
+    setInterval(() => fetchWeather(hwState.lat, hwState.lon), 10 * 60 * 1000);
     return;
   }
+  if (!navigator.geolocation) { $('hwCity').textContent = 'NO GPS'; $('hwIcon').className = 'hw-icon fas fa-location-slash loading'; return; }
+  $('hwCity').textContent = 'Detecting…';
   navigator.geolocation.getCurrentPosition(
     pos => {
-      fetchWeather(pos.coords.latitude, pos.coords.longitude);
-      setInterval(() => fetchWeather(pos.coords.latitude, pos.coords.longitude), 10 * 60 * 1000);
+      const { latitude: lat, longitude: lon } = pos.coords;
+      reverseGeocode(lat, lon).then(city => setLocation(lat, lon, city));
+      setInterval(() => fetchWeather(hwState.lat, hwState.lon), 10 * 60 * 1000);
     },
-    () => {
-      $('hwIcon').className = 'hw-icon fas fa-location-slash hw-loading';
-      $('hwTemp').textContent = '--°';
-      $('hwCond').textContent = 'DENIED';
-    },
+    () => { $('hwIcon').className = 'hw-icon fas fa-location-slash loading'; $('hwCity').textContent = 'Set loc ✎'; $('hwCond').textContent = '--'; },
     { timeout: 8000 }
   );
 };
