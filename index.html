@@ -76,6 +76,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .ring-bg{fill:none;stroke:var(--bg2);stroke-width:6;}
 .ring-fg{fill:none;stroke:var(--yellow-b);stroke-width:6;stroke-linecap:round;stroke-dasharray:534.07;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear,stroke .3s ease;}
 .pomo-sub{font-family:var(--mono);font-size:10px;color:var(--blue-b);letter-spacing:1px;text-align:center;user-select:none;}
+.pomo-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;}
 .pomo-time-wrap{position:absolute;display:flex;align-items:center;justify-content:center;}
 .pomo-time{font-family:var(--mono);font-size:39px;font-weight:800;color:var(--fg);letter-spacing:-2px;user-select:none;cursor:pointer;transition:color var(--t);}
 .pomo-time:hover{color:var(--yellow-b);}
@@ -101,22 +102,23 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .dot.break{background:var(--green-b);}
 
 /* Session plan strip — pointer drag */
-.pomo-plan{position:relative;display:flex;align-items:center;gap:4px;flex-wrap:nowrap;justify-content:center;max-width:100%;}
-.plan-block{font-family:var(--mono);font-size:9px;font-weight:700;padding:3px 20px 3px 8px;border-radius:3px;letter-spacing:.5px;white-space:nowrap;cursor:grab;position:relative;user-select:none;transition:transform .15s ease,opacity .15s ease,box-shadow .15s ease;}
-.plan-block.work{background:rgba(251,73,52,.15);color:var(--red-b);border:1px solid rgba(251,73,52,.3);}
-.plan-block.short{background:rgba(184,187,38,.15);color:var(--green-b);border:1px solid rgba(184,187,38,.3);}
-.plan-block.long{background:rgba(131,165,152,.15);color:var(--blue-b);border:1px solid rgba(131,165,152,.3);}
-.plan-block.more{background:rgba(168,153,132,.15);color:var(--fg-dim);border:1px solid rgba(168,153,132,.3);}
-.plan-block.dragging{opacity:.2;transform:scale(.88);}
-.plan-block.shifting{transition:transform .15s ease;}
-.plan-block.plan-cur{box-shadow:0 0 0 2px rgba(250,189,47,.55);z-index:1;}
+.pomo-plan{position:relative;display:flex;align-items:center;gap:4px;flex-wrap:nowrap;max-width:100%;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
+.pomo-plan::-webkit-scrollbar{display:none;}
+.plan-block{font-family:var(--mono);font-size:9px;font-weight:700;padding:3px 20px 3px 8px;border-radius:3px;letter-spacing:.5px;white-space:nowrap;cursor:pointer;position:relative;user-select:none;transition:opacity .15s ease,box-shadow .15s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 1px 4px rgba(0,0,0,.35);text-shadow:0 1px 2px rgba(0,0,0,.4);}
+.plan-block.work{background:rgba(251,73,52,.28);color:var(--red-b);border:1px solid rgba(251,73,52,.55);}
+.plan-block.short{background:rgba(184,187,38,.26);color:var(--green-b);border:1px solid rgba(184,187,38,.52);}
+.plan-block.long{background:rgba(131,165,152,.28);color:var(--blue-b);border:1px solid rgba(131,165,152,.52);}
+.plan-block.more{background:rgba(168,153,132,.22);color:var(--fg-dim);border:1px solid rgba(168,153,132,.45);}
+.plan-block.dragging{opacity:.2;transform:scale(.88);transition:none;}
+.plan-block.shifting{transition:transform .12s ease;}
+.plan-block.plan-cur{z-index:1;}
 .pb-del{position:absolute;top:50%;right:4px;transform:translateY(-50%);width:11px;height:11px;border-radius:50%;background:rgba(0,0,0,.4);color:currentColor;font-size:9px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;padding:0;opacity:0;transition:opacity var(--t);}
 .plan-block:hover .pb-del{opacity:1;}
 .plan-ghost{position:fixed;pointer-events:none;z-index:9999;font-family:var(--mono);font-size:9px;font-weight:700;padding:3px 8px;border-radius:3px;letter-spacing:.5px;white-space:nowrap;transform-origin:center center;box-shadow:0 8px 28px rgba(0,0,0,.55);transition:none;}
 .plan-ghost.work{background:rgba(251,73,52,.9);color:#fff;border:1px solid rgba(251,73,52,.8);}
 .plan-ghost.short{background:rgba(184,187,38,.9);color:#1d2021;border:1px solid rgba(184,187,38,.8);}
 .plan-ghost.long{background:rgba(131,165,152,.9);color:#fff;border:1px solid rgba(131,165,152,.8);}
-.plan-insert-line{position:absolute;top:50%;transform:translateY(-50%);width:2px;height:24px;background:var(--yellow-b);border-radius:2px;pointer-events:none;z-index:10;transition:left .08s ease;box-shadow:0 0 6px rgba(250,189,47,.6);}
+.plan-insert-line{position:absolute;top:50%;transform:translateY(-50%);width:2px;height:24px;background:var(--yellow-b);border-radius:2px;pointer-events:none;z-index:10;box-shadow:0 0 6px rgba(250,189,47,.6);}
 .plan-add-btn{width:18px;height:18px;border-radius:50%;background:transparent;border:1px dashed var(--bg3);color:var(--fg-dim);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);flex-shrink:0;font-family:var(--mono);}
 .plan-add-btn:hover{background:var(--aqua);color:var(--bg);border-color:var(--aqua);}
 .plan-total{font-family:var(--mono);font-size:9px;color:var(--yellow-b);font-weight:700;white-space:nowrap;}
@@ -137,7 +139,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .auto-badge.off:hover{background:var(--bg2);}
 
 /* TASK INPUT */
-.task-bar{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;transition:border-color var(--t);}
+.task-bar{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;transition:border-color var(--t);margin-bottom:10px;}
 .task-bar:focus-within{border-color:var(--bg3);}
 .task-bar select{background:var(--bg);border:1px solid var(--bg2);color:var(--fg);padding:6px 8px;border-radius:var(--r);font-family:var(--mono);font-size:11px;flex-shrink:1;min-width:100px;max-width:160px;cursor:pointer;outline:none;}
 .task-bar select option{background:var(--bg1);}
@@ -173,7 +175,8 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .pomo-log-list::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px;}
 
 /* GOALS / PROJECTS lists — show 2 items, scroll to see more */
-#goalList,#projList{overflow-y:auto;max-height:122px;scrollbar-gutter:stable;padding-right:3px;scroll-behavior:smooth;}
+#goalList{overflow-y:auto;max-height:128px;scrollbar-gutter:stable;padding-right:3px;scroll-behavior:smooth;}
+#projList{overflow-y:auto;max-height:122px;scrollbar-gutter:stable;padding-right:3px;scroll-behavior:smooth;}
 #goalList::-webkit-scrollbar,#projList::-webkit-scrollbar{width:4px;}
 #goalList::-webkit-scrollbar-track,#projList::-webkit-scrollbar-track{background:transparent;}
 #goalList::-webkit-scrollbar-thumb,#projList::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px;}
@@ -220,12 +223,13 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .pg-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
 .pg-count{font-family:var(--mono);font-size:22px;font-weight:800;color:var(--yellow-b);}
 .pg-target{font-family:var(--mono);font-size:11px;color:var(--fg-dim);}
+.pg-slash{font-size:13px;color:var(--fg-dim);}
 .pg-bar-wrap{background:var(--bg);border-radius:4px;height:6px;overflow:hidden;margin-bottom:6px;}
 .pg-bar{height:100%;background:var(--yellow);border-radius:4px;transition:width .4s ease,background .4s ease;}
 
 /* BREAK SELECTOR in settings */
 .break-slots{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
-.break-slot{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);transition:border-color var(--t);}
+.break-slot{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);transition:border-color var(--t),opacity var(--t);}
 .break-slot:hover{border-color:var(--bg3);}
 .break-slot-label{font-family:var(--mono);font-size:10px;color:var(--fg-dim);}
 .break-slot-label b{color:var(--fg);}
@@ -276,7 +280,9 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .cal-nav-btns{display:flex;gap:3px;}
 .cal-nav{width:20px;height:20px;background:transparent;border:none;border-radius:3px;color:var(--fg-dim);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
 .cal-nav:hover{background:var(--bg2);color:var(--fg);}
+.cal-today-dot{font-size:6px;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-grid-wrap{margin-top:6px;}
 .cal-dow{font-family:var(--mono);font-size:8px;font-weight:700;color:var(--fg-dim);text-align:center;padding:3px 0;letter-spacing:.5px;}
 .cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;transition:background var(--t);position:relative;gap:1px;}
 .cal-day:hover{background:var(--bg2);}
@@ -360,8 +366,10 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .field input.err,.field select.err{border-color:var(--red)!important;}
 .frow{display:flex;gap:6px;}
 .frow .field{flex:1;margin-bottom:0;}
+.frow.mb{margin-bottom:14px;}
 .errmsg{font-family:var(--mono);font-size:10px;color:var(--red-b);margin-top:3px;display:none;}
 .errmsg.show{display:block;}
+.errmsg.mb{margin-bottom:10px;}
 .radio-grp{display:flex;flex-direction:column;gap:6px;}
 .radio-opt{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--fg-dim);cursor:pointer;}
 .radio-opt input{accent-color:var(--yellow);}
@@ -408,6 +416,11 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .cycle-stepper:focus-within{border-color:var(--yellow);}
 .cycle-num{font-family:var(--mono);font-size:22px;font-weight:800;color:var(--fg);text-align:center;padding:7px 6px;background:transparent;border:none;outline:none;width:52px;}
 .cycle-label-text{font-family:var(--mono);font-size:11px;color:var(--fg-dim);}
+.ps-cycle-wrap{margin-bottom:14px;}
+.ps-cycle-label{margin-bottom:5px;}
+.cycle-controls{display:flex;align-items:center;gap:10px;}
+.ps-section-title{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--fg-dim);margin-bottom:4px;text-transform:uppercase;}
+.ps-section-help{font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-bottom:6px;}
 .cycle-label-text b{color:var(--fg);}
 .cycle-presets{display:flex;gap:3px;margin-top:5px;}
 .cycle-preset{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;background:var(--bg2);border:1px solid transparent;color:var(--fg-dim);cursor:pointer;transition:var(--t);}
@@ -435,6 +448,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 /* ALERT */
 .alert-ov .modal{max-width:320px;}
 .alert-body{text-align:center;font-size:13px;line-height:1.7;color:var(--fg-dim);padding:18px;}
+.modal-info{color:var(--fg-dim);font-size:13px;line-height:1.7;}
 
 /* REPORT */
 .rentry{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:9px 11px;margin-bottom:7px;}
@@ -484,7 +498,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
   </div>
 
   <!-- TASK INPUT -->
-  <div class="task-bar" role="region" aria-label="Task tracker" style="margin-bottom:10px;">
+  <div class="task-bar" role="region" aria-label="Task tracker">
     <select id="projSelect" aria-label="Select project"><option value="">— no project —</option></select>
     <input type="text" id="taskInput" placeholder="What are you working on right now?" aria-label="Task description" autocomplete="off">
     <span class="live off" id="liveTimer" aria-live="off">00:00:00</span>
@@ -498,7 +512,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 
     <!-- POMODORO -->
     <div class="pomo" role="region" aria-label="Pomodoro timer">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;">
+      <div class="pomo-header">
         <div class="pomo-tabs" role="tablist">
           <button class="pomo-tab active" data-m="work" role="tab" aria-selected="true">WORK</button>
           <button class="pomo-tab" data-m="short" role="tab" aria-selected="false">SHORT</button>
@@ -586,7 +600,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
             <div class="ctitle">DAILY GOAL</div>
           </div>
           <div class="pg-row">
-            <div class="pg-count"><span id="pgDone">0</span> <span style="font-size:13px;color:var(--fg-dim);">/ <span id="pgTarget">8</span></span></div>
+            <div class="pg-count"><span id="pgDone">0</span> <span class="pg-slash">/ <span id="pgTarget">8</span></span></div>
             <div class="pg-target" id="pgStatus">sessions</div>
           </div>
           <div class="pg-bar-wrap"><div class="pg-bar" id="pgBar" style="width:0%"></div></div>
@@ -608,12 +622,12 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
           <div class="ctitle">CALENDAR</div>
           <div class="cal-nav-btns">
             <button class="cal-nav" id="calPrevBtn" aria-label="Previous month"><i class="fas fa-chevron-left"></i></button>
-            <button class="cal-nav" id="calTodayBtn" aria-label="Go to today's month" title="Today"><i class="fas fa-circle" style="font-size:6px"></i></button>
+            <button class="cal-nav" id="calTodayBtn" aria-label="Go to today's month" title="Today"><i class="fas fa-circle cal-today-dot"></i></button>
             <button class="cal-nav" id="calNextBtn" aria-label="Next month"><i class="fas fa-chevron-right"></i></button>
           </div>
         </div>
         <div class="cal-month-lbl" id="calMonthLabel"></div>
-        <div style="margin-top:6px">
+        <div class="cal-grid-wrap">
           <div class="cal-grid" id="calDowRow"></div>
           <div class="cal-grid" id="calGrid"></div>
         </div>
@@ -708,9 +722,9 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
       </div>
 
       <!-- Cycle -->
-      <div style="margin-bottom:14px;">
-        <div class="dur-label" style="margin-bottom:5px;">Sessions per cycle</div>
-        <div style="display:flex;align-items:center;gap:10px;">
+      <div class="ps-cycle-wrap">
+        <div class="dur-label ps-cycle-label">Sessions per cycle</div>
+        <div class="cycle-controls">
           <div class="cycle-stepper">
             <button class="dur-btn" data-step="-1" data-target="psCycle" aria-label="Decrease">−</button>
             <input class="cycle-num" type="number" id="psCycle" min="1" max="12" value="4" aria-label="Cycle count">
@@ -736,8 +750,8 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
         </label>
       </div>
       <hr class="mdivider">
-      <div style="font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--fg-dim);margin-bottom:4px;">SKIP SPECIFIC BREAKS</div>
-      <div style="font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-bottom:6px;">Uncheck to skip a break · click SHORT / LONG to change type</div>
+      <div class="ps-section-title">SKIP SPECIFIC BREAKS</div>
+      <div class="ps-section-help">Uncheck to skip a break · click SHORT / LONG to change type</div>
       <div class="break-slots" id="psBreakSlots"></div>
       <hr class="mdivider">
       <div class="session-preview" id="psPreview">
@@ -846,11 +860,11 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
     <div class="mhead"><div class="mtitle">ADVANCED REPORTS</div><button class="mcls" data-close="reportModal" aria-label="Close"><i class="fas fa-times" aria-hidden="true"></i></button></div>
     <div class="modal-body">
       <div class="field"><label for="rProj">Filter by Project</label><select id="rProj"><option value="">All Projects</option></select></div>
-      <div class="frow" style="margin-bottom:14px">
+      <div class="frow mb">
         <div class="field"><label for="rStart">Start Date</label><input type="date" id="rStart"></div>
         <div class="field"><label for="rEnd">End Date</label><input type="date" id="rEnd"></div>
       </div>
-      <div class="errmsg" id="rDateErr" style="margin-bottom:10px" role="alert">Start date cannot be after end date.</div>
+      <div class="errmsg mb" id="rDateErr" role="alert">Start date cannot be after end date.</div>
       <button class="btn btn-p" id="genReportBtn"><i class="fas fa-bolt" aria-hidden="true"></i> GENERATE REPORT</button>
       <div class="rlist" id="rList" aria-live="polite"><div class="empty">// run a report to see results</div></div>
       <div class="rtotal" id="rTotal" style="display:none"><span>TOTAL</span><span id="rTotalVal">00:00:00</span></div>
@@ -862,7 +876,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 <div class="overlay" id="exportModal">
   <div class="modal" role="dialog" aria-modal="true">
     <div class="mhead"><div class="mtitle">EXPORT DATA</div><button class="mcls" data-close="exportModal" aria-label="Close"><i class="fas fa-times" aria-hidden="true"></i></button></div>
-    <div class="modal-body"><p style="color:var(--fg-dim);font-size:13px;line-height:1.7">Exports all projects, goals, and time entries as a JSON backup. Use this to restore or migrate your data later.</p></div>
+    <div class="modal-body"><p class="modal-info">Exports all projects, goals, and time entries as a JSON backup. Use this to restore or migrate your data later.</p></div>
     <div class="mfoot"><button class="btn btn-s" data-close="exportModal">CANCEL</button><button class="btn btn-p" id="confirmExportBtn"><i class="fas fa-download" aria-hidden="true"></i> EXPORT JSON</button></div>
   </div>
 </div>
@@ -1198,7 +1212,7 @@ const renderPlanStrip = () => {
       const ghost = document.createElement('div');
       ghost.className = `plan-ghost ${type}`;
       ghost.textContent = fmtHuman(planSecFor(type));
-      ghost.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;`;
+      ghost.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;`;
       document.body.appendChild(ghost);
 
       // Snapshot natural (unshifted) rects once — used every frame for stable detection
