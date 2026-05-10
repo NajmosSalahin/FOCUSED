@@ -308,8 +308,8 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .g-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;font-weight:700;color:var(--fg);}
 .g-pct.exceeded{color:var(--red-b);}
 .g-body{flex:1;min-width:0;}
-.g-name{font-size:12px;font-weight:700;color:var(--fg);}
-.g-meta{font-family:var(--mono);font-size:9px;color:var(--fg-dim);}
+.g-name{font-size:12px;font-weight:700;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.g-meta{font-family:var(--mono);font-size:9px;color:var(--fg-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .iacts{display:flex;gap:3px;opacity:0;transition:opacity var(--t);}
 .goal-item:hover .iacts,.proj-item:hover .iacts{opacity:1;}
 .ia{width:20px;height:20px;background:transparent;border:none;border-radius:3px;color:var(--fg-dim);font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--t);}
