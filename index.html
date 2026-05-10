@@ -169,7 +169,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .pg-set-btn{padding:5px 10px;font-size:10px;margin-left:2px;}
 
 /* POMO LOG — grow freely, cap at comfortable height */
-.pomo-log-list{display:flex;flex-direction:column;gap:4px;overflow-y:auto;max-height:220px;}
+.pomo-log-list{display:flex;flex-direction:column;gap:4px;overflow-y:auto;max-height:89px;}
 .pomo-log-list::-webkit-scrollbar{width:4px;}
 .pomo-log-list::-webkit-scrollbar-track{background:transparent;}
 .pomo-log-list::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px;}
@@ -195,7 +195,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 @media(max-width:860px){.top-row{grid-template-columns:1fr;}}
 
 /* MAIN */
-.main{display:grid;grid-template-columns:1fr var(--sidebar-w);gap:10px;align-items:start;}
+.main{display:grid;grid-template-columns:1fr var(--sidebar-w);gap:10px;align-items:stretch;}
 @media(max-width:780px){.main{grid-template-columns:1fr;}}
 
 /* ENTRY COL — left column of main */
@@ -251,7 +251,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .add-btn:hover{background:var(--aqua);color:var(--bg);}
 
 /* ENTRIES */
-.entries{display:flex;flex-direction:column;gap:5px;max-height:288px;overflow-y:auto;scrollbar-gutter:stable;padding-right:3px;scroll-behavior:smooth;}
+.entries{display:flex;flex-direction:column;gap:5px;max-height:181px;overflow-y:auto;scrollbar-gutter:stable;padding-right:3px;scroll-behavior:smooth;}
 .empty{font-family:var(--mono);font-size:11px;text-align:center;padding:22px 0;color:var(--blue-b);}
 
 .entry{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:9px 11px;display:flex;align-items:center;gap:9px;transition:border-color var(--t);}
@@ -272,7 +272,8 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .ea.dl:hover{color:var(--red-b);background:var(--bg2);}
 
 /* SIDEBAR */
-.sidebar{display:flex;flex-direction:column;gap:10px;}
+.sidebar{display:flex;flex-direction:column;gap:10px;height:100%;}
+.sidebar>.card:first-child{flex:1;}
 
 /* CALENDAR WIDGET */
 .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
