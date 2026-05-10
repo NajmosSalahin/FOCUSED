@@ -48,6 +48,23 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .logo em{color:var(--fg-dim);font-style:normal;font-weight:400;}
 .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 
+/* Clock + Weather widget */
+.hw-widget{display:flex;align-items:center;gap:6px;margin-left:4px;}
+.hw-chip{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--r);padding:4px 10px;font-family:var(--mono);font-size:11px;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.hw-clock{font-weight:700;color:var(--fg);letter-spacing:.5px;min-width:60px;}
+.hw-icon{font-size:11px;}
+.hw-icon.clear{color:var(--yellow-b);}
+.hw-icon.cloud{color:var(--fg-dim);}
+.hw-icon.rain{color:var(--blue-b);}
+.hw-icon.snow{color:var(--aqua-b);}
+.hw-icon.storm{color:var(--purple-b);}
+.hw-icon.fog{color:var(--fg-dim);}
+.hw-temp{color:var(--yellow-b);font-weight:700;}
+.hw-sep{color:var(--bg3);}
+.hw-hum{color:var(--blue-b);}
+.hw-cond{color:var(--fg-dim);}
+.hw-loading{color:var(--fg-dim);font-size:10px;}
+
 /* DATE NAV */
 .date-nav{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;}
 .date-nav button{background:var(--bg1);border:1px solid var(--bg2);color:var(--fg-dim);width:28px;height:28px;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:var(--t);}
@@ -494,6 +511,18 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
         <div class="chip"><span class="lbl">WEEK</span><span class="val" id="weekTotal" aria-live="polite">00:00:00</span></div>
         <div class="chip"><span class="lbl">MONTH</span><span class="val" id="monthTotal" aria-live="polite">00:00:00</span></div>
         <div class="chip avg" title="Average daily tracked time this week"><span class="lbl">D.AVG</span><span class="val" id="dayAvg" aria-live="polite">00:00:00</span></div>
+      </div>
+      <div class="hw-widget" aria-label="Clock and weather">
+        <div class="hw-chip"><span class="hw-clock" id="hwClock">--:--:--</span></div>
+        <div class="hw-chip" id="hwWeatherChip" title="Live weather">
+          <i class="hw-icon hw-loading fas fa-circle-notch fa-spin" id="hwIcon"></i>
+          <span class="hw-temp" id="hwTemp">--°</span>
+          <span class="hw-sep">·</span>
+          <i class="fas fa-droplet hw-hum" style="font-size:9px"></i>
+          <span class="hw-hum" id="hwHumidity">--%</span>
+          <span class="hw-sep">·</span>
+          <span class="hw-cond" id="hwCond">--</span>
+        </div>
       </div>
     </div>
   </div>
@@ -2444,6 +2473,67 @@ window.onload = () => {
   calViewDate=new Date(viewDate.getFullYear(),viewDate.getMonth(),1);
   renderCalendar();
 };
+// === CLOCK ===
+const hwClock = $('hwClock');
+const tickClock = () => {
+  const n = new Date();
+  const pad = v => String(v).padStart(2,'0');
+  hwClock.textContent = `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+};
+tickClock();
+setInterval(tickClock, 1000);
+
+// === WEATHER ===
+const WMO_ICON = code => {
+  if (code === 0)            return ['fa-sun',            'clear', 'CLEAR'];
+  if (code <= 3)             return ['fa-cloud-sun',      'cloud', 'CLOUDY'];
+  if (code <= 48)            return ['fa-smog',           'fog',   'FOGGY'];
+  if (code <= 55)            return ['fa-cloud-drizzle',  'rain',  'DRIZZLE'];
+  if (code <= 67)            return ['fa-cloud-rain',     'rain',  'RAIN'];
+  if (code <= 77)            return ['fa-snowflake',      'snow',  'SNOW'];
+  if (code <= 82)            return ['fa-cloud-showers-heavy','rain','SHOWERS'];
+  if (code <= 86)            return ['fa-snowflake',      'snow',  'SNOW'];
+  return                            ['fa-cloud-bolt',     'storm', 'STORM'];
+};
+
+const fetchWeather = (lat, lon) => {
+  fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code&temperature_unit=celsius&timezone=auto`)
+    .then(r => r.json())
+    .then(d => {
+      const c = d.current;
+      const [icon, cls, label] = WMO_ICON(c.weather_code);
+      const el = $('hwIcon');
+      el.className = `hw-icon fas fa-${icon} ${cls}`;
+      $('hwTemp').textContent  = `${Math.round(c.temperature_2m)}°C`;
+      $('hwHumidity').textContent = `${c.relative_humidity_2m}%`;
+      $('hwCond').textContent  = label;
+    })
+    .catch(() => {
+      $('hwIcon').className = 'hw-icon fas fa-question hw-loading';
+      $('hwCond').textContent = 'N/A';
+    });
+};
+
+const initWeather = () => {
+  if (!navigator.geolocation) {
+    $('hwCond').textContent = 'NO GPS';
+    $('hwIcon').className = 'hw-icon fas fa-location-slash hw-loading';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      fetchWeather(pos.coords.latitude, pos.coords.longitude);
+      setInterval(() => fetchWeather(pos.coords.latitude, pos.coords.longitude), 10 * 60 * 1000);
+    },
+    () => {
+      $('hwIcon').className = 'hw-icon fas fa-location-slash hw-loading';
+      $('hwTemp').textContent = '--°';
+      $('hwCond').textContent = 'DENIED';
+    },
+    { timeout: 8000 }
+  );
+};
+initWeather();
 </script>
 </body>
 </html>
