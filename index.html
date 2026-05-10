@@ -62,7 +62,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--fg);min-height:100
 .chip.avg .val{color:var(--aqua-b);}
 
 /* POMODORO */
-.pomo{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:14px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.pomo{background:var(--bg1);border:1px solid var(--bg2);border-radius:var(--rl);padding:14px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:center;}
 .pomo-tabs{display:flex;gap:3px;background:var(--bg);border-radius:var(--r);padding:3px;}
 .pomo-tab{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--fg-dim);background:transparent;border:none;cursor:pointer;padding:6px 13px;border-radius:calc(var(--r) - 2px);transition:var(--t);letter-spacing:.5px;}
 .pomo-tab:hover:not(.active){color:var(--fg);background:rgba(255,255,255,.05);}
@@ -175,7 +175,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .pomo-log-list::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px;}
 
 /* GOALS / PROJECTS lists — show 2 items, scroll to see more */
-#goalList{overflow-y:auto;max-height:186px;scrollbar-gutter:stable;padding-right:3px;scroll-behavior:smooth;}
+#goalList{overflow-y:auto;max-height:226px;scrollbar-gutter:stable;padding-right:3px;scroll-behavior:smooth;}
 #projList{overflow-y:auto;max-height:122px;scrollbar-gutter:stable;padding-right:3px;scroll-behavior:smooth;}
 #goalList::-webkit-scrollbar,#projList::-webkit-scrollbar{width:4px;}
 #goalList::-webkit-scrollbar-track,#projList::-webkit-scrollbar-track{background:transparent;}
@@ -191,7 +191,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .gp-col{height:100%;}
 
 /* TOP ROW — pomo left, goals+projects right */
-.top-row{display:grid;grid-template-columns:1fr var(--sidebar-w);gap:10px;margin-bottom:10px;align-items:start;}
+.top-row{display:grid;grid-template-columns:1fr var(--sidebar-w);gap:10px;margin-bottom:10px;align-items:stretch;}
 @media(max-width:860px){.top-row{grid-template-columns:1fr;}}
 
 /* MAIN */
