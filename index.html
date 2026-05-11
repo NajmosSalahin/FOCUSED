@@ -520,36 +520,48 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .hab-arch-item{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:7px 10px;opacity:.5;}
 .hab-arch-restore{background:none;border:none;color:var(--bg3);cursor:pointer;font-size:9px;font-family:var(--mono);margin-left:auto;transition:color var(--t);}
 .hab-arch-restore:hover{color:var(--green-b);}
-/* calendar view */
-.hab-cal-view{display:flex;flex-direction:column;gap:0;}
-.hab-cal-header{display:flex;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--bg2);}
-.hab-cal-spacer{width:140px;flex-shrink:0;}
-.hab-cal-month-labels{display:flex;flex:1;font-family:var(--mono);font-size:8px;color:var(--bg3);}
-.hab-cal-row{display:flex;align-items:center;gap:0;padding:4px 0;border-bottom:1px solid rgba(80,73,69,.3);}
-.hab-cal-name{width:140px;flex-shrink:0;font-size:11px;font-weight:700;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px;}
-.hab-cal-dots{display:flex;gap:2px;flex:1;flex-wrap:nowrap;}
-.hab-cal-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
-.hab-cal-dot.l0{background:var(--bg2);}
-.hab-cal-dot.l1{background:rgba(152,151,26,.4);}
-.hab-cal-dot.l2{background:rgba(152,151,26,.75);}
-.hab-cal-dot.l3{background:var(--green-b);}
-.hab-cal-dot.skip{background:var(--bg2);opacity:.3;}
-.hab-cal-rate{font-family:var(--mono);font-size:9px;color:var(--fg-dim);width:38px;text-align:right;flex-shrink:0;}
 /* stats view */
-.hab-stats-header{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1px;color:var(--fg-dim);margin-bottom:10px;}
-.hab-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px;}
-.hab-stat-card{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:10px 12px;}
-.hab-stat-val{font-family:var(--mono);font-size:20px;font-weight:800;line-height:1;}
-.hab-stat-lbl{font-family:var(--mono);font-size:8px;color:var(--fg-dim);letter-spacing:.5px;margin-top:3px;}
+.hab-stats-section{margin-bottom:18px;}
+.hab-stats-section-title{font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:1.5px;color:var(--fg-dim);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--bg2);}
+.hab-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:7px;}
+.hab-stat-card{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:10px 12px;position:relative;overflow:hidden;}
+.hab-stat-card::after{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.02),transparent);pointer-events:none;}
+.hab-stat-val{font-family:var(--mono);font-size:22px;font-weight:800;line-height:1;}
+.hab-stat-lbl{font-family:var(--mono);font-size:8px;color:var(--fg-dim);letter-spacing:.5px;margin-top:4px;}
 .hab-stat-sub{font-family:var(--mono);font-size:8px;color:var(--bg3);margin-top:2px;}
-.hab-per-hab-stats{display:flex;flex-direction:column;gap:6px;}
-.hab-stat-row{display:flex;align-items:center;gap:8px;}
-.hab-stat-row-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0;}
-.hab-stat-row-name{font-size:11px;font-weight:700;color:var(--fg);width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;}
-.hab-stat-track{flex:1;height:6px;background:var(--bg2);border-radius:3px;overflow:hidden;}
-.hab-stat-fill{height:100%;border-radius:3px;transition:width .4s ease;}
-.hab-stat-pct{font-family:var(--mono);font-size:9px;color:var(--fg-dim);width:32px;text-align:right;flex-shrink:0;}
-.hab-stat-streak-lbl{font-family:var(--mono);font-size:9px;width:32px;text-align:right;flex-shrink:0;}
+.hab-stat-card-icon{position:absolute;right:8px;top:8px;font-size:16px;opacity:.18;}
+.hab-dow-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.hab-dow-col{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.hab-dow-bar-wrap{height:48px;display:flex;align-items:flex-end;width:100%;}
+.hab-dow-bar{width:100%;border-radius:2px 2px 0 0;transition:height .4s ease;min-height:2px;}
+.hab-dow-lbl{font-family:var(--mono);font-size:8px;color:var(--fg-dim);}
+.hab-dow-pct{font-family:var(--mono);font-size:7px;color:var(--bg3);}
+.hab-leaderboard{display:flex;flex-direction:column;gap:5px;}
+.hab-lb-row{display:flex;align-items:center;gap:9px;background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:8px 12px;}
+.hab-lb-medal{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+.hab-lb-icon{font-size:15px;flex-shrink:0;}
+.hab-lb-info{flex:1;min-width:0;}
+.hab-lb-name{font-size:12px;font-weight:700;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hab-lb-meta{font-family:var(--mono);font-size:9px;color:var(--fg-dim);margin-top:1px;}
+.hab-lb-streak{font-family:var(--mono);font-size:11px;font-weight:800;color:#fe8019;flex-shrink:0;}
+.hab-insight-list{display:flex;flex-direction:column;gap:6px;}
+.hab-insight{display:flex;align-items:flex-start;gap:10px;background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:9px 12px;}
+.hab-insight-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.hab-insight-text{flex:1;font-size:11px;color:var(--fg);line-height:1.5;}
+.hab-insight-text strong{color:var(--yellow-b);}
+.hab-per-hab-list{display:flex;flex-direction:column;gap:5px;}
+.hab-per-row{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:8px 12px;display:flex;flex-direction:column;gap:5px;}
+.hab-per-top{display:flex;align-items:center;gap:8px;}
+.hab-per-icon{font-size:15px;flex-shrink:0;}
+.hab-per-name{font-size:12px;font-weight:700;color:var(--fg);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hab-per-chips{display:flex;gap:5px;flex-shrink:0;}
+.hab-per-chip{font-family:var(--mono);font-size:8px;font-weight:700;padding:2px 7px;border-radius:8px;background:var(--bg2);color:var(--fg-dim);}
+.hab-per-bar-row{display:flex;align-items:center;gap:7px;}
+.hab-per-bar-lbl{font-family:var(--mono);font-size:8px;color:var(--bg3);width:38px;flex-shrink:0;}
+.hab-per-bar-track{flex:1;height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;}
+.hab-per-bar-fill{height:100%;border-radius:3px;transition:width .5s ease;}
+.hab-per-bar-val{font-family:var(--mono);font-size:8px;color:var(--fg-dim);width:30px;text-align:right;flex-shrink:0;}
+.hab-per-last{font-family:var(--mono);font-size:8px;color:var(--bg3);}
 
 /* ── TIMELINE MODAL ────────────────────────────────────────────────── */
 .tln-modal .modal{max-width:720px;width:95vw;}
@@ -616,10 +628,6 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 
 /* ── HEATMAP MODAL ─────────────────────────────────────────────────── */
 .hm-modal .modal{max-width:860px;width:95vw;}
-.hm-tabs{display:flex;gap:4px;margin-bottom:14px;}
-.hm-tab{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.5px;padding:5px 12px;border-radius:3px;background:var(--bg);border:1px solid var(--bg2);color:var(--fg-dim);cursor:pointer;transition:var(--t);}
-.hm-tab:hover{background:var(--bg2);color:var(--fg);}
-.hm-tab.on{background:rgba(250,189,47,.15);border-color:var(--yellow);color:var(--yellow-b);}
 .hm-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px;}
 .hm-stat{background:var(--bg);border:1px solid var(--bg2);border-radius:var(--r);padding:10px 12px;}
 .hm-stat-val{font-family:var(--mono);font-size:18px;font-weight:800;color:var(--yellow-b);line-height:1;}
@@ -1011,7 +1019,6 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
         <div class="mtitle">HABITS &amp; ROUTINES</div>
         <div class="hab-tabs" id="habTabs">
           <button class="hab-tab on" data-view="today">TODAY</button>
-          <button class="hab-tab" data-view="calendar">CALENDAR</button>
           <button class="hab-tab" data-view="stats">STATS</button>
         </div>
         <button class="mcls" data-close="habitsModal" aria-label="Close"><i class="fas fa-times"></i></button>
@@ -1088,8 +1095,6 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
         </div>
         <div id="habArchivedSection"></div>
       </div>
-      <!-- CALENDAR VIEW -->
-      <div id="habCalView" style="display:none"></div>
       <!-- STATS VIEW -->
       <div id="habStatsView" style="display:none"></div>
     </div>
@@ -1143,11 +1148,6 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
       <button class="mcls" data-close="heatmapModal" aria-label="Close"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
-      <div class="hm-tabs" id="hmTabs">
-        <button class="hm-tab on" data-view="year">YEAR</button>
-        <button class="hm-tab" data-view="month">MONTH</button>
-        <button class="hm-tab" data-view="week">WEEK</button>
-      </div>
       <div class="hm-stats" id="hmStats"></div>
       <div class="hm-grid-wrap">
         <div class="hm-month-labels" id="hmMonthLabels"></div>
@@ -3091,7 +3091,6 @@ const hmDateRange = view => {
 };
 
 // ── Render ────────────────────────────────────────────────────────────────
-let hmView = 'year';
 const hmTooltipEl = document.getElementById('hmTooltip');
 
 const hmShowTooltip = (cell, dateKey, data, e) => {
@@ -3117,7 +3116,7 @@ const hmHideTooltip = () => hmTooltipEl.classList.remove('show');
 
 const renderHeatmap = () => {
   const dayMap = hmBuildDayMap();
-  const { start, end } = hmDateRange(hmView);
+  const { start, end } = hmDateRange('year');
   const today = new Date(); today.setHours(0,0,0,0);
   const todayKey = today.toISOString().slice(0,10);
 
@@ -3145,7 +3144,7 @@ const renderHeatmap = () => {
 
   // Month labels (year view only)
   const mlEl = $('hmMonthLabels'); mlEl.innerHTML = '';
-  if (hmView === 'year') {
+  if (true) {
     let lastMonth = -1;
     weeks.forEach(wk => {
       const firstReal = wk.find(d => d);
@@ -3161,7 +3160,7 @@ const renderHeatmap = () => {
 
   // Day labels
   const dlEl = $('hmDayLabels'); dlEl.innerHTML = '';
-  const dayLblSet = hmView === 'week'
+  const dayLblSet = false
     ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
     : ['','Mon','','Wed','','Fri',''];
   dayLblSet.forEach(lbl => {
@@ -3263,14 +3262,7 @@ const renderHeatmap = () => {
 };
 
 // ── Tab wiring ────────────────────────────────────────────────────────────
-document.getElementById('hmTabs').addEventListener('click', e => {
-  const btn = e.target.closest('.hm-tab');
-  if (!btn) return;
-  document.querySelectorAll('.hm-tab').forEach(t => t.classList.remove('on'));
-  btn.classList.add('on');
-  hmView = btn.dataset.view;
-  renderHeatmap();
-});
+
 
 // Save pomos to persistent history whenever a work session completes
 const hmPersistPomo = () => {
@@ -3281,8 +3273,7 @@ const hmPersistPomo = () => {
 };
 
 $('openHeatmapBtn').addEventListener('click', () => {
-  hmView = 'year';
-  document.querySelectorAll('.hm-tab').forEach(t => t.classList.toggle('on', t.dataset.view === 'year'));
+
   renderHeatmap();
   openM('heatmapModal');
 });
@@ -3711,135 +3702,154 @@ const renderHabArchived = () => {
 };
 
 // ── Calendar view ────────────────────────────────────────────────────────────
-const renderHabCalView = () => {
-  const el=document.getElementById('habCalView'); el.innerHTML='';
-  const active=habits.filter(h=>!h.archived);
-  if(!active.length){el.innerHTML='<div class="hab-empty"><span class="hab-empty-icon">📅</span>No habits to show.</div>';return;}
-
-  const today=new Date(); today.setHours(0,0,0,0);
-  const DAYS=28;
-  const c=habComp();
-
-  // Build date array (last 28 days)
-  const dates=[];
-  for(let i=DAYS-1;i>=0;i--){const d=new Date(today);d.setDate(today.getDate()-i);dates.push(d);}
-
-  // Month label header
-  const header=document.createElement('div'); header.className='hab-cal-header';
-  const spacer=document.createElement('div'); spacer.className='hab-cal-spacer'; header.appendChild(spacer);
-  const mlRow=document.createElement('div'); mlRow.style.cssText='display:flex;flex:1;gap:2px;';
-  let lastM=-1;
-  dates.forEach(d=>{
-    const cell=document.createElement('div');
-    cell.style.cssText='width:10px;flex:1;font-family:var(--mono);font-size:7px;color:var(--bg3);text-align:center;';
-    const m=d.getMonth();
-    cell.textContent=(m!==lastM&&d.getDate()<=3)?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]:'';
-    if(m!==lastM)lastM=m;
-    mlRow.appendChild(cell);
-  });
-  header.appendChild(mlRow);
-  const rateHdr=document.createElement('div');
-  rateHdr.style.cssText='width:38px;font-family:var(--mono);font-size:7px;color:var(--bg3);text-align:right;flex-shrink:0;';
-  rateHdr.textContent='RATE';
-  header.appendChild(rateHdr);
-  el.appendChild(header);
-
-  // One row per habit
-  active.forEach(h=>{
-    const col=h.color||'var(--green-b)';
-    const rate=habRate(h.id,DAYS);
-    const row=document.createElement('div'); row.className='hab-cal-row';
-
-    const nameEl=document.createElement('div'); nameEl.className='hab-cal-name';
-    nameEl.innerHTML=`<span>${h.icon||'📚'}</span><span style="color:${col}">${h.name}</span>`;
-
-    const dotsEl=document.createElement('div'); dotsEl.className='hab-cal-dots';
-    dotsEl.style.cssText='display:flex;gap:2px;flex:1;';
-    dates.forEach(d=>{
-      const k=habKey(d);
-      const dot=document.createElement('div');
-      dot.style.cssText='width:10px;height:10px;flex:1;border-radius:2px;';
-      if(!habIsScheduled(h,d)){dot.style.background='transparent';dot.style.opacity='.15';}
-      else{
-        const isDone=(c[k]||[]).includes(h.id);
-        dot.style.background=isDone?col:'var(--bg2)';
-        dot.style.opacity=isDone?'1':'.5';
-      }
-      const dd=d; dot.title=`${dd.toDateString()} · ${(c[habKey(dd)]||[]).includes(h.id)?'✓ Done':'Not done'}`;
-      dotsEl.appendChild(dot);
-    });
-
-    const rateEl=document.createElement('div'); rateEl.className='hab-cal-rate';
-    rateEl.textContent=rate+'%';
-    rateEl.style.color=rate>=80?'var(--green-b)':rate>=50?'var(--yellow-b)':'var(--red-b)';
-
-    row.appendChild(nameEl); row.appendChild(dotsEl); row.appendChild(rateEl);
-    el.appendChild(row);
-  });
-};
-
 // ── Stats view ───────────────────────────────────────────────────────────────
 const renderHabStatsView = () => {
-  const el=document.getElementById('habStatsView'); el.innerHTML='';
-  const active=habits.filter(h=>!h.archived);
-  if(!active.length){el.innerHTML='<div class="hab-empty"><span class="hab-empty-icon">📊</span>No habits yet.</div>';return;}
-
-  const c=habComp();
-  const today=new Date(); today.setHours(0,0,0,0);
-  const allStreaks=active.map(h=>habStreak(h.id));
-  const allLong=active.map(h=>habLongestStreak(h.id));
-  const allRates=active.map(h=>habRate(h.id,28));
-  const maxStreak=allStreaks.length?Math.max(...allStreaks):0;
-  const avgRate=allRates.length?Math.round(allRates.reduce((s,r)=>s+r,0)/allRates.length):0;
-
-  // Count perfect days (all scheduled habits done) in last 30 days
-  let perfectDays=0;
+  const el = document.getElementById('habStatsView');
+  el.innerHTML = '';
+  const active = habits.filter(h => !h.archived);
+  if (!active.length) { el.innerHTML='<div class="hab-empty"><span class="hab-empty-icon">📊</span>No habits yet.</div>'; return; }
+  const c = habComp();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const DNAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const allStreaks = active.map(h=>habStreak(h.id));
+  const allLongest = active.map(h=>habLongestStreak(h.id));
+  const allR28 = active.map(h=>habRate(h.id,28));
+  const allR7  = active.map(h=>habRate(h.id,7));
+  const allTot = active.map(h=>{ let n=0; Object.values(c).forEach(ids=>{if(ids.includes(h.id))n++;}); return n; });
+  const maxS   = Math.max(...allStreaks,0);
+  const maxL   = Math.max(...allLongest,0);
+  const avgR28 = active.length ? Math.round(allR28.reduce((s,r)=>s+r,0)/active.length) : 0;
+  const totAll = allTot.reduce((s,n)=>s+n,0);
+  let perf=0;
   for(let i=0;i<30;i++){
-    const d=new Date(today); d.setDate(today.getDate()-i);
-    const k=habKey(d);
-    const sched=active.filter(h=>habIsScheduled(h,d));
-    if(sched.length&&sched.every(h=>(c[k]||[]).includes(h.id)))perfectDays++;
+    const d=new Date(today); d.setDate(today.getDate()-i); const k=habKey(d);
+    const sc=active.filter(h=>habIsScheduled(h,d));
+    if(sc.length&&sc.every(h=>(c[k]||[]).includes(h.id)))perf++;
   }
+  const dowDone=new Array(7).fill(0), dowSch=new Array(7).fill(0);
+  for(let i=0;i<90;i++){
+    const d=new Date(today); d.setDate(today.getDate()-i);
+    const k=habKey(d),dow=d.getDay();
+    active.forEach(h=>{ if(habIsScheduled(h,d)){ dowSch[dow]++; if((c[k]||[]).includes(h.id))dowDone[dow]++; } });
+  }
+  const dowR=dowSch.map((s,i)=>s?Math.round(dowDone[i]/s*100):0);
+  const maxDR=Math.max(...dowR,1);
+  const bestDow=dowR.indexOf(Math.max(...dowR));
+  const worstDow=dowR.reduce((b,r,i)=>(dowSch[i]>0&&r<dowR[b]?i:b),bestDow);
 
-  el.innerHTML=`<div class="hab-stats-header">OVERVIEW</div>`;
-  const grid=document.createElement('div'); grid.className='hab-stats-grid';
-  grid.innerHTML=`
-    <div class="hab-stat-card"><div class="hab-stat-val" style="color:#fe8019">${maxStreak}</div><div class="hab-stat-lbl">BEST STREAK</div><div class="hab-stat-sub">current</div></div>
-    <div class="hab-stat-card"><div class="hab-stat-val" style="color:var(--green-b)">${avgRate}%</div><div class="hab-stat-lbl">AVG RATE</div><div class="hab-stat-sub">last 28 days</div></div>
-    <div class="hab-stat-card"><div class="hab-stat-val" style="color:var(--yellow-b)">${perfectDays}</div><div class="hab-stat-lbl">PERFECT DAYS</div><div class="hab-stat-sub">last 30 days</div></div>
-    <div class="hab-stat-card"><div class="hab-stat-val" style="color:var(--blue-b)">${active.length}</div><div class="hab-stat-lbl">ACTIVE HABITS</div><div class="hab-stat-sub">total</div></div>`;
-  el.appendChild(grid);
+  // ── Overview ──────────────────────────────────────────────────────────
+  const mkSec = title => { const s=document.createElement('div'); s.className='hab-stats-section'; s.innerHTML=`<div class="hab-stats-section-title">${title}</div>`; el.appendChild(s); return s; };
+  const sec1=mkSec('OVERVIEW');
+  const g=document.createElement('div'); g.className='hab-stats-grid';
+  g.innerHTML=`
+    <div class="hab-stat-card"><div class="hab-stat-card-icon">🔥</div><div class="hab-stat-val" style="color:#fe8019">${maxS}</div><div class="hab-stat-lbl">BEST STREAK</div><div class="hab-stat-sub">current</div></div>
+    <div class="hab-stat-card"><div class="hab-stat-card-icon">🏆</div><div class="hab-stat-val" style="color:var(--yellow-b)">${maxL}</div><div class="hab-stat-lbl">LONGEST EVER</div><div class="hab-stat-sub">all time</div></div>
+    <div class="hab-stat-card"><div class="hab-stat-card-icon">✅</div><div class="hab-stat-val" style="color:var(--green-b)">${avgR28}%</div><div class="hab-stat-lbl">AVG COMPLETION</div><div class="hab-stat-sub">last 28 days</div></div>
+    <div class="hab-stat-card"><div class="hab-stat-card-icon">⭐</div><div class="hab-stat-val" style="color:var(--yellow-b)">${perf}</div><div class="hab-stat-lbl">PERFECT DAYS</div><div class="hab-stat-sub">last 30 days</div></div>
+    <div class="hab-stat-card"><div class="hab-stat-card-icon">📦</div><div class="hab-stat-val" style="color:var(--blue-b)">${totAll}</div><div class="hab-stat-lbl">TOTAL COMPLETIONS</div><div class="hab-stat-sub">all time</div></div>
+    <div class="hab-stat-card"><div class="hab-stat-card-icon">📋</div><div class="hab-stat-val" style="color:var(--fg)">${active.length}</div><div class="hab-stat-lbl">ACTIVE HABITS</div><div class="hab-stat-sub">tracked now</div></div>`;
+  sec1.appendChild(g);
 
-  // Per-habit completion rate bars
-  el.innerHTML+=`<div class="hab-stats-header" style="margin-top:4px">PER-HABIT (28-DAY RATE)</div>`;
-  const barsEl=document.createElement('div'); barsEl.className='hab-per-hab-stats';
-  const sorted=[...active].sort((a,b)=>habRate(b.id,28)-habRate(a.id,28));
-  sorted.forEach(h=>{
-    const rate=habRate(h.id,28);
-    const streak=habStreak(h.id);
-    const longest=habLongestStreak(h.id);
-    const col=h.color||'var(--green-b)';
-    const row=document.createElement('div'); row.className='hab-stat-row';
-    row.innerHTML=`
-      <div class="hab-stat-row-icon">${h.icon||'📚'}</div>
-      <div class="hab-stat-row-name" style="color:${col}">${h.name}</div>
-      <div class="hab-stat-track"><div class="hab-stat-fill" style="width:${rate}%;background:${col}"></div></div>
-      <div class="hab-stat-pct">${rate}%</div>
-      <div class="hab-stat-streak-lbl" style="color:#fe8019">🔥${streak}</div>`;
-    row.title=`Longest streak: ${longest} days`;
-    barsEl.appendChild(row);
+  // ── Day of week ───────────────────────────────────────────────────────
+  const sec2=mkSec('COMPLETION BY DAY OF WEEK (last 90 days)');
+  const dg=document.createElement('div'); dg.className='hab-dow-grid';
+  dowR.forEach((rate,i)=>{
+    const col2=document.createElement('div'); col2.className='hab-dow-col';
+    const bh=Math.max(2,Math.round((rate/maxDR)*48));
+    const bc=rate>=80?'var(--green-b)':rate>=60?'var(--yellow-b)':rate>=40?'#fe8019':'var(--red-b)';
+    col2.innerHTML=`<div class="hab-dow-bar-wrap"><div class="hab-dow-bar" style="height:${bh}px;background:${i===bestDow?bc:bc+'88'}"></div></div>
+      <div class="hab-dow-lbl" style="font-weight:${i===bestDow?700:400};color:${i===bestDow?'var(--fg)':'var(--fg-dim)'}">${DNAMES[i][0]}</div>
+      <div class="hab-dow-pct">${rate}%</div>`;
+    dg.appendChild(col2);
   });
-  el.appendChild(barsEl);
+  sec2.appendChild(dg);
+
+  // ── Streak leaderboard ────────────────────────────────────────────────
+  const sec3=mkSec('STREAK LEADERBOARD');
+  const lb=document.createElement('div'); lb.className='hab-leaderboard';
+  [...active].map((h,i)=>({h,s:allStreaks[i],l:allLongest[i],r:allR28[i]}))
+    .sort((a,b)=>b.s-a.s).slice(0,5).forEach(({h,s,l,r},i)=>{
+      const col3=h.color||'var(--green-b)';
+      const row=document.createElement('div'); row.className='hab-lb-row';
+      row.style.cssText=`border-left:3px solid ${col3};`;
+      row.innerHTML=`<div class="hab-lb-medal">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]||''}</div>
+        <div class="hab-lb-icon">${h.icon||'📚'}</div>
+        <div class="hab-lb-info"><div class="hab-lb-name" style="color:${col3}">${h.name}</div>
+        <div class="hab-lb-meta">Best ever: ${l}d · 28-day: ${r}% · ${h.category||'General'}</div></div>
+        <div class="hab-lb-streak">🔥${s}</div>`;
+      lb.appendChild(row);
+    });
+  sec3.appendChild(lb);
+
+  // ── Insights ──────────────────────────────────────────────────────────
+  const sec4=mkSec('INSIGHTS');
+  const ins=[];
+  const bh2=active[allR28.indexOf(Math.max(...allR28))];
+  const wh=active[allR28.indexOf(Math.min(...allR28))];
+  const mth=active[allTot.indexOf(Math.max(...allTot))];
+  if(bh2) ins.push({icon:'🌟',t:`<strong>${bh2.icon} ${bh2.name}</strong> is your most consistent — <strong>${Math.max(...allR28)}%</strong> over 28 days.`});
+  if(wh&&wh.id!==bh2?.id) ins.push({icon:'⚠️',t:`<strong>${wh.icon} ${wh.name}</strong> needs attention — only <strong>${Math.min(...allR28)}%</strong> completion. Try a reminder or easier target.`});
+  if(bestDow>=0) ins.push({icon:'📅',t:`You're most productive on <strong>${DNAMES[bestDow]}s</strong> (${dowR[bestDow]}%). Schedule your hardest habits then.`});
+  if(worstDow>=0&&worstDow!==bestDow&&dowSch[worstDow]>0) ins.push({icon:'😴',t:`<strong>${DNAMES[worstDow]}s</strong> are your weakest (${dowR[worstDow]}%). Try lighter habits or extra reminders.`});
+  if(mth) ins.push({icon:'🏅',t:`<strong>${mth.icon} ${mth.name}</strong> is your all-time champion — completed <strong>${Math.max(...allTot)}</strong> times.`});
+  if(perf>=5) ins.push({icon:'🔥',t:`<strong>${perf} perfect days</strong> in the last 30. Exceptional consistency!`});
+  else if(perf===0) ins.push({icon:'💡',t:`No perfect days yet — try completing all scheduled habits in one day to start the momentum.`});
+  const il=document.createElement('div'); il.className='hab-insight-list';
+  ins.slice(0,5).forEach(({icon,t})=>{
+    const d=document.createElement('div'); d.className='hab-insight';
+    d.innerHTML=`<div class="hab-insight-icon">${icon}</div><div class="hab-insight-text">${t}</div>`;
+    il.appendChild(d);
+  });
+  sec4.appendChild(il);
+
+  // ── Per-habit breakdown ───────────────────────────────────────────────
+  const sec5=mkSec('PER-HABIT BREAKDOWN');
+  const pl=document.createElement('div'); pl.className='hab-per-hab-list';
+  [...active].map((h,i)=>({h,s:allStreaks[i],l:allLongest[i],r28:allR28[i],r7:allR7[i],tot:allTot[i]}))
+    .sort((a,b)=>b.r28-a.r28).forEach(({h,s,l,r28,r7,tot})=>{
+      const col4=h.color||'var(--green-b)';
+      let ld=null;
+      for(let i=0;i<365;i++){const d=new Date(today);d.setDate(today.getDate()-i);if((c[habKey(d)]||[]).includes(h.id)){ld=d;break;}}
+      const ls=ld?(ld.toDateString()===today.toDateString()?'Today':ld.toLocaleDateString('en-US',{month:'short',day:'numeric'})):'Never';
+      const sc2=s>=30?'fire':s>=14?'hot':s>=7?'warm':'cold';
+      const card=document.createElement('div'); card.className='hab-per-row';
+      card.style.cssText=`border-left:3px solid ${col4};`;
+      card.innerHTML=`
+        <div class="hab-per-top">
+          <div class="hab-per-icon">${h.icon||'📚'}</div>
+          <div class="hab-per-name" style="color:${col4}">${h.name}</div>
+          <div class="hab-per-chips">
+            <span class="hab-per-chip" style="background:${col4}22;color:${col4}">${h.category||'General'}</span>
+            <span class="hab-streak-chip ${sc2}">🔥 ${s}</span>
+          </div>
+        </div>
+        <div class="hab-per-bar-row">
+          <div class="hab-per-bar-lbl">7-day</div>
+          <div class="hab-per-bar-track"><div class="hab-per-bar-fill" style="width:${r7}%;background:${col4}"></div></div>
+          <div class="hab-per-bar-val">${r7}%</div>
+        </div>
+        <div class="hab-per-bar-row">
+          <div class="hab-per-bar-lbl">28-day</div>
+          <div class="hab-per-bar-track"><div class="hab-per-bar-fill" style="width:${r28}%;background:${col4}88"></div></div>
+          <div class="hab-per-bar-val">${r28}%</div>
+        </div>
+        <div class="hab-per-bar-row">
+          <div class="hab-per-bar-lbl">Best</div>
+          <div class="hab-per-bar-track"><div class="hab-per-bar-fill" style="width:${maxL>0?Math.min(l/maxL*100,100):0}%;background:${col4}44"></div></div>
+          <div class="hab-per-bar-val">${l}d</div>
+        </div>
+        <div class="hab-per-last">Last: ${ls} · ${tot} total completions</div>`;
+      pl.appendChild(card);
+    });
+  sec5.appendChild(pl);
 };
 
 // ── Main render ──────────────────────────────────────────────────────────────
 const renderHabitsModal = () => {
   renderHabStrip();
   document.getElementById('habTodayView').style.display  = habView==='today'    ? '' : 'none';
-  document.getElementById('habCalView').style.display    = habView==='calendar' ? '' : 'none';
   document.getElementById('habStatsView').style.display  = habView==='stats'    ? '' : 'none';
   if(habView==='today')    renderHabTodayView();
-  if(habView==='calendar') renderHabCalView();
   if(habView==='stats')    renderHabStatsView();
 };
 
