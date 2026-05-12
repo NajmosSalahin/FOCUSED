@@ -60,56 +60,6 @@ Designed with a heavily customized Gruvbox-inspired UI and optimized for local-f
 
 ---
 
-# Architecture
-
-The project is separated into three main files:
-
-```text
-.
-├── index.html
-├── style.css
-└── script.js
-```
-
-## index.html
-
-Contains:
-
-* Layout structure
-* UI containers
-* Modals
-* Widgets
-* Dashboard sections
-
-## style.css
-
-Contains:
-
-* Gruvbox theme system
-* Layout system
-* Animations
-* Responsive breakpoints
-* Modal styling
-* Dashboard components
-* Productivity visualizations
-
-## script.js
-
-Contains:
-
-* Pomodoro engine
-* Habit logic
-* Task tracking
-* Calendar system
-* Timeline rendering
-* Heatmap analytics
-* LocalStorage persistence
-* Keyboard controls
-* Modal management
-* Weather integration
-
----
-
 # Core Systems
 
 # 1. Pomodoro Engine
