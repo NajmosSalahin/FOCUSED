@@ -370,23 +370,6 @@ FOCUS was designed to provide:
 
 ---
 
-# Future Improvements
-
-Potential future upgrades:
-
-* PWA support
-* Offline caching
-* IndexedDB migration
-* Cloud sync
-* Multi-device sync
-* Calendar integrations
-* Export systems
-* Plugin architecture
-* Theme engine
-* Markdown journaling
-
----
-
 # License
 
 MIT License
