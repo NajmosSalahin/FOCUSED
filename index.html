@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FOCUS — Pomodoro &amp; Task Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&amp;family=Atkinson+Hyperlegible:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+
+<link href="style.css" rel="stylesheet"/></head>
+<body>
+<div class="app">
+<!-- HEADER -->
+<div class="header">
+<div class="header-row1">
+<div class="logo">FOCUS <em>/ pomodoro + tracker</em></div>
+</div>
+<div class="header-row2">
+<div class="date-nav">
+<button aria-label="Previous day" id="prevDateBtn" title="Previous day"><i aria-hidden="true" class="fas fa-chevron-left"></i></button>
+<span aria-live="polite" class="date-label" id="dateLabel"></span>
+<button aria-label="Go to today" id="goTodayBtn" title="Go to today"><i aria-hidden="true" class="fas fa-calendar-check"></i></button>
+<button aria-label="Next day" id="nextDateBtn" title="Next day"><i aria-hidden="true" class="fas fa-chevron-right"></i></button>
+</div>
+<div class="hw-chip" id="hwClockChip" title="Click to toggle 12/24h">
+<span class="hw-clock" id="hwClock">--:--:--</span>
+</div>
+<div class="hw-chip hw-weather-chip" id="hwWeatherChip" title="Live weather">
+<i class="hw-icon loading fas fa-circle-notch fa-spin" id="hwIcon"></i>
+<span class="hw-temp" id="hwTemp">--°C</span>
+<span class="hw-sep">·</span>
+<i class="fas fa-droplet hw-hum" style="font-size:9px"></i>
+<span class="hw-hum" id="hwHumidity">--%</span>
+<span class="hw-sep">·</span>
+<span class="hw-cond" id="hwCond">--</span>
+<span class="hw-sep">·</span>
+<i class="fas fa-location-dot hw-hum" style="font-size:9px"></i>
+<span class="hw-city" id="hwCity">--</span>
+<button aria-label="Change location" class="hw-loc-btn" id="hwLocBtn" title="Change location"><i class="fas fa-pen"></i></button>
+</div>
+</div>
+<div class="header-row3">
+<div aria-label="Time totals" class="totals">
+<div class="chip"><span class="lbl">TODAY</span><span aria-live="polite" class="val" id="todayTotal">00:00:00</span></div>
+<div class="chip"><span class="lbl">WEEK</span><span aria-live="polite" class="val" id="weekTotal">00:00:00</span></div>
+<div class="chip"><span class="lbl">MONTH</span><span aria-live="polite" class="val" id="monthTotal">00:00:00</span></div>
+<div class="chip avg" title="Average daily tracked time this week"><span class="lbl">D.AVG</span><span aria-live="polite" class="val" id="dayAvg">00:00:00</span></div>
+</div>
+</div>
+</div>
+<!-- TASK INPUT -->
+<div aria-label="Task tracker" class="task-bar" role="region">
+<select aria-label="Select project" id="projSelect"><option value="">— no project —</option></select>
+<input aria-label="Task description" autocomplete="off" id="taskInput" placeholder="What are you working on right now?" type="text"/>
+<span aria-live="off" class="live off" id="liveTimer">00:00:00</span>
+<button aria-label="Start task timer" class="track-btn" id="trackBtn" title="Start/Stop (Ctrl+Enter)">
+<i aria-hidden="true" class="fas fa-play"></i> START
+    </button>
+</div>
+<!-- TOP ROW: POMO (left) + GOALS & PROJECTS (right) -->
+<div class="top-row">
+<!-- POMODORO -->
+<div aria-label="Pomodoro timer" class="pomo" role="region">
+<div class="pomo-header">
+<div class="pomo-tabs" role="tablist">
+<button aria-selected="true" class="pomo-tab active" data-m="work" role="tab">WORK</button>
+<button aria-selected="false" class="pomo-tab" data-m="short" role="tab">SHORT</button>
+<button aria-selected="false" class="pomo-tab" data-m="long" role="tab">LONG</button>
+</div>
+<button aria-label="Toggle auto-advance mode" class="auto-badge" id="autoBadge" title="Click to toggle Auto / Manual mode">AUTO ▶</button>
+</div>
+<div aria-hidden="true" class="pomo-ring-wrap">
+<svg aria-hidden="true" class="pomo-svg" viewbox="0 0 190 190">
+<circle class="ring-bg" cx="95" cy="95" r="85"></circle>
+<circle class="ring-fg" cx="95" cy="95" id="ringFg" r="85"></circle>
+</svg>
+<div class="pomo-time-wrap">
+<div aria-live="off" class="pomo-time" id="pomoDisplay" title="Click to edit time">25:00</div>
+<input aria-label="Edit timer" class="pomo-time-input" id="pomoTimeInput" maxlength="5" placeholder="MM:SS" type="text"/>
+</div>
+</div>
+<div class="pomo-sub" id="pomoSub">SESSION 1 OF 4</div>
+<span aria-live="polite" class="sr-only" id="pomoLive" style="position:absolute;left:-9999px;"></span>
+<div class="pomo-ctrls">
+<button aria-label="Reset timer" class="pbtn pbtn-sm" id="pomoReset" title="Reset (R)"><i aria-hidden="true" class="fas fa-redo"></i></button>
+<button aria-label="Start timer" class="pbtn pbtn-main" id="pomoStart" title="Start/Pause (Space)"><i aria-hidden="true" class="fas fa-play"></i></button>
+<button aria-label="Skip to next session" class="pbtn pbtn-sm" id="pomoSkip" title="Skip"><i aria-hidden="true" class="fas fa-forward-step"></i></button>
+<button aria-label="Timer settings" class="pbtn pbtn-sm" id="pomoSettingsBtn" title="Timer Settings"><i aria-hidden="true" class="fas fa-sliders"></i></button>
+</div>
+<div aria-label="Session progress" class="pomo-dots" id="pomoDots"></div>
+<div aria-label="Session plan" class="pomo-plan" id="pomoPlan"></div>
+<span class="kbd-hint" title="Keyboard shortcuts">Space: start/pause · R: reset · Ctrl+Enter: track</span>
+</div>
+<!-- GOALS + PROJECTS -->
+<div class="gp-col">
+<div class="card">
+<div class="chead">
+<div class="ctitle">GOALS</div>
+<button aria-label="Add goal" class="add-btn" id="openGoalBtn" title="Add goal"><i aria-hidden="true" class="fas fa-plus"></i></button>
+</div>
+<div id="goalList" role="list"></div>
+</div>
+<div class="card">
+<div class="chead">
+<div class="ctitle">PROJECTS</div>
+<button aria-label="Add project" class="add-btn" id="openProjBtn" title="Add project"><i aria-hidden="true" class="fas fa-plus"></i></button>
+</div>
+<div id="projList" role="list"></div>
+</div>
+</div>
+</div><!-- /top-row -->
+<!-- MAIN GRID -->
+<div class="main">
+<!-- LEFT COL: Entries + sub-grid -->
+<div class="entry-col">
+<!-- ENTRIES -->
+<div class="card">
+<div class="chead">
+<div class="ctitle">ENTRIES — <b id="entryDateLabel">TODAY</b></div>
+</div>
+<div aria-label="Time entries" class="entries" id="entryList" role="list"></div>
+</div>
+<!-- SUB-GRID: Pomo Log + Pomo Goal -->
+<div class="sub-grid">
+<!-- POMO SESSION LOG -->
+<div class="card">
+<div class="chead">
+<div class="ctitle">POMO LOG</div>
+<button aria-label="Clear pomo log" class="add-btn danger" id="clearPomoLogBtn" title="Clear today's log"><i aria-hidden="true" class="fas fa-trash"></i></button>
+</div>
+<div class="pomo-log-list" id="pomoLogList">
+<div class="empty">// no sessions yet today</div>
+</div>
+</div>
+<!-- POMO DAILY GOAL -->
+<div class="card">
+<div class="chead">
+<div class="ctitle">DAILY GOAL</div>
+</div>
+<div class="pg-row">
+<div class="pg-count"><span id="pgDone">0</span> <span class="pg-slash">/ <span id="pgTarget">8</span></span></div>
+<div class="pg-target" id="pgStatus">sessions</div>
+</div>
+<div class="pg-bar-wrap"><div class="pg-bar" id="pgBar" style="width:0%"></div></div>
+<div class="pg-set">
+<button aria-label="Decrease goal" class="pg-nudge" id="pgMinus">−</button>
+<input aria-label="Daily session goal" id="pgGoalInput" max="24" min="1" type="number" value="8"/>
+<button aria-label="Increase goal" class="pg-nudge" id="pgPlus">+</button>
+<button class="btn btn-s pg-set-btn" id="pgSetBtn">SET</button>
+</div>
+</div>
+</div><!-- /sub-grid -->
+</div><!-- /entry-col -->
+<!-- SIDEBAR: Calendar + Actions -->
+<div class="sidebar">
+<div class="card">
+<div class="chead">
+<div class="ctitle">CALENDAR</div>
+<div class="cal-nav-btns">
+<button aria-label="Previous month" class="cal-nav" id="calPrevBtn"><i class="fas fa-chevron-left"></i></button>
+<button aria-label="Go to today's month" class="cal-nav" id="calTodayBtn" title="Today"><i class="fas fa-circle cal-today-dot"></i></button>
+<button aria-label="Next month" class="cal-nav" id="calNextBtn"><i class="fas fa-chevron-right"></i></button>
+</div>
+</div>
+<div class="cal-month-lbl" id="calMonthLabel"></div>
+<div class="cal-grid-wrap">
+<div class="cal-grid" id="calDowRow"></div>
+<div class="cal-grid" id="calGrid"></div>
+</div>
+</div>
+<div class="card">
+<div class="act-btns">
+<button class="act-btn hab" id="openHabitsBtn"><i aria-hidden="true" class="fas fa-check-double"></i> HABITS &amp; ROUTINES</button>
+<button class="act-btn tln" id="openTimelineBtn"><i aria-hidden="true" class="fas fa-timeline"></i> DAY TIMELINE</button>
+<button class="act-btn hmp" id="openHeatmapBtn"><i aria-hidden="true" class="fas fa-fire"></i> FOCUS HEATMAP</button>
+<button class="act-btn rpt" id="openReportBtn"><i aria-hidden="true" class="fas fa-chart-bar"></i> ADVANCED REPORTS</button>
+<button class="act-btn imp" id="openImportBtn"><i aria-hidden="true" class="fas fa-upload"></i> IMPORT DATA</button>
+<button class="act-btn exp" id="openExportBtn"><i aria-hidden="true" class="fas fa-download"></i> EXPORT DATA</button>
+</div>
+</div>
+</div><!-- /sidebar -->
+</div><!-- /main -->
+</div><!-- /app -->
+<!-- HABITS MODAL -->
+<div aria-label="Habits and Routines" aria-modal="true" class="overlay hab-modal" id="habitsModal" role="dialog">
+<div class="modal">
+<div class="mhead">
+<div class="hab-mhead-inner">
+<div class="mtitle">HABITS &amp; ROUTINES</div>
+<div class="hab-tabs" id="habTabs">
+<button class="hab-tab on" data-view="today">TODAY</button>
+<button class="hab-tab" data-view="stats">STATS</button>
+</div>
+<button aria-label="Close" class="mcls" data-close="habitsModal"><i class="fas fa-times"></i></button>
+</div>
+</div>
+<div class="hab-date-nav" id="habDateNav">
+<button class="hab-date-arrow" id="habDateBack"><i class="fas fa-chevron-left"></i></button>
+<div class="hab-date-strip" id="habDateStrip"></div>
+<button class="hab-date-arrow" id="habDateFwd"><i class="fas fa-chevron-right"></i></button>
+<button class="hab-date-arrow" id="habDateToday" title="Go to today"><i class="fas fa-calendar-check"></i></button>
+</div>
+<div class="modal-body" id="habModalBody">
+<!-- TODAY VIEW -->
+<div id="habTodayView">
+<div class="hab-top-row">
+<div class="hab-ring-wrap" id="habRingWrap">
+<svg class="hab-ring-svg" height="72" id="habRingSvg" viewbox="0 0 72 72" width="72">
+<circle class="hab-ring-bg" cx="36" cy="36" r="30" stroke-width="6"></circle>
+<circle class="hab-ring-fg" cx="36" cy="36" id="habRingFg" r="30" stroke-dasharray="188.5" stroke-dashoffset="188.5" stroke-width="6"></circle>
+</svg>
+<div class="hab-ring-center">
+<div class="hab-ring-pct" id="habRingPct">0%</div>
+<div class="hab-ring-lbl">DONE</div>
+</div>
+</div>
+<div class="hab-summary-block">
+<div class="hab-summary-row" id="habSummaryRow"></div>
+<div id="habPerfectBanner"></div>
+</div>
+</div>
+<div class="hab-controls">
+<div class="hab-cat-pills" id="habCatPills"></div>
+<select class="hab-sort-sel" id="habSortSel">
+<option value="order">Custom order</option>
+<option value="streak">By streak</option>
+<option value="name">By name</option>
+<option value="cat">By category</option>
+</select>
+</div>
+<div class="hab-prog-wrap">
+<div class="hab-prog-bar"><div class="hab-prog-fill" id="habProgFill" style="width:0%"></div></div>
+<div class="hab-prog-label"><span id="habProgLeft">0 remaining</span><span id="habProgRight">0 / 0</span></div>
+</div>
+<div class="hab-list" id="habList"></div>
+<!-- ADD PANEL -->
+<div class="hab-add-panel">
+<div class="hab-add-title">+ NEW HABIT</div>
+<div class="hab-add-row">
+<div class="hab-add-col">
+<input autocomplete="off" class="hab-add-name" id="habAddName" maxlength="50" placeholder="Habit name…" type="text"/>
+<div class="hab-add-fields">
+<div class="hab-emoji-grid-wrap" id="habAddEmojiWrap">
+<button class="hab-emoji-btn" id="habAddEmojiBtn" type="button">📚</button>
+<div class="hab-emoji-grid" id="habAddEmojiGrid" style="display:none"></div>
+</div>
+<select class="hab-add-cat" id="habAddCat">
+<option value="General">General</option>
+<option value="Health">Health</option>
+<option value="Fitness">Fitness</option>
+<option value="Mind">Mind</option>
+<option value="Learning">Learning</option>
+<option value="Social">Social</option>
+<option value="Creative">Creative</option>
+</select>
+<input class="hab-add-time" id="habAddTime" title="Daily reminder" type="time"/>
+</div>
+<div class="hab-recur-pills" id="habAddRecurPills"></div>
+<div class="hab-day-toggles" id="habAddDayToggles" style="display:none"></div>
+<div class="hab-color-swatches" id="habAddColors"></div>
+</div>
+<button class="hab-add-submit" id="habAddSubmit">ADD HABIT</button>
+</div>
+</div>
+<div id="habArchivedSection"></div>
+</div>
+<!-- STATS VIEW -->
+<div id="habStatsView" style="display:none"></div>
+</div>
+</div>
+</div>
+<!-- TIMELINE MODAL -->
+<div aria-label="Day Timeline" aria-modal="true" class="overlay tln-modal" id="timelineModal" role="dialog">
+<div class="modal">
+<div class="mhead"><div class="mtitle">DAY TIMELINE</div><button aria-label="Close" class="mcls" data-close="timelineModal"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+<div class="tln-date-nav">
+<button class="tln-nav-btn" id="tlnPrev"><i class="fas fa-chevron-left"></i></button>
+<div class="tln-date-lbl" id="tlnDateLbl"></div>
+<button class="tln-nav-btn" id="tlnNext"><i class="fas fa-chevron-right"></i></button>
+<button class="tln-nav-btn" id="tlnToday" title="Jump to today"><i class="fas fa-calendar-check"></i></button>
+</div>
+<div class="tln-stats" id="tlnStats"></div>
+<div class="tln-tabs" id="tlnTabs">
+<button class="tln-tab on" data-view="timeline">TIMELINE</button>
+<button class="tln-tab" data-view="blocks">FOCUS BLOCKS</button>
+<button class="tln-tab" data-view="density">DENSITY GRAPH</button>
+</div>
+<div class="tln-wrap" id="tlnWrap"></div>
+</div>
+</div>
+</div>
+<!-- COMMAND PALETTE -->
+<div class="cmd-overlay" id="cmdOverlay">
+<div class="cmd-box">
+<div class="cmd-input-wrap">
+<span class="cmd-prompt">›</span>
+<input autocomplete="off" class="cmd-input" id="cmdInput" placeholder="Type a command or search…" spellcheck="false" type="text"/>
+</div>
+<div class="cmd-results" id="cmdResults"></div>
+<div class="cmd-footer">
+<span><kbd>↑↓</kbd> navigate</span>
+<span><kbd>Enter</kbd> run</span>
+<span><kbd>Esc</kbd> close</span>
+</div>
+</div>
+</div>
+<!-- ALERT MODAL -->
+<!-- HEATMAP MODAL -->
+<div aria-label="Focus Heatmap" aria-modal="true" class="overlay hm-modal" id="heatmapModal" role="dialog">
+<div class="modal">
+<div class="mhead">
+<span>FOCUS HEATMAP <em style="font-weight:400;color:var(--fg-dim);font-style:normal;font-size:12px;">· streak analytics</em></span>
+<button aria-label="Close" class="mcls" data-close="heatmapModal"><i class="fas fa-times"></i></button>
+</div>
+<div class="modal-body">
+<div class="hm-stats" id="hmStats"></div>
+<div class="hm-grid-wrap">
+<div class="hm-month-labels" id="hmMonthLabels"></div>
+<div class="hm-rows">
+<div class="hm-day-labels" id="hmDayLabels"></div>
+<div class="hm-weeks" id="hmWeeks"></div>
+</div>
+</div>
+<div class="hm-legend">
+<span>LESS</span>
+<div class="hm-legend-cells">
+<div class="hm-cell l0" style="cursor:default"></div>
+<div class="hm-cell l1" style="cursor:default"></div>
+<div class="hm-cell l2" style="cursor:default"></div>
+<div class="hm-cell l3" style="cursor:default"></div>
+<div class="hm-cell l4" style="cursor:default"></div>
+</div>
+<span>MORE</span>
+</div>
+<div class="hm-trend" id="hmTrend"></div>
+<div class="hm-burnout" id="hmBurnout"></div>
+</div>
+</div>
+</div>
+<div class="hm-tooltip" id="hmTooltip"></div>
+<div class="overlay alert-ov" data-no-overlay-close="" id="alertModal">
+<div aria-labelledby="alertMsg" aria-modal="true" class="modal" role="alertdialog">
+<div class="alert-body" id="alertMsg">Are you sure?</div>
+<div class="mfoot">
+<button class="btn btn-s" id="alertCancel" style="display:none">CANCEL</button>
+<button class="btn btn-p" id="alertOk">OK</button>
+</div>
+</div>
+</div>
+<!-- POMODORO SETTINGS MODAL -->
+<div class="overlay" id="pomoSettingsModal">
+<div aria-modal="true" class="modal" role="dialog">
+<div class="mhead">
+<div class="mtitle">TIMER SETTINGS</div>
+<button aria-label="Close" class="mcls" data-close="pomoSettingsModal"><i aria-hidden="true" class="fas fa-times"></i></button>
+</div>
+<div class="modal-body">
+<!-- Work / Short / Long duration — MM:SS -->
+<div class="dur-row">
+<div class="dur-field">
+<div class="dur-label">Work</div>
+<div class="dur-stepper" id="stepWork">
+<button aria-label="Decrease" class="dur-btn" data-step="-1" data-target="psWork">−</button>
+<input aria-label="Work minutes" class="dur-num" id="psWork" max="240" min="0" type="number" value="25"/>
+<span class="dur-unit">m</span><span class="dur-sep">·</span>
+<input aria-label="Work seconds" class="dur-num dur-sec-input" id="psWorkSec" max="59" min="0" type="number" value="0"/>
+<span class="dur-unit">s</span>
+<button aria-label="Increase" class="dur-btn" data-step="1" data-target="psWork">+</button>
+</div>
+<div class="dur-presets" data-for="psWork">
+<button class="dur-preset" data-val="15">15m</button>
+<button class="dur-preset" data-val="25">25m</button>
+<button class="dur-preset" data-val="30">30m</button>
+<button class="dur-preset" data-val="45">45m</button>
+<button class="dur-preset" data-val="50">50m</button>
+<button class="dur-preset" data-val="90">90m</button>
+</div>
+</div>
+<div class="dur-field">
+<div class="dur-label">Short Break</div>
+<div class="dur-stepper" id="stepShort">
+<button aria-label="Decrease" class="dur-btn" data-step="-1" data-target="psShort">−</button>
+<input aria-label="Short break minutes" class="dur-num" id="psShort" max="60" min="0" type="number" value="5"/>
+<span class="dur-unit">m</span><span class="dur-sep">·</span>
+<input aria-label="Short break seconds" class="dur-num dur-sec-input" id="psShortSec" max="59" min="0" type="number" value="0"/>
+<span class="dur-unit">s</span>
+<button aria-label="Increase" class="dur-btn" data-step="1" data-target="psShort">+</button>
+</div>
+<div class="dur-presets" data-for="psShort">
+<button class="dur-preset" data-val="5">5m</button>
+<button class="dur-preset" data-val="10">10m</button>
+<button class="dur-preset" data-val="15">15m</button>
+</div>
+</div>
+<div class="dur-field">
+<div class="dur-label">Long Break</div>
+<div class="dur-stepper" id="stepLong">
+<button aria-label="Decrease" class="dur-btn" data-step="-1" data-target="psLong">−</button>
+<input aria-label="Long break minutes" class="dur-num" id="psLong" max="120" min="0" type="number" value="15"/>
+<span class="dur-unit">m</span><span class="dur-sep">·</span>
+<input aria-label="Long break seconds" class="dur-num dur-sec-input" id="psLongSec" max="59" min="0" type="number" value="0"/>
+<span class="dur-unit">s</span>
+<button aria-label="Increase" class="dur-btn" data-step="1" data-target="psLong">+</button>
+</div>
+<div class="dur-presets" data-for="psLong">
+<button class="dur-preset" data-val="10">10m</button>
+<button class="dur-preset" data-val="15">15m</button>
+<button class="dur-preset" data-val="20">20m</button>
+<button class="dur-preset" data-val="30">30m</button>
+</div>
+</div>
+</div>
+<!-- Cycle -->
+<div class="ps-cycle-wrap">
+<div class="dur-label ps-cycle-label">Sessions per cycle</div>
+<div class="cycle-controls">
+<div class="cycle-stepper">
+<button aria-label="Decrease" class="dur-btn" data-step="-1" data-target="psCycle">−</button>
+<input aria-label="Cycle count" class="cycle-num" id="psCycle" max="12" min="1" type="number" value="4"/>
+<button aria-label="Increase" class="dur-btn" data-step="1" data-target="psCycle">+</button>
+</div>
+<div class="cycle-presets">
+<button class="cycle-preset" data-val="2">2</button>
+<button class="cycle-preset" data-val="3">3</button>
+<button class="cycle-preset" data-val="4">4</button>
+<button class="cycle-preset" data-val="5">5</button>
+<button class="cycle-preset" data-val="6">6</button>
+</div>
+</div>
+</div>
+<hr class="mdivider"/>
+<div class="toggle-row">
+<div class="toggle-label"><span>Auto-advance</span> — automatically start next phase</div>
+<label class="toggle">
+<input checked="" id="psAutoAdv" type="checkbox"/>
+<div class="toggle-track"></div>
+<div class="toggle-thumb"></div>
+</label>
+</div>
+<hr class="mdivider"/>
+<div class="ps-section-title">SKIP SPECIFIC BREAKS</div>
+<div class="ps-section-help">Uncheck to skip a break · click SHORT / LONG to change type</div>
+<div class="break-slots" id="psBreakSlots"></div>
+<hr class="mdivider"/>
+<div class="session-preview" id="psPreview">
+<div class="sp-title">Session Preview</div>
+<div class="sp-row" id="psPreviewBlocks"></div>
+<div class="sp-stat" id="psPreviewStat"></div>
+</div>
+</div>
+<div class="mfoot">
+<button class="btn btn-s" data-close="pomoSettingsModal">CANCEL</button>
+<button class="btn btn-p" id="savePomoSettings"><i aria-hidden="true" class="fas fa-check"></i> APPLY</button>
+</div>
+</div>
+</div>
+<!-- CREATE GOAL -->
+<div class="overlay" id="createGoalModal">
+<div aria-labelledby="cgTitle" aria-modal="true" class="modal" role="dialog">
+<div class="mhead"><div class="mtitle" id="cgTitle">NEW GOAL</div><button aria-label="Close" class="mcls" data-close="createGoalModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
+<div class="modal-body">
+<div class="field"><label for="gName">Goal Name</label><input id="gName" placeholder="e.g. Code every day" type="text"/><div class="errmsg" id="gNameErr" role="alert">Name is required.</div></div>
+<div class="field"><label for="gProj">Track Project (optional)</label><select id="gProj"><option value="">All Projects</option></select></div>
+<div class="field"><label for="gType">Type</label><select id="gType"><option value="atLeast">At least</option><option value="atMost">At most</option></select></div>
+<div class="field"><label>Target Time</label>
+<div class="frow">
+<div class="field"><input aria-label="Hours" id="gHours" inputmode="numeric" placeholder="hrs" type="text"/></div>
+<div class="field"><input aria-label="Minutes" id="gMins" inputmode="numeric" placeholder="mins" type="text"/></div>
+<div class="field"><select aria-label="Frequency" id="gFreq"><option value="day">/ day</option><option value="week">/ week</option><option value="month">/ month</option></select></div>
+</div>
+<div class="errmsg" id="gTimeErr" role="alert">Enter a positive time target.</div>
+</div>
+<div class="field"><label for="gUntil">Until</label><input id="gUntil" type="date"/>
+<label class="cb-row"><input id="gNoEnd" type="checkbox"/> No end date</label>
+<div class="errmsg" id="gDateErr" role="alert">Select an end date or check no end date.</div>
+</div>
+</div>
+<div class="mfoot"><button class="btn btn-s" data-close="createGoalModal">CANCEL</button><button class="btn btn-p" id="createGoalBtn">CREATE GOAL</button></div>
+</div>
+</div>
+<!-- CREATE PROJECT -->
+<div class="overlay" id="createProjModal">
+<div aria-labelledby="cpTitle" aria-modal="true" class="modal" role="dialog">
+<div class="mhead"><div class="mtitle" id="cpTitle">NEW PROJECT</div><button aria-label="Close" class="mcls" data-close="createProjModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
+<div class="modal-body">
+<div class="field"><label for="pName">Project Name</label><input id="pName" placeholder="e.g. Website Redesign" type="text"/><div class="errmsg" id="pNameErr" role="alert">Name is required.</div></div>
+</div>
+<div class="mfoot"><button class="btn btn-s" data-close="createProjModal">CANCEL</button><button class="btn btn-p" id="createProjBtn">CREATE PROJECT</button></div>
+</div>
+</div>
+<!-- EDIT ENTRY -->
+<div class="overlay" id="editEntryModal">
+<div aria-modal="true" class="modal" role="dialog">
+<div class="mhead"><div class="mtitle">EDIT ENTRY</div><button aria-label="Close" class="mcls" data-close="editEntryModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
+<div class="modal-body">
+<input id="eeId" type="hidden"/>
+<div class="field"><label for="eeTask">Task Description</label><input id="eeTask" type="text"/><div class="errmsg" id="eeTaskErr" role="alert">Description is required.</div></div>
+<div class="field"><label for="eeProj">Project</label><select id="eeProj"><option value="">— no project —</option></select></div>
+</div>
+<div class="mfoot"><button class="btn btn-s" data-close="editEntryModal">CANCEL</button><button class="btn btn-p" id="saveEntryBtn">SAVE CHANGES</button></div>
+</div>
+</div>
+<!-- EDIT GOAL -->
+<div class="overlay" id="editGoalModal">
+<div aria-modal="true" class="modal" role="dialog">
+<div class="mhead"><div class="mtitle">EDIT GOAL</div><button aria-label="Close" class="mcls" data-close="editGoalModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
+<div class="modal-body">
+<input id="egId" type="hidden"/>
+<div class="field"><label for="egName">Goal Name</label><input id="egName" type="text"/><div class="errmsg" id="egNameErr" role="alert">Name is required.</div></div>
+<div class="field"><label for="egProj">Track Project</label><select id="egProj"><option value="">All Projects</option></select></div>
+<div class="field"><label for="egType">Type</label><select id="egType"><option value="atLeast">At least</option><option value="atMost">At most</option></select></div>
+<div class="field"><label>Target Time</label>
+<div class="frow">
+<div class="field"><input aria-label="Hours" id="egHours" inputmode="numeric" placeholder="hrs" type="text"/></div>
+<div class="field"><input aria-label="Minutes" id="egMins" inputmode="numeric" placeholder="mins" type="text"/></div>
+<div class="field"><select aria-label="Frequency" id="egFreq"><option value="day">/ day</option><option value="week">/ week</option><option value="month">/ month</option></select></div>
+</div>
+<div class="errmsg" id="egTimeErr" role="alert">Enter a positive time target.</div>
+</div>
+<div class="field"><label for="egUntil">Until</label><input id="egUntil" type="date"/>
+<label class="cb-row"><input id="egNoEnd" type="checkbox"/> No end date</label>
+<div class="errmsg" id="egDateErr" role="alert">Select an end date or check no end date.</div>
+</div>
+</div>
+<div class="mfoot"><button class="btn btn-s" data-close="editGoalModal">CANCEL</button><button class="btn btn-p" id="saveGoalBtn">SAVE CHANGES</button></div>
+</div>
+</div>
+<!-- EDIT PROJECT -->
+<div class="overlay" id="editProjModal">
+<div aria-modal="true" class="modal" role="dialog">
+<div class="mhead"><div class="mtitle">EDIT PROJECT</div><button aria-label="Close" class="mcls" data-close="editProjModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
+<div class="modal-body">
+<input id="epId" type="hidden"/>
+<div class="field"><label for="epName">Project Name</label><input id="epName" type="text"/><div class="errmsg" id="epNameErr" role="alert">Name is required.</div><div class="errmsg" id="epDupErr" role="alert">Name already exists.</div></div>
+</div>
+<div class="mfoot"><button class="btn btn-s" data-close="editProjModal">CANCEL</button><button class="btn btn-p" id="saveProjBtn">SAVE CHANGES</button></div>
+</div>
+</div>
+<!-- REPORTS -->
+<div class="overlay" id="reportModal">
+<div aria-modal="true" class="modal wide" role="dialog">
+<div class="mhead"><div class="mtitle">ADVANCED REPORTS</div><button aria-label="Close" class="mcls" data-close="reportModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
+<div class="modal-body">
+<div class="field"><label for="rProj">Filter by Project</label><select id="rProj"><option value="">All Projects</option></select></div>
+<div class="frow mb">
+<div class="field"><label for="rStart">Start Date</label><input id="rStart" type="date"/></div>
+<div class="field"><label for="rEnd">End Date</label><input id="rEnd" type="date"/></div>
+</div>
+<div class="errmsg mb" id="rDateErr" role="alert">Start date cannot be after end date.</div>
+<button class="btn btn-p" id="genReportBtn"><i aria-hidden="true" class="fas fa-bolt"></i> GENERATE REPORT</button>
+<div aria-live="polite" class="rlist" id="rList"><div class="empty">// run a report to see results</div></div>
+<div class="rtotal" id="rTotal" style="display:none"><span>TOTAL</span><span id="rTotalVal">00:00:00</span></div>
+</div>
+</div>
+</div>
+<!-- EXPORT -->
+<div class="overlay" id="exportModal">
+<div aria-modal="true" class="modal" role="dialog">
+<div class="mhead"><div class="mtitle">EXPORT DATA</div><button aria-label="Close" class="mcls" data-close="exportModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
+<div class="modal-body"><p class="modal-info">Exports all projects, goals, and time entries as a JSON backup. Use this to restore or migrate your data later.</p></div>
+<div class="mfoot"><button class="btn btn-s" data-close="exportModal">CANCEL</button><button class="btn btn-p" id="confirmExportBtn"><i aria-hidden="true" class="fas fa-download"></i> EXPORT JSON</button></div>
+</div>
+</div>
+<!-- IMPORT -->
+<div class="overlay" id="importModal">
+<div aria-modal="true" class="modal" role="dialog">
+<div class="mhead"><div class="mtitle">IMPORT DATA</div><button aria-label="Close" class="mcls" data-close="importModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
+<div class="modal-body">
+<div class="field">
+<label>JSON Backup File</label>
+<div class="file-input-wrap">
+<div class="file-input-label" id="fileInputLabel">
+<i aria-hidden="true" class="fas fa-folder-open"></i>
+<span class="file-name" id="fileNameDisplay">Choose a .json file…</span>
+</div>
+<input accept=".json" aria-label="JSON backup file" id="importFile" type="file"/>
+</div>
+<div class="errmsg" id="importFileErr" role="alert">Please select a valid JSON file.</div>
+</div>
+<div class="field"><label>Import Mode</label>
+<div class="radio-grp">
+<label class="radio-opt"><input checked="" name="importMode" type="radio" value="merge"/> Merge with existing data</label>
+<label class="radio-opt"><input name="importMode" type="radio" value="replace"/> Replace all existing data</label>
+</div>
+</div>
+</div>
+<div class="mfoot"><button class="btn btn-s" data-close="importModal">CANCEL</button><button class="btn btn-p" id="confirmImportBtn"><i aria-hidden="true" class="fas fa-upload"></i> IMPORT</button></div>
+</div>
+</div>
+<div aria-atomic="true" aria-live="assertive" class="toasts" id="toastContainer"></div>
+
+<script src="script.js"></script></body>
+</html>
