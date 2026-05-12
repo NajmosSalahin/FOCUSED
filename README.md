@@ -24,14 +24,6 @@ Designed with a heavily customized Gruvbox-inspired UI and optimized for local-f
 
 # Preview
 
-<img width="1130" height="630" alt="image" src="https://github.com/user-attachments/assets/1ebad854-258b-46e9-ab57-96b317527198" />
-
-<img width="1234" height="511" alt="image" src="https://github.com/user-attachments/assets/4f5efe6b-b236-4133-9d1c-dc2f970fa9f3" />
-
-<img width="862" height="609" alt="image" src="https://github.com/user-attachments/assets/bc6376d6-022d-4aa8-92ef-4543be97f82e" />
-
-<img width="937" height="576" alt="image" src="https://github.com/user-attachments/assets/18498ed6-1a1b-4b37-8950-827ba33d33f6" />
-
 
 
 ## Main Features
@@ -435,11 +427,15 @@ with proper attribution.
 
 Add screenshots here:
 
-```markdown
-![Dashboard](./screenshots/dashboard.png)
-![Heatmap](./screenshots/heatmap.png)
-![Habits](./screenshots/habits.png)
-```
+<img width="1130" height="630" alt="image" src="https://github.com/user-attachments/assets/1ebad854-258b-46e9-ab57-96b317527198" />
+
+<img width="1234" height="511" alt="image" src="https://github.com/user-attachments/assets/4f5efe6b-b236-4133-9d1c-dc2f970fa9f3" />
+
+<img width="862" height="609" alt="image" src="https://github.com/user-attachments/assets/bc6376d6-022d-4aa8-92ef-4543be97f82e" />
+
+<img width="937" height="576" alt="image" src="https://github.com/user-attachments/assets/18498ed6-1a1b-4b37-8950-827ba33d33f6" />
+
+
 
 ---
 
