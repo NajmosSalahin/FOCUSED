@@ -1,9 +1,9 @@
-## FOCUS — Pomodoro & Productivity Dashboard
+## FOCUSED — Pomodoro & Productivity Dashboard
 
 
 ### A fully featured productivity operating system built with pure frontend technologies.
 
-FOCUS combines:
+FOCUSED combines:
 
 * Pomodoro timer systems
 * Task tracking
