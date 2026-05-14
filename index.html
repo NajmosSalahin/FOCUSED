@@ -57,6 +57,9 @@
 <button aria-label="Start task timer" class="track-btn" id="trackBtn" title="Start/Stop (Ctrl+Enter)">
 <i aria-hidden="true" class="fas fa-play"></i> START
     </button>
+<button aria-label="Pause task timer" class="track-btn pause-btn hidden" id="pauseBtn" title="Pause/Resume (Ctrl+P)">
+<i aria-hidden="true" class="fas fa-pause"></i> PAUSE
+    </button>
 </div>
 <!-- TOP ROW: POMO (left) + GOALS & PROJECTS (right) -->
 <div class="top-row">
@@ -90,7 +93,7 @@
 </div>
 <div aria-label="Session progress" class="pomo-dots" id="pomoDots"></div>
 <div aria-label="Session plan" class="pomo-plan" id="pomoPlan"></div>
-<span class="kbd-hint" title="Keyboard shortcuts">Space: start/pause · R: reset · Ctrl+Enter: track</span>
+<span class="kbd-hint" title="Keyboard shortcuts — press ? for full list">Space: start/pause · R: reset · S: skip · 1/2/3: mode · N: new task · `: terminal · ?: help</span>
 </div>
 <!-- GOALS + PROJECTS -->
 <div class="gp-col">
@@ -171,6 +174,7 @@
 </div>
 <div class="card">
 <div class="act-btns">
+<button class="act-btn term-btn" id="openTermBtn" title="Open terminal (`)"><i aria-hidden="true" class="fas fa-terminal"></i> TERMINAL</button>
 <button class="act-btn hab" id="openHabitsBtn"><i aria-hidden="true" class="fas fa-check-double"></i> HABITS &amp; ROUTINES</button>
 <button class="act-btn tln" id="openTimelineBtn"><i aria-hidden="true" class="fas fa-timeline"></i> DAY TIMELINE</button>
 <button class="act-btn hmp" id="openHeatmapBtn"><i aria-hidden="true" class="fas fa-fire"></i> FOCUS HEATMAP</button>
@@ -590,6 +594,72 @@
 </div>
 </div>
 <div aria-atomic="true" aria-live="assertive" class="toasts" id="toastContainer"></div>
+
+<!-- TERMINAL -->
+<div class="overlay term-overlay" id="terminalModal" data-no-overlay-close>
+  <div class="term-window" id="termWindow">
+    <div class="term-titlebar">
+      <div class="term-dots">
+        <span class="term-dot tdclose" id="termCloseBtn" title="Close (`)"></span>
+        <span class="term-dot tdmin"></span>
+        <span class="term-dot tdmax"></span>
+      </div>
+      <span class="term-title-text">focus@arch — bash</span>
+      <div style="width:52px"></div>
+    </div>
+    <div class="term-output" id="termOutput"></div>
+    <div class="term-input-row">
+      <span class="term-ps1"><span class="tp-user">focus</span><span class="tp-at">@</span><span class="tp-host">arch</span><span class="tp-sep">:</span><span class="tp-tilde">~</span><span class="tp-dollar">$</span></span>
+      <input class="term-input" id="termInput" type="text" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="off" aria-label="Terminal input" />
+    </div>
+  </div>
+</div>
+
+<!-- KEYBOARD SHORTCUTS -->
+<div class="overlay" id="kbModal">
+  <div class="modal wide">
+    <div class="mhead"><div class="mtitle">KEYBOARD SHORTCUTS</div><button aria-label="Close" class="mcls" data-close="kbModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
+    <div class="modal-body">
+      <div class="kb-grid">
+        <div class="kb-section">
+          <div class="kb-section-title">POMODORO</div>
+          <div class="kb-row"><kbd>Space</kbd><span>Start / Pause timer</span></div>
+          <div class="kb-row"><kbd>R</kbd><span>Reset timer</span></div>
+          <div class="kb-row"><kbd>S</kbd><span>Skip to next session</span></div>
+          <div class="kb-row"><kbd>1</kbd><span>Switch to Work mode</span></div>
+          <div class="kb-row"><kbd>2</kbd><span>Switch to Short break</span></div>
+          <div class="kb-row"><kbd>3</kbd><span>Switch to Long break</span></div>
+        </div>
+        <div class="kb-section">
+          <div class="kb-section-title">TASK TRACKER</div>
+          <div class="kb-row"><kbd>N</kbd><span>Focus task input</span></div>
+          <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>Enter</kbd><span>Start / Stop tracking</span></div>
+          <div class="kb-row"><kbd>[</kbd><span>Previous day</span></div>
+          <div class="kb-row"><kbd>]</kbd><span>Next day</span></div>
+          <div class="kb-row"><kbd>T</kbd><span>Jump to today</span></div>
+        </div>
+        <div class="kb-section">
+          <div class="kb-section-title">NAVIGATION</div>
+          <div class="kb-row"><kbd>G</kbd><span>New goal</span></div>
+          <div class="kb-row"><kbd>P</kbd><span>New project</span></div>
+          <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>K</kbd><span>Command palette</span></div>
+          <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>H</kbd><span>Focus heatmap</span></div>
+          <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>L</kbd><span>Day timeline</span></div>
+          <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>,</kbd><span>Timer settings</span></div>
+        </div>
+        <div class="kb-section">
+          <div class="kb-section-title">MISC</div>
+          <div class="kb-row"><kbd>`</kbd><span>Open terminal</span></div>
+          <div class="kb-row"><kbd>?</kbd><span>This shortcuts panel</span></div>
+          <div class="kb-row"><kbd>Esc</kbd><span>Close modal / overlay</span></div>
+          <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>E</kbd><span>Export data</span></div>
+          <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>I</kbd><span>Import data</span></div>
+          <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>R</kbd><span>Advanced reports</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="script.js"></script></body>
 </html>

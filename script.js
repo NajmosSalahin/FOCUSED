@@ -23,7 +23,8 @@ const PROJ_COLORS = ['#458588','#b16286','#689d6a','#d79921','#cc241d','#98971a'
 let mode = 'work', pomoSec = pomoSettings.work, pomoTotal = pomoSettings.work;
 let pomoRunning = false, pomoInterval = null, sessionsD = 0;
 let planIdx = 0, planDrag = null; // planDrag: active pointer drag state
-let taskRunning = false, taskStart = null, taskInterval = null, activeEntry = null;
+let taskRunning = false, taskPaused = false, taskStart = null, taskInterval = null, activeEntry = null;
+let currentSegStart = null; // start of the current open segment
 let timeEntries = [], goals = [], projects = [], viewDate = new Date();
 let calViewDate = new Date(); // separate calendar navigation
 
@@ -127,7 +128,12 @@ const save = () => {
     localStorage.setItem('tt_ps',JSON.stringify(pomoSettings));
     localStorage.setItem('tt_pl',JSON.stringify({log:pomoLog,date:pomoLogDate}));
     localStorage.setItem('tt_pg',String(pomoGoalTarget));
-    if(activeEntry) localStorage.setItem('tt_a',JSON.stringify({...activeEntry,startTime:taskStart.toISOString()}));
+    if(activeEntry) localStorage.setItem('tt_a',JSON.stringify({
+      ...activeEntry,
+      startTime: taskStart ? taskStart.toISOString() : null,
+      currentSegStart: currentSegStart ? currentSegStart.toISOString() : null,
+      taskPaused,
+    }));
     else localStorage.removeItem('tt_a');
   } catch(e){ toast('Save failed','err'); }
 };
@@ -147,13 +153,15 @@ const load = () => {
     if(pg) pomoGoalTarget=parseInt(pg)||8;
     const a=JSON.parse(localStorage.getItem('tt_a'));
     if(a){
-      taskStart=new Date(a.startTime);
-      activeEntry={id:a.id,task:a.task,projectId:a.projectId,projectName:a.projectName};
-      taskRunning=true; taskInput.value=a.task; projSelect.value=a.projectId||'';
-      startLive();
+      taskStart = a.startTime ? new Date(a.startTime) : null;
+      currentSegStart = a.currentSegStart ? new Date(a.currentSegStart) : null;
+      taskPaused = !!a.taskPaused;
+      activeEntry={id:a.id,task:a.task,projectId:a.projectId,projectName:a.projectName,segments:a.segments||[],durationMs:a.durationMs||0};
+      taskRunning=true;
+      taskInput.value=a.task; projSelect.value=a.projectId||'';
       taskInput.readOnly=true; projSelect.disabled=true;
-      trackBtn.innerHTML='<i class="fas fa-stop" aria-hidden="true"></i> STOP';
-      trackBtn.classList.add('on'); trackBtn.setAttribute('aria-label','Stop task timer');
+      if(!taskPaused){ startLive(); }
+      _setTrackUI(taskPaused ? 'paused' : 'running');
       liveTimer.classList.remove('off');
     }
   } catch(e){ toast('Load failed','err'); }
@@ -1006,19 +1014,14 @@ $('savePomoSettings').addEventListener('click', () => {
 });
 
 // === KEYBOARD SHORTCUTS ===
-document.addEventListener('keydown', e => {
-  const tag=document.activeElement.tagName;
-  const inInput=(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT');
-  const modalOpen=!!document.querySelector('.overlay.open');
-  if(e.code==='Space' && !inInput && !modalOpen){ e.preventDefault(); pomoStartBtn.click(); }
-  if(e.code==='KeyR' && !inInput && !modalOpen){ e.preventDefault(); $('pomoReset').click(); }
-  if(e.code==='Enter' && e.ctrlKey && !modalOpen){ e.preventDefault(); trackBtn.click(); }
-});
+// Keyboard shortcuts are registered at the end of the file (expanded set)
 
 // === TASK TRACKER ===
 const updateRunningEntry = () => {
-  if(!taskRunning||!taskStart) return;
-  const elapsed=Date.now()-taskStart.getTime();
+  if(!taskRunning||!taskStart||taskPaused) return;
+  const segElapsed = currentSegStart ? Date.now() - currentSegStart.getTime() : 0;
+  const committed  = activeEntry ? (activeEntry.durationMs||0) : 0;
+  const elapsed    = committed + segElapsed;
   liveTimer.textContent=fmt(elapsed);
   const durEl=entryList.querySelector('.e-dur.running');
   if(durEl) durEl.textContent=fmt(elapsed);
@@ -1034,32 +1037,104 @@ taskInput.addEventListener('keydown', e => {
   if(e.key==='Enter' && !taskRunning){ e.preventDefault(); trackBtn.click(); }
 });
 
+const pauseBtn = $('pauseBtn');
+
+// Set track UI state: 'idle' | 'running' | 'paused'
+const _setTrackUI = (state) => {
+  if (state === 'idle') {
+    trackBtn.innerHTML = '<i class="fas fa-play" aria-hidden="true"></i> START';
+    trackBtn.classList.remove('on');
+    trackBtn.setAttribute('aria-label','Start task timer');
+    pauseBtn.classList.add('hidden');
+    pauseBtn.classList.remove('resuming');
+  } else if (state === 'running') {
+    trackBtn.innerHTML = '<i class="fas fa-stop" aria-hidden="true"></i> STOP';
+    trackBtn.classList.add('on');
+    trackBtn.setAttribute('aria-label','Stop task timer');
+    pauseBtn.innerHTML = '<i class="fas fa-pause" aria-hidden="true"></i> PAUSE';
+    pauseBtn.classList.remove('hidden','resuming');
+    pauseBtn.setAttribute('aria-label','Pause task timer');
+  } else if (state === 'paused') {
+    trackBtn.innerHTML = '<i class="fas fa-stop" aria-hidden="true"></i> STOP';
+    trackBtn.classList.add('on');
+    trackBtn.setAttribute('aria-label','Stop task timer');
+    pauseBtn.innerHTML = '<i class="fas fa-play" aria-hidden="true"></i> RESUME';
+    pauseBtn.classList.remove('hidden');
+    pauseBtn.classList.add('resuming');
+    pauseBtn.setAttribute('aria-label','Resume task timer');
+  }
+};
+
+// Compute total committed ms from closed segments
+const _committedMs = (entry) => (entry.segments||[]).reduce((s,seg) => s + (seg.end - seg.start), 0);
+
+// STOP button
 trackBtn.addEventListener('click',()=>{
   if(!taskRunning){
+    // START
     const desc=taskInput.value.trim();
     if(!desc){ toast('Enter a task description first.','err'); taskInput.focus(); return; }
     const pid=projSelect.value||null, pname=pid?projSelect.options[projSelect.selectedIndex].text:null;
-    taskStart=new Date();
-    activeEntry={id:uid(),task:desc,projectId:pid,projectName:pname,startTime:taskStart.toISOString(),endTime:null,durationMs:0};
+    taskStart = new Date();
+    currentSegStart = new Date();
+    taskPaused = false;
+    activeEntry={id:uid(),task:desc,projectId:pid,projectName:pname,startTime:taskStart.toISOString(),endTime:null,durationMs:0,segments:[]};
     timeEntries.push(activeEntry); taskRunning=true;
     taskInput.readOnly=true; projSelect.disabled=true;
-    trackBtn.innerHTML='<i class="fas fa-stop" aria-hidden="true"></i> STOP';
-    trackBtn.classList.add('on'); trackBtn.setAttribute('aria-label','Stop task timer');
+    _setTrackUI('running');
     liveTimer.classList.remove('off'); startLive();
     toast('Timer started!'); save(); rerender();
   } else {
+    // STOP — close current segment if not paused
     clearInterval(taskInterval);
-    const end=new Date(), elapsed=end-taskStart;
-    const idx=timeEntries.findIndex(e=>e.id===activeEntry.id);
-    if(idx!==-1){ timeEntries[idx].endTime=end.toISOString(); timeEntries[idx].durationMs=elapsed; }
-    updateGoalProgress(activeEntry.projectId,elapsed);
-    activeEntry=null; taskStart=null; taskRunning=false;
+    const end = new Date();
+    if (!taskPaused && currentSegStart) {
+      activeEntry.segments.push({ start: currentSegStart.getTime(), end: end.getTime() });
+    }
+    const totalMs = _committedMs(activeEntry);
+    const idx = timeEntries.findIndex(e=>e.id===activeEntry.id);
+    if(idx!==-1){
+      timeEntries[idx].endTime = end.toISOString();
+      timeEntries[idx].durationMs = totalMs;
+      timeEntries[idx].segments = activeEntry.segments;
+    }
+    updateGoalProgress(activeEntry.projectId, totalMs);
+    activeEntry=null; taskStart=null; currentSegStart=null; taskRunning=false; taskPaused=false;
     taskInput.readOnly=false; projSelect.disabled=false;
     taskInput.value=''; projSelect.value='';
-    trackBtn.innerHTML='<i class="fas fa-play" aria-hidden="true"></i> START';
-    trackBtn.classList.remove('on'); trackBtn.setAttribute('aria-label','Start task timer');
+    _setTrackUI('idle');
     liveTimer.classList.add('off'); liveTimer.textContent='00:00:00';
     toast('Timer stopped!'); save(); rerender();
+  }
+});
+
+// PAUSE / RESUME button
+pauseBtn.addEventListener('click',()=>{
+  if(!taskRunning) return;
+  if(!taskPaused){
+    // PAUSE — close current segment
+    clearInterval(taskInterval);
+    const now = new Date();
+    if(currentSegStart){
+      activeEntry.segments.push({ start: currentSegStart.getTime(), end: now.getTime() });
+      activeEntry.durationMs = _committedMs(activeEntry);
+      const idx = timeEntries.findIndex(e=>e.id===activeEntry.id);
+      if(idx!==-1){ timeEntries[idx].durationMs = activeEntry.durationMs; timeEntries[idx].segments = activeEntry.segments; }
+    }
+    currentSegStart = null;
+    taskPaused = true;
+    _setTrackUI('paused');
+    // freeze live timer display
+    liveTimer.textContent = fmt(activeEntry.durationMs);
+    updateTotals(activeEntry.durationMs);
+    toast('Timer paused.'); save(); rerender();
+  } else {
+    // RESUME — open new segment
+    currentSegStart = new Date();
+    taskPaused = false;
+    _setTrackUI('running');
+    startLive();
+    toast('Timer resumed!'); save(); rerender();
   }
 });
 
@@ -1213,16 +1288,52 @@ const renderEntries = () => {
   entryList.innerHTML='';
   if(!entries.length){ entryList.innerHTML='<div class="empty" role="listitem">// no entries for this day</div>'; return; }
   entries.forEach(e=>{
-    const isRunning=taskRunning&&activeEntry&&e.id===activeEntry.id;
-    const s=new Date(e.startTime);
-    const en=e.endTime?new Date(e.endTime):null;
-    const color=e.projectId?projColor(e.projectId):'#665c54';
-    const elapsed=isRunning?(Date.now()-taskStart.getTime()):e.durationMs;
-    const d=document.createElement('div'); d.className='entry'+(isRunning?' running':''); d.setAttribute('role','listitem');
+    const isRunning = taskRunning && activeEntry && e.id===activeEntry.id;
+    const isPaused  = isRunning && taskPaused;
+    const color     = e.projectId ? projColor(e.projectId) : '#665c54';
+
+    // Compute elapsed: for running entry use live committed + open segment
+    let elapsed;
+    if (isRunning && !isPaused && currentSegStart) {
+      elapsed = (activeEntry.durationMs||0) + (Date.now() - currentSegStart.getTime());
+    } else {
+      elapsed = e.durationMs || 0;
+    }
+
+    // Build segment time-range string: "09:17 AM → 09:50 AM, 11:50 AM → 12:50 PM"
+    const fmtT = d => d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    let rangesHtml = '';
+    const segs = e.segments && e.segments.length ? e.segments : [];
+    if (segs.length) {
+      const parts = segs.map(seg => `${fmtT(new Date(seg.start))} → ${fmtT(new Date(seg.end))}`);
+      if (isRunning && !isPaused && currentSegStart) {
+        parts.push(`${fmtT(currentSegStart)} → <span style="color:var(--green-b)">now</span>`);
+      } else if (isRunning && isPaused && currentSegStart === null && segs.length) {
+        // last segment already committed, show paused marker
+        parts[parts.length-1] += ` <span style="color:var(--yellow)">[paused]</span>`;
+      }
+      rangesHtml = parts.join(', ');
+    } else {
+      // legacy entry with no segments
+      const s  = new Date(e.startTime);
+      const en = e.endTime ? new Date(e.endTime) : null;
+      if (en) {
+        rangesHtml = `${fmtT(s)} → ${fmtT(en)}`;
+      } else if (isRunning && !isPaused && currentSegStart) {
+        rangesHtml = `${fmtT(currentSegStart)} → <span style="color:var(--green-b)">now</span>`;
+      } else if (isRunning && isPaused) {
+        rangesHtml = `${fmtT(s)} → <span style="color:var(--yellow)">[paused]</span>`;
+      } else {
+        rangesHtml = fmtT(s);
+      }
+    }
+
+    const stateClass = isPaused ? ' paused' : isRunning ? ' running' : '';
+    const d=document.createElement('div'); d.className=`entry${stateClass}`; d.setAttribute('role','listitem');
     d.innerHTML=`<div class="e-bar" style="background:${color}"></div>
       <div class="e-body">
-        <div class="e-task" title="${e.task}">${e.task}</div>
-        <div class="e-meta">${e.projectName||'no project'} · ${s.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}${en?' → '+en.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):isRunning?' → <span style="color:var(--green-b)">running</span>':''}</div>
+        <div class="e-task" title="${escHtml(e.task)}">${escHtml(e.task)}</div>
+        <div class="e-meta">${e.projectName||'no project'} · ${rangesHtml}</div>
       </div>
       <div class="e-dur${isRunning?' running':''}">${fmt(elapsed)}</div>
       <div class="e-acts">
@@ -2749,7 +2860,11 @@ cmdOverlay.addEventListener('click', e => { if (e.target === cmdOverlay) cmdClos
 
 // Ctrl+K / Cmd+K global hotkey
 document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); cmdOverlay.classList.contains('open') ? cmdClose() : cmdOpen(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    if (document.getElementById('terminalModal').classList.contains('open')) return;
+    e.preventDefault();
+    cmdOverlay.classList.contains('open') ? cmdClose() : cmdOpen();
+  }
   if (e.key === 'Escape' && cmdOverlay.classList.contains('open')) cmdClose();
 });
 
@@ -2896,3 +3011,688 @@ const initWeather = () => {
   );
 };
 initWeather();
+// ============================================================
+
+// ============================================================
+// === TERMINAL ===============================================
+// ============================================================
+const termModal   = document.getElementById('terminalModal');
+const termOutput  = document.getElementById('termOutput');
+const termInputEl = document.getElementById('termInput');
+const termWin     = document.getElementById('termWindow');
+
+let termHistory   = [];
+let termHistIdx   = -1;
+let termOpen      = false;
+let termCwd       = '~/focus';
+
+// ── Helpers ────────────────────────────────────────────────
+const termLine = (text, cls = 'tl-out') => {
+  const d = document.createElement('div');
+  d.className = `term-line ${cls}`;
+  d.innerHTML = text;
+  termOutput.appendChild(d);
+  termOutput.scrollTop = termOutput.scrollHeight;
+};
+const termBlank = () => { const d = document.createElement('div'); d.className = 'term-line tl-empty'; termOutput.appendChild(d); };
+const termPs1Echo = (cmd) => {
+  const d = document.createElement('div');
+  d.className = 'term-line tl-cmd';
+  d.innerHTML = `<span class="tp-user">focus</span><span class="tp-at">@</span><span class="tp-host">local</span><span class="tp-sep">:</span><span class="tp-dir">${termCwd}</span><span class="tp-dollar"> $</span>${escHtml(cmd)}`;
+  termOutput.appendChild(d);
+  termOutput.scrollTop = termOutput.scrollHeight;
+};
+const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmtSz   = b => b < 1024 ? `${b}B` : b < 1048576 ? `${(b/1024).toFixed(1)}K` : `${(b/1048576).toFixed(1)}M`;
+const lsUsed  = () => { let t=0; for(const k of Object.keys(localStorage)) t+=(localStorage.getItem(k)||'').length*2; return t; };
+const ruler   = (ch='─', n=44) => ch.repeat(n);
+
+// ── Boot banner ────────────────────────────────────────────
+// ── Shared auto-scaling ASCII logo ─────────────────────────
+// FOCUGRUV in standard figlet ASCII (5 rows, pure ASCII chars)
+const ASCII_LOGO_ROWS = [
+  [' _____   ___    ____  _   _   ____  ____  _   _  __   __',  '#fabd2f'],
+  ['|  ___| / _ \\  / ___|| | | | / ___||  _ \\| | | | \\ \\ / /', '#fabd2f'],
+  ['| |_   | | | || |    | | | || |  _ || |_) || | | |  \\ V / ','#fe8019'],
+  ['|  _|  | |_| || |___ | |_| || |_| ||  _ < | |_| |   | |  ', '#fe8019'],
+  ['|_|     \\___/  \\____|  \\___/  \\____|_| \\_\\ \\___/    |_|  ', '#d65d0e'],
+];
+
+// Creates a scaled logo <div>. Measures actual render width and applies
+// CSS transform to fit the available container width.
+const _mkLogo = () => {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'transform-origin:left top;white-space:pre;line-height:1.3;margin-bottom:2px;';
+  ASCII_LOGO_ROWS.forEach(([text, color]) => {
+    const ln = document.createElement('div');
+    ln.style.cssText = `color:${color};font-family:'JetBrains Mono',monospace;font-size:12.5px;`;
+    ln.textContent = text;
+    wrap.appendChild(ln);
+  });
+  // Scale after DOM paints
+  requestAnimationFrame(() => {
+    const avail  = termOutput.clientWidth - 8;
+    const actual = wrap.scrollWidth;
+    if (actual > avail && avail > 0) {
+      const ratio = avail / actual;
+      wrap.style.transform = `scale(${ratio})`;
+      // collapse the visual height so it doesn't leave a gap
+      wrap.style.marginBottom = `${-(wrap.scrollHeight * (1 - ratio))}px`;
+    }
+  });
+  return wrap;
+};
+
+const termBoot = () => {
+  termOutput.innerHTML = '';
+  const now = new Date();
+  termOutput.appendChild(_mkLogo());
+  termBlank();
+  termLine(`<span style="color:#665c54">  ${now.toDateString()}  ${now.toLocaleTimeString()}  ·  ${timeEntries.length} entries  ·  ${fmt(timeEntries.reduce((s,e)=>s+(e.durationMs||0),0))} total</span>`);
+  termLine(`<span style="color:#665c54">  type <span style="color:#8ec07c">help</span> for commands  ·  <span style="color:#8ec07c">Tab</span> autocomplete  ·  <span style="color:#8ec07c">↑↓</span> history</span>`);
+  termBlank();
+};
+
+// ── Open / close ────────────────────────────────────────────
+const termOpenFn = () => {
+  termModal.classList.add('open');
+  termOpen = true;
+  if (!termOutput.children.length) termBoot();
+  setTimeout(() => termInputEl.focus(), 40);
+};
+const termCloseFn = () => {
+  termModal.classList.remove('open');
+  termOpen = false;
+};
+
+document.getElementById('termCloseBtn').addEventListener('click', termCloseFn);
+document.getElementById('openTermBtn').addEventListener('click', termOpenFn);
+termModal.addEventListener('click', e => { if (e.target === termModal) termCloseFn(); });
+termWin.addEventListener('click', () => termInputEl.focus());
+
+// ── Command registry ────────────────────────────────────────
+const TERM_CMDS = {};
+const reg = (names, fn, meta = {}) => {
+  (Array.isArray(names) ? names : [names]).forEach(n => TERM_CMDS[n] = { fn, ...meta });
+};
+
+// help
+reg('help', ({ args }) => {
+  const target = args[0];
+  if (target && TERM_CMDS[target] && TERM_CMDS[target].desc) {
+    termBlank();
+    termLine(`<span style="color:#d3869b">${target}</span>  <span style="color:#a89984">${TERM_CMDS[target].desc}</span>`);
+    if (TERM_CMDS[target].usage) termLine(`  usage: <span style="color:#8ec07c">${TERM_CMDS[target].usage}</span>`);
+    termBlank(); return;
+  }
+  termBlank();
+  termLine(`<span style="color:#d3869b">${ruler()}</span>`,'tl-head');
+  const groups = {
+    'TIMER':    [['start','pause','reset','skip'],       'Pomodoro controls'],
+    'MODE':     [['work','short','long'],                'Switch session mode'],
+    'DATA':     [['status','stats','today','week'],      'Time & session data'],
+    'ENTRIES':  [['ls','tasks','find','grep'],           'Browse entries'],
+    'PROJECTS': [['projects','proj'],                   'Project info'],
+    'GOALS':    [['goals'],                              'Goal progress'],
+    'SESSIONS': [['log','pomo','top'],                  'Session info'],
+    'SYSTEM':   [['env','df','uptime','date','whoami'], 'System / settings'],
+    'TOOLS':    [['cal','neofetch','history','echo','man'],'Utilities'],
+    'SHELL':    [['clear','exit','help'],               'Shell builtins'],
+  };
+  Object.entries(groups).forEach(([grp, [cmds, hint]]) => {
+    termLine(`<span style="color:#665c54">  ${grp.padEnd(10)}</span><span style="color:#8ec07c">${cmds.join('  ')}</span>  <span style="color:#665c54">${hint}</span>`);
+  });
+  termLine(`<span style="color:#d3869b">${ruler()}</span>`,'tl-head');
+  termLine(`<span style="color:#665c54">  help &lt;cmd&gt; for details  ·  Tab to autocomplete</span>`);
+  termBlank();
+}, { desc:'Show available commands', usage:'help [command]' });
+
+// ── Timer commands ──────────────────────────────────────────
+reg('start', ({ args }) => {
+  if (!pomoRunning) $('pomoStart').click();
+  termLine(`  <span style="color:#b8bb26">✓</span> <span style="color:#a89984">timer started — ${mode.toUpperCase()} · ${fmtMS(pomoSec)} remaining</span>`);
+}, { desc:'Start the pomodoro timer' });
+
+reg('pause', () => {
+  if (pomoRunning) $('pomoStart').click();
+  termLine(`  <span style="color:#fabd2f">⏸</span> <span style="color:#a89984">timer paused at ${fmtMS(pomoSec)}</span>`);
+}, { desc:'Pause the pomodoro timer' });
+
+reg('reset', () => {
+  $('pomoReset').click();
+  termLine(`  <span style="color:#fabd2f">↺</span> <span style="color:#a89984">timer reset to ${fmtMS(pomoSettings[mode])}</span>`);
+}, { desc:'Reset current session' });
+
+reg('skip', () => {
+  $('pomoSkip').click();
+  termLine(`  <span style="color:#83a598">⏭</span> <span style="color:#a89984">skipped to next session</span>`);
+}, { desc:'Skip to the next session' });
+
+// mode switchers
+['work','short','long'].forEach(m => {
+  reg(m, () => {
+    document.querySelector(`.pomo-tab[data-m="${m}"]`).click();
+    termLine(`  <span style="color:#8ec07c">→</span> <span style="color:#a89984">mode set to <b>${m.toUpperCase()}</b></span>`);
+  }, { desc:`Switch to ${m} mode` });
+});
+
+// ── Data / status commands ──────────────────────────────────
+reg('status', () => {
+  const now = new Date();
+  const todayMs = timeEntries.filter(e=>sameDay(new Date(e.startTime),now)).reduce((s,e)=>s+(e.durationMs||0),0);
+  termBlank();
+  termLine(`<span style="color:#665c54">  ${ruler()}</span>`);
+  const pomoState = pomoRunning
+    ? `<span style="color:#b8bb26">RUNNING</span>`
+    : `<span style="color:#665c54">PAUSED</span>`;
+  const trackState = taskRunning
+    ? `<span style="color:#b8bb26">● ${escHtml(activeEntry?.task || 'tracking')}</span>`
+    : `<span style="color:#665c54">idle</span>`;
+  termLine(`  <span style="color:#a89984">timer   </span><span style="color:#ebdbb2">${mode.toUpperCase()} ${fmtMS(pomoSec)}</span>  ${pomoState}`);
+  termLine(`  <span style="color:#a89984">tracker </span>${trackState}`);
+  termLine(`  <span style="color:#a89984">today   </span><span style="color:#fabd2f">${fmt(todayMs)}</span>  <span style="color:#665c54">${timeEntries.filter(e=>sameDay(new Date(e.startTime),now)).length} entries</span>`);
+  termLine(`  <span style="color:#a89984">sessions</span><span style="color:#ebdbb2">${sessionsD}</span> completed`);
+  termLine(`<span style="color:#665c54">  ${ruler()}</span>`);
+  termBlank();
+}, { desc:'Show live timer and tracker status' });
+
+reg('stats', () => {
+  const now = new Date();
+  const sum = arr => arr.reduce((s,e)=>s+(e.durationMs||0),0);
+  const todayE  = timeEntries.filter(e=>sameDay(new Date(e.startTime),now));
+  const weekE   = timeEntries.filter(e=>sameWeek(new Date(e.startTime),now));
+  const monthE  = timeEntries.filter(e=>sameMon(new Date(e.startTime),now));
+  // avg per tracked day
+  const days = new Set(timeEntries.map(e=>new Date(e.startTime).toDateString()));
+  const avg  = days.size ? Math.round(sum(timeEntries)/days.size) : 0;
+  termBlank();
+  termLine(`<span style="color:#d3869b">── statistics ─────────────────────────────</span>`,'tl-head');
+  [
+    ['today',      fmt(sum(todayE)),  `${todayE.length} entries`],
+    ['this week',  fmt(sum(weekE)),   `${weekE.length} entries`],
+    ['this month', fmt(sum(monthE)),  `${monthE.length} entries`],
+    ['all time',   fmt(sum(timeEntries)), `${timeEntries.length} entries`],
+    ['daily avg',  fmt(avg),          `over ${days.size} days`],
+  ].forEach(([lbl,val,sub]) => {
+    termLine(`  <span style="color:#a89984">${lbl.padEnd(12)}</span><span style="color:#fabd2f">${val.padEnd(12)}</span><span style="color:#665c54">${sub}</span>`);
+  });
+  termLine(`  <span style="color:#a89984">projects</span>    <span style="color:#ebdbb2">${projects.length}</span>`);
+  termLine(`  <span style="color:#a89984">goals</span>       <span style="color:#ebdbb2">${goals.length}</span>`);
+  termBlank();
+}, { desc:'Detailed time statistics' });
+
+reg(['today'], () => {
+  const now = new Date();
+  const entries = timeEntries.filter(e=>sameDay(new Date(e.startTime),now));
+  const total   = entries.reduce((s,e)=>s+(e.durationMs||0),0);
+  termBlank();
+  termLine(`<span style="color:#d3869b">── today · ${now.toDateString()} ──────────────────</span>`,'tl-head');
+  if (!entries.length) { termLine(`  <span style="color:#665c54">no entries yet</span>`); termBlank(); return; }
+  entries.forEach((e,i)=>{
+    const proj = projects.find(p=>p.id===e.projectId);
+    termLine(`  <span style="color:#665c54">${String(i+1).padStart(2)}.</span> <span style="color:#ebdbb2">${escHtml(e.task||'?')}</span>  <span style="color:#fabd2f">${fmt(e.durationMs||0)}</span>${proj?`  <span style="color:#83a598">${escHtml(proj.name)}</span>`:''}`);
+  });
+  termLine(`<span style="color:#665c54">  ${'─'.repeat(44)}</span>`);
+  termLine(`  <span style="color:#a89984">total</span>  <span style="color:#fabd2f">${fmt(total)}</span>  <span style="color:#665c54">${entries.length} entries</span>`);
+  termBlank();
+}, { desc:"Show today's entries and total" });
+
+reg('week', () => {
+  const now = new Date();
+  const entries = timeEntries.filter(e=>sameWeek(new Date(e.startTime),now));
+  const total = entries.reduce((s,e)=>s+(e.durationMs||0),0);
+  // group by day
+  const byDay = {};
+  entries.forEach(e => {
+    const d = new Date(e.startTime).toDateString();
+    byDay[d] = (byDay[d]||0) + (e.durationMs||0);
+  });
+  termBlank();
+  termLine(`<span style="color:#d3869b">── this week ──────────────────────────────</span>`,'tl-head');
+  Object.entries(byDay).forEach(([d,ms]) => {
+    const pct = Math.round(ms/Math.max(...Object.values(byDay))*20);
+    const bar = '█'.repeat(pct) + '░'.repeat(20-pct);
+    termLine(`  <span style="color:#a89984">${d.slice(0,10)}</span>  <span style="color:#83a598">${bar}</span>  <span style="color:#fabd2f">${fmt(ms)}</span>`);
+  });
+  termLine(`<span style="color:#665c54">  ${'─'.repeat(44)}</span>`);
+  termLine(`  <span style="color:#a89984">week total</span>  <span style="color:#fabd2f">${fmt(total)}</span>  <span style="color:#665c54">${entries.length} entries</span>`);
+  termBlank();
+}, { desc:'Weekly breakdown by day' });
+
+// ── Entry browsing ──────────────────────────────────────────
+reg(['ls', 'tasks'], ({ args }) => {
+  const limit = parseInt(args[0]) || 10;
+  const all   = args.includes('--all') || args.includes('-a');
+  const entries = all ? timeEntries : timeEntries.filter(e=>sameDay(new Date(e.startTime),new Date()));
+  const show  = entries.slice(-limit);
+  termBlank();
+  termLine(`<span style="color:#d3869b">── ${all?`last ${limit} entries`:"today's entries"} ──────────────────────</span>`,'tl-head');
+  if (!show.length) { termLine(`  <span style="color:#665c54">no entries</span>`); termBlank(); return; }
+  show.forEach((e,i) => {
+    const proj = projects.find(p=>p.id===e.projectId);
+    const d    = new Date(e.startTime);
+    const ts   = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    termLine(`  <span style="color:#665c54">${ts}</span>  <span style="color:#ebdbb2">${escHtml(e.task||'—')}</span>  <span style="color:#fabd2f">${fmt(e.durationMs||0)}</span>${proj?`  <span style="color:#83a598">${escHtml(proj.name)}</span>`:''}`);
+  });
+  termBlank();
+}, { desc:'List entries (today by default)', usage:'ls [n] [--all]' });
+
+reg(['find','grep'], ({ args }) => {
+  const q = args.join(' ').toLowerCase().trim();
+  if (!q) { termLine(`  usage: find &lt;keyword&gt;`,'tl-err'); return; }
+  const hits = timeEntries.filter(e => (e.task||'').toLowerCase().includes(q));
+  termBlank();
+  termLine(`<span style="color:#d3869b">── find "${escHtml(q)}" — ${hits.length} result(s) ──────────</span>`,'tl-head');
+  if (!hits.length) { termLine(`  <span style="color:#665c54">no matches</span>`); termBlank(); return; }
+  hits.slice(-20).forEach(e => {
+    const proj = projects.find(p=>p.id===e.projectId);
+    const d    = new Date(e.startTime).toLocaleDateString();
+    const hl   = escHtml(e.task).replace(new RegExp(escHtml(q),'gi'), m=>`<span style="color:#fabd2f;font-weight:700">${m}</span>`);
+    termLine(`  <span style="color:#665c54">${d}</span>  ${hl}  <span style="color:#83a598">${fmt(e.durationMs||0)}</span>`);
+  });
+  if (hits.length > 20) termLine(`  <span style="color:#665c54">... ${hits.length-20} more not shown</span>`);
+  termBlank();
+}, { desc:'Search entries by keyword', usage:'find <keyword>' });
+
+// ── Projects / goals ────────────────────────────────────────
+reg(['projects','proj'], () => {
+  if (!projects.length) { termLine(`  <span style="color:#665c54">no projects — create one with the + button</span>`); return; }
+  termBlank();
+  termLine(`<span style="color:#d3869b">── projects ───────────────────────────────</span>`,'tl-head');
+  const sorted = [...projects].map(p => ({
+    ...p,
+    total: timeEntries.filter(e=>e.projectId===p.id).reduce((s,e)=>s+(e.durationMs||0),0),
+    count: timeEntries.filter(e=>e.projectId===p.id).length,
+  })).sort((a,b)=>b.total-a.total);
+  const maxT = Math.max(...sorted.map(p=>p.total),1);
+  sorted.forEach((p,i) => {
+    const bar = '█'.repeat(Math.round(p.total/maxT*16))+'░'.repeat(16-Math.round(p.total/maxT*16));
+    const col = PROJ_COLORS[i%PROJ_COLORS.length];
+    termLine(`  <span style="color:${col}">●</span> <span style="color:#ebdbb2">${escHtml(p.name).padEnd(20)}</span><span style="color:#83a598">${bar}</span>  <span style="color:#fabd2f">${fmt(p.total)}</span>  <span style="color:#665c54">${p.count} entries</span>`);
+  });
+  termBlank();
+}, { desc:'List projects with time totals' });
+
+reg('goals', () => {
+  if (!goals.length) { termLine(`  <span style="color:#665c54">no goals — create one with the + button</span>`); return; }
+  const now = new Date();
+  termBlank();
+  termLine(`<span style="color:#d3869b">── goals ──────────────────────────────────</span>`,'tl-head');
+  goals.forEach(g => {
+    const relevant = timeEntries.filter(e => {
+      if (g.projectId && e.projectId!==g.projectId) return false;
+      const d = new Date(e.startTime);
+      return g.freq==='day' ? sameDay(d,now) : g.freq==='week' ? sameWeek(d,now) : sameMon(d,now);
+    });
+    const done   = relevant.reduce((s,e)=>s+(e.durationMs||0),0)/1000;
+    const target = g.targetSecs||3600;
+    const pct    = Math.min(100, Math.round(done/target*100));
+    const filled = Math.round(pct/5);
+    const bar    = `${'█'.repeat(filled)}${'░'.repeat(20-filled)}`;
+    const col    = pct>=100?'#b8bb26':pct>=50?'#fabd2f':'#fb4934';
+    termLine(`  <span style="color:#ebdbb2">${escHtml(g.name)}</span>  <span style="color:#665c54">${g.type==='atLeast'?'≥':'≤'} ${fmt(target*1000)} /${g.freq}</span>`);
+    termLine(`  <span style="color:${col}">${bar}</span>  <span style="color:${col}">${pct}%</span>  <span style="color:#665c54">${fmt(done*1000)} done</span>`);
+    termBlank();
+  });
+}, { desc:'Show goal progress' });
+
+// ── Session / pomo ──────────────────────────────────────────
+reg('pomo', () => {
+  termBlank();
+  termLine(`<span style="color:#d3869b">── pomodoro ───────────────────────────────</span>`,'tl-head');
+  termLine(`  <span style="color:#a89984">mode      </span><span style="color:#ebdbb2">${mode.toUpperCase()}</span>  ${pomoRunning?'<span style="color:#b8bb26">running</span>':'<span style="color:#665c54">paused</span>'}`);
+  termLine(`  <span style="color:#a89984">remaining </span><span style="color:#fabd2f">${fmtMS(pomoSec)}</span>  <span style="color:#665c54">of ${fmtMS(pomoSettings[mode])}</span>`);
+  termLine(`  <span style="color:#a89984">sessions  </span><span style="color:#ebdbb2">${sessionsD}</span> today`);
+  termLine(`  <span style="color:#a89984">auto-adv  </span><span style="color:#ebdbb2">${pomoSettings.autoAdv?'on':'off'}</span>`);
+  termLine(`  <span style="color:#a89984">work      </span><span style="color:#ebdbb2">${Math.floor(pomoSettings.work/60)}m</span>  <span style="color:#a89984">short</span> <span style="color:#ebdbb2">${Math.floor(pomoSettings.short/60)}m</span>  <span style="color:#a89984">long</span> <span style="color:#ebdbb2">${Math.floor(pomoSettings.long/60)}m</span>`);
+  termBlank();
+}, { desc:'Show pomodoro state and settings' });
+
+reg('log', () => {
+  if (!pomoLog.length) { termLine(`  <span style="color:#665c54">no sessions logged today</span>`); return; }
+  termBlank();
+  termLine(`<span style="color:#d3869b">── session log · today ────────────────────</span>`,'tl-head');
+  pomoLog.forEach((s,i) => {
+    const col = s.mode==='work'?'#fb4934':s.mode==='short'?'#b8bb26':'#83a598';
+    termLine(`  <span style="color:#665c54">${String(i+1).padStart(2)}.</span>  <span style="color:${col}">${(s.mode||'?').padEnd(7)}</span><span style="color:#fabd2f">${fmtMS(s.duration||0)}</span>  <span style="color:#665c54">${s.ts||''}</span>`);
+  });
+  const workCount = pomoLog.filter(s=>s.mode==='work').length;
+  termLine(`  <span style="color:#665c54">─── ${workCount} work · ${pomoLog.length-workCount} break</span>`);
+  termBlank();
+}, { desc:"Show today's pomodoro session log" });
+
+reg('top', () => {
+  const now = new Date();
+  const todayMs = timeEntries.filter(e=>sameDay(new Date(e.startTime),now)).reduce((s,e)=>s+(e.durationMs||0),0);
+  termBlank();
+  termLine(`<span style="color:#d3869b">── top — focus processes ──────────────────</span>`,'tl-head');
+  termLine(`  <span style="color:#665c54">PID   TASK                        TIME      STATE</span>`);
+  termLine(`<span style="color:#665c54">  ${ruler()}</span>`);
+  if (taskRunning && activeEntry) {
+    const el = Date.now() - (taskStart?.getTime()||Date.now());
+    termLine(`  <span style="color:#fabd2f">0001  ${escHtml((activeEntry.task||'?').slice(0,28)).padEnd(28)}  ${fmt(el)}  <span style="color:#b8bb26">running</span></span>`);
+  }
+  termLine(`  <span style="color:#83a598">0002  pomodoro-timer              ${fmtMS(pomoSec).padEnd(8)}  ${pomoRunning?'<span style="color:#b8bb26">running</span>':'<span style="color:#665c54">sleeping</span>'}</span>`);
+  termLine(`  <span style="color:#a89984">0003  storage-sync                background  <span style="color:#665c54">idle</span></span>`);
+  termLine(`  <span style="color:#a89984">0004  weather-poller              10min       <span style="color:#665c54">idle</span></span>`);
+  termLine(`<span style="color:#665c54">  ${'─'.repeat(44)}</span>`);
+  termLine(`  <span style="color:#665c54">today: ${fmt(todayMs)}  ·  ${sessionsD} sessions  ·  mem: ${fmtSz(lsUsed())}</span>`);
+  termBlank();
+}, { desc:'Show running processes / active tasks' });
+
+// ── System commands ─────────────────────────────────────────
+reg('env', () => {
+  termBlank();
+  termLine(`<span style="color:#d3869b">── environment ────────────────────────────</span>`,'tl-head');
+  [
+    ['WORK_MINS',    String(Math.floor(pomoSettings.work/60))],
+    ['SHORT_MINS',   String(Math.floor(pomoSettings.short/60))],
+    ['LONG_MINS',    String(Math.floor(pomoSettings.long/60))],
+    ['CYCLE',        String(pomoSettings.cycle||4)],
+    ['AUTO_ADV',     pomoSettings.autoAdv?'1':'0'],
+    ['POMO_GOAL',    String(pomoGoalTarget)],
+    ['ENTRIES',      String(timeEntries.length)],
+    ['PROJECTS',     String(projects.length)],
+    ['GOALS',        String(goals.length)],
+    ['CLOCK_MODE',   hwState?.is24h?'24h':'12h'],
+  ].forEach(([k,v]) => termLine(`  <span style="color:#83a598">${k.padEnd(16)}</span><span style="color:#ebdbb2">=${v}</span>`));
+  termBlank();
+}, { desc:'Show current settings and environment' });
+
+reg('df', () => {
+  const used  = lsUsed();
+  const quota = 5 * 1024 * 1024; // 5MB typical
+  const pct   = Math.round(used/quota*100);
+  const filled= Math.round(pct/5);
+  termBlank();
+  termLine(`<span style="color:#d3869b">── storage usage ──────────────────────────</span>`,'tl-head');
+  termLine(`  <span style="color:#a89984">Filesystem   Size    Used    Avail   Use%</span>`);
+  termLine(`  <span style="color:#665c54">${'─'.repeat(44)}</span>`);
+  termLine(`  <span style="color:#ebdbb2">localStorage </span><span style="color:#a89984">5.0M</span>    <span style="color:#fabd2f">${fmtSz(used).padEnd(8)}</span><span style="color:#a89984">${fmtSz(quota-used).padEnd(8)}</span><span style="color:${pct>80?'#fb4934':'#b8bb26'}">${pct}%</span>`);
+  termLine(`  <span style="color:#83a598">${'█'.repeat(filled)}${'░'.repeat(20-filled)}</span>  <span style="color:#665c54">${fmtSz(used)} / ${fmtSz(quota)}</span>`);
+  termLine(`  <span style="color:#665c54">  entries: ${fmtSz(JSON.stringify(timeEntries).length*2)}  ·  settings: ${fmtSz(JSON.stringify(pomoSettings).length*2)}</span>`);
+  termBlank();
+}, { desc:'Show localStorage usage' });
+
+reg('uptime', () => {
+  const since = window._appStart || new Date();
+  const secs  = Math.floor((Date.now()-since.getTime())/1000);
+  const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
+  const now = new Date();
+  termLine(`  <span style="color:#a89984">${now.toLocaleTimeString()}  up ${h>0?h+'h ':''}${m}m ${s}s  ·  load: pomodoro ${pomoRunning?'active':'idle'}</span>`);
+}, { desc:'Show session uptime' });
+
+reg('date', () => {
+  const n = new Date();
+  termLine(`  <span style="color:#ebdbb2">${n.toDateString()}  ${n.toLocaleTimeString()}  UTC${n.getTimezoneOffset()<0?'+':''}${-n.getTimezoneOffset()/60}</span>`);
+}, { desc:'Print current date and time' });
+
+reg('whoami', () => {
+  termLine(`  <span style="color:#fabd2f">focus</span>`);
+}, { desc:'Print current user' });
+
+// ── Tools ───────────────────────────────────────────────────
+reg('cal', () => {
+  const now = new Date();
+  const y = now.getFullYear(), mo = now.getMonth();
+  const days = new Date(y,mo+1,0).getDate();
+  let firstDow = new Date(y,mo,1).getDay(); // 0=Sun
+  // shift to Mon-start
+  firstDow = (firstDow+6)%7;
+  const tracked = new Set(timeEntries.filter(e=>sameMon(new Date(e.startTime),now)).map(e=>new Date(e.startTime).getDate()));
+  const mName   = now.toLocaleDateString('en',{month:'long',year:'numeric'});
+  termBlank();
+  termLine(`<span style="color:#d3869b">  ${mName.toUpperCase()}</span>`,'tl-head');
+  termLine(`<span style="color:#665c54">  Mo  Tu  We  Th  Fr  Sa  Su</span>`);
+  let row='  ' + '    '.repeat(firstDow);
+  for (let d=1; d<=days; d++) {
+    const isToday = d===now.getDate();
+    const hasTr   = tracked.has(d);
+    const col     = isToday?'#fabd2f':hasTr?'#b8bb26':'#ebdbb2';
+    const sym     = isToday?'◆':hasTr?'●':' ';
+    row += `<span style="color:${col}">${String(d).padStart(2)}${sym} </span>`;
+    const dow = (firstDow + d - 1) % 7;
+    if (dow===6 || d===days) { termLine(row); row='  '; }
+  }
+  termBlank();
+  termLine(`  <span style="color:#fabd2f">◆</span> today  <span style="color:#b8bb26">●</span> tracked`);
+  termBlank();
+}, { desc:'Show calendar for current month' });
+
+reg('neofetch', () => {
+  const now    = new Date();
+  const upSec  = Math.floor((Date.now() - (window._appStart||now).getTime()) / 1000);
+  const upStr  = upSec < 60 ? `${upSec}s`
+               : upSec < 3600 ? `${Math.floor(upSec/60)}m ${upSec%60}s`
+               : `${Math.floor(upSec/3600)}h ${Math.floor((upSec%3600)/60)}m`;
+  const used   = lsUsed();
+  const quota  = 5*1024*1024;
+  const usedMB = (used/1048576).toFixed(2);
+  const totMB  = (quota/1048576).toFixed(0);
+  const ua     = navigator.userAgent;
+  const cores  = navigator.hardwareConcurrency || '?';
+  const mem    = navigator.deviceMemory ? `${navigator.deviceMemory} GiB` : 'unknown';
+  const res    = `${screen.width}x${screen.height}`;
+  const dpr    = window.devicePixelRatio||1;
+  const lang   = navigator.language || 'en-US';
+  const brw    = ua.includes('Firefox') ? 'Firefox' : ua.includes('Edg') ? 'Edge'
+               : ua.includes('Chrome') ? 'Chrome' : ua.includes('Safari') ? 'Safari' : 'Browser';
+  const brwVer = (ua.match(new RegExp(brw.replace('Browser','Chrome')+'\\/([\\d.]+)')) || [])[1] || '';
+  const plat   = ua.includes('Win') ? 'Windows' : ua.includes('Mac') ? 'macOS'
+               : ua.includes('Linux') ? 'Linux' : ua.includes('Android') ? 'Android'
+               : (ua.includes('iPhone')||ua.includes('iPad')) ? 'iOS' : 'Unknown';
+  const pkgs   = timeEntries.length + projects.length + goals.length;
+  const swapUsed = Math.max(0, used - 512*1024);
+  const gpuStr = (() => {
+    try {
+      const c=document.createElement('canvas'); const gl=c.getContext('webgl');
+      const d=gl&&gl.getExtension('WEBGL_debug_renderer_info');
+      return d ? gl.getParameter(d.UNMASKED_RENDERER_WEBGL).split('/')[0].trim() : 'unknown';
+    } catch(e){ return 'unknown'; }
+  })();
+
+  const cv = k => `<span style="color:#fabd2f;font-weight:700">${k}</span>`;
+  const vv = v => `<span style="color:#ebdbb2">${v}</span>`;
+
+  const infoRows = [
+    `<span style="color:#fabd2f;font-weight:700">focus</span><span style="color:#665c54">@</span><span style="color:#8ec07c;font-weight:700">local</span>`,
+    `<span style="color:#504945">${'─'.repeat(30)}</span>`,
+    `${cv('OS')}          ${vv(plat)}`,
+    `${cv('Kernel')}      ${vv('focusos ' + (navigator.platform||plat).toLowerCase())}`,
+    `${cv('Uptime')}      ${vv(upStr)}`,
+    `${cv('Packages')}    ${vv(pkgs + ' (entries+proj+goals)')}`,
+    `${cv('Shell')}       ${vv('focusbash 2.0')}`,
+    `${cv('Resolution')}  ${vv(res + ' @ ' + dpr + 'x')}`,
+    `${cv('DE')}          ${vv('Focus Workspace')}`,
+    `${cv('WM')}          ${vv('Pomodoro Compositor')}`,
+    `${cv('Terminal')}    ${vv(brw + (brwVer ? ' ' + brwVer.split('.')[0] : ''))}`,
+    `${cv('CPU')}         ${vv(cores + '-core (logical)')}`,
+    `${cv('GPU')}         ${vv(gpuStr)}`,
+    `${cv('Memory')}      ${vv(mem)}`,
+    `${cv('Swap')}        ${vv(fmtSz(swapUsed) + ' / ' + fmtSz(512*1024))}`,
+    `${cv('Disk')}        ${vv(usedMB + 'M / ' + totMB + 'M')}`,
+    `${cv('Battery')}     <span id="neofetchBat" style="color:#ebdbb2">checking…</span>`,
+    `${cv('Locale')}      ${vv(lang)}`,
+    ``,
+    `<span style="background:#282828;color:#282828"> ▌</span><span style="background:#cc241d;color:#cc241d"> ▌</span><span style="background:#98971a;color:#98971a"> ▌</span><span style="background:#d79921;color:#d79921"> ▌</span><span style="background:#458588;color:#458588"> ▌</span><span style="background:#b16286;color:#b16286"> ▌</span><span style="background:#689d6a;color:#689d6a"> ▌</span><span style="background:#a89984;color:#a89984"> ▌</span>`,
+    `<span style="background:#928374;color:#928374"> ▌</span><span style="background:#fb4934;color:#fb4934"> ▌</span><span style="background:#b8bb26;color:#b8bb26"> ▌</span><span style="background:#fabd2f;color:#fabd2f"> ▌</span><span style="background:#83a598;color:#83a598"> ▌</span><span style="background:#d3869b;color:#d3869b"> ▌</span><span style="background:#8ec07c;color:#8ec07c"> ▌</span><span style="background:#ebdbb2;color:#ebdbb2"> ▌</span>`,
+  ];
+
+  termBlank();
+
+  // ── Logo (full-width, auto-scaled) then info below ──────────
+  // Build logo element directly (no termOutput wrapper needed)
+  const logoWrap = document.createElement('div');
+  logoWrap.style.cssText = 'transform-origin:left top;white-space:pre;line-height:1.3;margin-bottom:4px;';
+  ASCII_LOGO_ROWS.forEach(([text, color]) => {
+    const ln = document.createElement('div');
+    ln.style.cssText = `color:${color};font-family:'JetBrains Mono',monospace;font-size:12.5px;`;
+    ln.textContent = text;
+    logoWrap.appendChild(ln);
+  });
+  termOutput.appendChild(logoWrap);
+
+  // Scale logo to fit
+  requestAnimationFrame(() => {
+    const avail  = termOutput.clientWidth - 8;
+    const actual = logoWrap.scrollWidth;
+    if (actual > avail && avail > 0) {
+      const ratio = avail / actual;
+      logoWrap.style.transform = `scale(${ratio})`;
+      logoWrap.style.marginBottom = `${-(logoWrap.scrollHeight * (1 - ratio))}px`;
+    }
+  });
+
+  // Info rows below logo
+  termBlank();
+  infoRows.forEach(row => termLine(`  ${row}`));
+  termBlank();
+
+  // async battery
+  if (navigator.getBattery) {
+    navigator.getBattery().then(b => {
+      const el = document.getElementById('neofetchBat');
+      if (el) el.textContent = `${Math.round(b.level*100)}%${b.charging ? ' (charging)' : ''}`;
+    }).catch(()=>{});
+  }
+}, { desc:'Display system info with FOCUGRUV logo' });
+
+reg('history', () => {
+  if (!termHistory.length) { termLine(`  <span style="color:#665c54">no history</span>`); return; }
+  termBlank();
+  termLine(`<span style="color:#d3869b">── command history ────────────────────────</span>`,'tl-head');
+  [...termHistory].reverse().forEach((c,i) => {
+    termLine(`  <span style="color:#665c54">${String(i+1).padStart(4)}</span>  <span style="color:#ebdbb2">${escHtml(c)}</span>`);
+  });
+  termBlank();
+}, { desc:'Show command history' });
+
+reg('echo', ({ args }) => {
+  termLine(`  ${escHtml(args.join(' '))}`,'tl-sub');
+}, { desc:'Print text to terminal', usage:'echo <text>' });
+
+reg('man', ({ args }) => {
+  const cmd = args[0];
+  if (!cmd) { termLine(`  usage: man &lt;command&gt;`,'tl-err'); return; }
+  if (!TERM_CMDS[cmd]) { termLine(`  <span style="color:#fb4934">no manual entry for '${escHtml(cmd)}'</span>  (try 'help')`,'tl-err'); return; }
+  const c = TERM_CMDS[cmd];
+  termBlank();
+  termLine(`<span style="color:#d3869b">MAN(1)  FOCUS TERMINAL  MAN(1)</span>`,'tl-head');
+  termBlank();
+  termLine(`<span style="color:#fabd2f">NAME</span>`);
+  termLine(`       ${cmd} — ${c.desc||'no description'}`);
+  if (c.usage) { termBlank(); termLine(`<span style="color:#fabd2f">SYNOPSIS</span>`); termLine(`       ${c.usage}`); }
+  termBlank();
+}, { desc:'Show manual page for a command', usage:'man <command>' });
+
+// ── Shell builtins ──────────────────────────────────────────
+reg(['clear','cls'], () => { termOutput.innerHTML=''; termBoot(); }, { desc:'Clear terminal' });
+reg(['exit','quit','q'], () => { termCloseFn(); }, { desc:'Close terminal' });
+reg('version', () => {
+  termLine(`  <span style="color:#fabd2f">FOCUS</span> <span style="color:#b8bb26">v2.0</span>  pomodoro + time tracker`);
+  termLine(`  <span style="color:#665c54">focusbash 2.0  ·  gruvbox dark  ·  JetBrains Mono</span>`);
+}, { desc:'Show version info' });
+
+// ── Execute ─────────────────────────────────────────────────
+const termExec = raw => {
+  const trimmed = raw.trim();
+  if (!trimmed) return;
+  termHistory.unshift(trimmed);
+  termHistIdx = -1;
+  if (termHistory.length > 200) termHistory.pop();
+
+  termPs1Echo(trimmed);
+
+  const parts = trimmed.split(/\s+/);
+  const cmd   = parts[0].toLowerCase();
+  const args  = parts.slice(1);
+
+  if (TERM_CMDS[cmd]) {
+    TERM_CMDS[cmd].fn({ args, raw: trimmed });
+  } else {
+    termLine(`  <span style="color:#fb4934">focusbash: command not found: ${escHtml(cmd)}</span>  <span style="color:#665c54">— try <span style="color:#8ec07c">help</span></span>`,'tl-err');
+  }
+};
+
+// ── Input handling ──────────────────────────────────────────
+termInputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const v = termInputEl.value;
+    termInputEl.value = '';
+    termExec(v);
+  }
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (termHistIdx < termHistory.length-1) { termHistIdx++; termInputEl.value = termHistory[termHistIdx]; }
+  }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (termHistIdx > 0) { termHistIdx--; termInputEl.value = termHistory[termHistIdx]; }
+    else if (termHistIdx === 0) { termHistIdx = -1; termInputEl.value = ''; }
+  }
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const partial = termInputEl.value.toLowerCase().split(' ')[0];
+    const isFirst = !termInputEl.value.includes(' ');
+    if (isFirst) {
+      const matches = [...new Set(Object.keys(TERM_CMDS))].filter(c=>c.startsWith(partial));
+      if (matches.length === 1) termInputEl.value = matches[0];
+      else if (matches.length > 1) termLine(`  <span style="color:#a89984">${matches.sort().join('  ')}</span>`);
+    }
+  }
+  if (e.key === 'l' && e.ctrlKey) { e.preventDefault(); termOutput.innerHTML=''; termBoot(); }
+  if (e.key === 'c' && e.ctrlKey) { termInputEl.value=''; }
+});
+
+// ============================================================
+// === EXPANDED KEYBOARD SHORTCUTS ============================
+// ============================================================
+document.addEventListener('keydown', e => {
+  const tag      = document.activeElement.tagName;
+  const inInput  = tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT';
+  const modalOpen= !!document.querySelector('.overlay.open:not(#terminalModal)');
+  const termIsOpen = termModal.classList.contains('open');
+
+  // `` ` `` toggles terminal — never blocked
+  if (e.key==='`' && !inInput) { e.preventDefault(); termIsOpen ? termCloseFn() : termOpenFn(); return; }
+
+  // ? opens shortcuts help
+  if (e.key==='?' && !inInput && !modalOpen && !termIsOpen) { e.preventDefault(); openM('kbModal'); return; }
+
+  // All other shortcuts blocked when in input / modal / terminal
+  if (inInput || modalOpen || termIsOpen) return;
+
+  // Pomodoro
+  if (e.code==='Space')                      { e.preventDefault(); $('pomoStart').click(); }
+  if (e.code==='KeyR' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); $('pomoReset').click(); }
+  if (e.code==='KeyS' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); $('pomoSkip').click();  }
+  if (e.code==='Digit1')                     { e.preventDefault(); document.querySelector('.pomo-tab[data-m="work"]').click();  }
+  if (e.code==='Digit2')                     { e.preventDefault(); document.querySelector('.pomo-tab[data-m="short"]').click(); }
+  if (e.code==='Digit3')                     { e.preventDefault(); document.querySelector('.pomo-tab[data-m="long"]').click();  }
+
+  // Tracker
+  if (e.code==='KeyN' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); taskInput.focus(); }
+  if (e.code==='Enter' && e.ctrlKey)          { e.preventDefault(); trackBtn.click(); }
+  if ((e.ctrlKey||e.metaKey) && e.key==='p' && !e.shiftKey) {
+    if (taskRunning) { e.preventDefault(); pauseBtn.click(); }
+  }
+
+  // Date navigation
+  if (e.code==='BracketLeft')  { e.preventDefault(); $('prevDateBtn').click(); }
+  if (e.code==='BracketRight') { e.preventDefault(); $('nextDateBtn').click(); }
+  if (e.code==='KeyT' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); $('goTodayBtn').click(); }
+
+  // Create
+  if (e.code==='KeyG' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); $('openGoalBtn').click(); }
+  if (e.code==='KeyP' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); $('openProjBtn').click(); }
+
+  // Ctrl combos
+  if ((e.ctrlKey||e.metaKey) && e.key==='h') { e.preventDefault(); $('openHeatmapBtn').click(); }
+  if ((e.ctrlKey||e.metaKey) && e.key==='l') { e.preventDefault(); $('openTimelineBtn').click(); }
+  if ((e.ctrlKey||e.metaKey) && e.key===',') { e.preventDefault(); $('pomoSettingsBtn').click(); }
+  if ((e.ctrlKey||e.metaKey) && e.key==='e') { e.preventDefault(); $('openExportBtn').click(); }
+  if ((e.ctrlKey||e.metaKey) && e.key==='i') { e.preventDefault(); $('openImportBtn').click(); }
+  if ((e.ctrlKey||e.metaKey) && e.key==='r') { e.preventDefault(); $('openReportBtn').click(); }
+});
+
+window._appStart = new Date();
