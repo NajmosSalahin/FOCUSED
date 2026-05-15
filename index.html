@@ -175,6 +175,7 @@
 <div class="card">
 <div class="act-btns">
 <button class="act-btn term-btn" id="openTermBtn" title="Open terminal (`)"><i aria-hidden="true" class="fas fa-terminal"></i> TERMINAL</button>
+<button class="act-btn stat-btn" id="openStatsBtn"><i aria-hidden="true" class="fas fa-chart-line"></i> STATISTICS</button>
 <button class="act-btn hab" id="openHabitsBtn"><i aria-hidden="true" class="fas fa-check-double"></i> HABITS &amp; ROUTINES</button>
 <button class="act-btn tln" id="openTimelineBtn"><i aria-hidden="true" class="fas fa-timeline"></i> DAY TIMELINE</button>
 <button class="act-btn hmp" id="openHeatmapBtn"><i aria-hidden="true" class="fas fa-fire"></i> FOCUS HEATMAP</button>
@@ -593,6 +594,64 @@
 <div class="mfoot"><button class="btn btn-s" data-close="importModal">CANCEL</button><button class="btn btn-p" id="confirmImportBtn"><i aria-hidden="true" class="fas fa-upload"></i> IMPORT</button></div>
 </div>
 </div>
+<!-- STATISTICS MODAL -->
+<div class="overlay" id="statsModal">
+  <div aria-modal="true" class="modal wide stats-modal" role="dialog">
+    <div class="mhead">
+      <div class="mtitle"><i class="fas fa-chart-line" style="color:var(--aqua-b);margin-right:8px"></i>STATISTICS &amp; ANALYTICS</div>
+      <button aria-label="Close" class="mcls" data-close="statsModal"><i aria-hidden="true" class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body stats-body">
+      <!-- Range selector -->
+      <div class="stats-range-bar">
+        <div class="stats-range-tabs" id="statsRangeTabs">
+          <button class="stats-range-tab active" data-range="7">7 DAYS</button>
+          <button class="stats-range-tab" data-range="14">14 DAYS</button>
+          <button class="stats-range-tab" data-range="30">30 DAYS</button>
+          <button class="stats-range-tab" data-range="90">90 DAYS</button>
+          <button class="stats-range-tab" data-range="all">ALL TIME</button>
+        </div>
+      </div>
+      <!-- KPI cards -->
+      <div class="stats-kpi-row" id="statsKpiRow"></div>
+      <!-- Charts grid -->
+      <div class="stats-charts-grid">
+        <div class="stats-chart-card wide">
+          <div class="stats-chart-title">DAILY TRACKED TIME</div>
+          <canvas id="statsDailyChart" height="140"></canvas>
+        </div>
+        <div class="stats-chart-card">
+          <div class="stats-chart-title">PROJECT BREAKDOWN</div>
+          <canvas id="statsProjChart" height="180"></canvas>
+        </div>
+        <div class="stats-chart-card">
+          <div class="stats-chart-title">DAY-OF-WEEK PATTERN</div>
+          <canvas id="statsDowChart" height="180"></canvas>
+        </div>
+        <div class="stats-chart-card wide">
+          <div class="stats-chart-title">HOUR-OF-DAY ACTIVITY HEATMAP</div>
+          <div id="statsHourHeatmap"></div>
+        </div>
+        <div class="stats-chart-card">
+          <div class="stats-chart-title">POMODORO SESSION LOG</div>
+          <canvas id="statsPomoChart" height="180"></canvas>
+        </div>
+        <div class="stats-chart-card">
+          <div class="stats-chart-title">SESSION DURATION DISTRIBUTION</div>
+          <canvas id="statsDurChart" height="180"></canvas>
+        </div>
+      </div>
+      <!-- Math / statistical summary -->
+      <div class="stats-math-section">
+        <div class="stats-math-title"><i class="fas fa-square-root-variable"></i> STATISTICAL SUMMARY</div>
+        <div class="stats-math-grid" id="statsMathGrid"></div>
+      </div>
+      <!-- Insights -->
+      <div class="stats-insights" id="statsInsights"></div>
+    </div>
+  </div>
+</div>
+
 <div aria-atomic="true" aria-live="assertive" class="toasts" id="toastContainer"></div>
 
 <!-- TERMINAL -->
@@ -643,6 +702,7 @@
           <div class="kb-row"><kbd>G</kbd><span>New goal</span></div>
           <div class="kb-row"><kbd>P</kbd><span>New project</span></div>
           <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>K</kbd><span>Command palette</span></div>
+          <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>B</kbd><span>Habits &amp; routines</span></div>
           <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>H</kbd><span>Focus heatmap</span></div>
           <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>L</kbd><span>Day timeline</span></div>
           <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>,</kbd><span>Timer settings</span></div>
@@ -655,6 +715,7 @@
           <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>E</kbd><span>Export data</span></div>
           <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>I</kbd><span>Import data</span></div>
           <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>R</kbd><span>Advanced reports</span></div>
+          <div class="kb-row"><kbd>Ctrl</kbd><span>+</span><kbd>S</kbd><span>Statistics &amp; analytics</span></div>
         </div>
       </div>
     </div>
