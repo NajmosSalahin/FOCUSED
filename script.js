@@ -80,7 +80,10 @@ const openM = id => {
     if(el) el.focus();
   });
 };
-const closeM = id => $(id).classList.remove('open');
+const closeM = id => {
+  $(id).classList.remove('open');
+  if (id === 'statsModal') $('openStatsBtn').classList.remove('active');
+};
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeM(b.dataset.close)));
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{
   if(e.target===o && !o.hasAttribute('data-no-overlay-close')) o.classList.remove('open');
@@ -3054,8 +3057,8 @@ const ASCII_LOGO_ROWS = [
   [' _____   ___    ____  _   _   ____  ____  _   _  __   __',  '#fabd2f'],
   ['|  ___| / _ \\  / ___|| | | | / ___||  _ \\| | | | \\ \\ / /', '#fabd2f'],
   ['| |_   | | | || |    | | | || |  _ || |_) || | | |  \\ V / ','#fe8019'],
-  ['|  _|  | |_| || |___ | |_| || |_| ||  _ < | |_| |   | |  ', '#fe8019'],
-  ['|_|     \\___/  \\____|  \\___/  \\____|_| \\_\\ \\___/    |_|  ', '#d65d0e'],
+  ['|  _|  | |_| || |___ | |_| || |_| ||  _ < | |_| |   \\  /  ', '#fe8019'],
+  ['|_|     \\___/  \\____|  \\___/  \\____|_| \\_\\ \\___/    \\/   ', '#d65d0e'],
 ];
 
 // Creates a scaled logo <div>. Measures actual render width and applies
@@ -3130,7 +3133,7 @@ reg('help', ({ args }) => {
   const groups = {
     'TIMER':    [['start','pause','reset','skip'],       'Pomodoro controls'],
     'MODE':     [['work','short','long'],                'Switch session mode'],
-    'DATA':     [['status','stats','today','week'],      'Time & session data'],
+    'DATA':     [['status','statsum','today','week'],    'Time & session data'],
     'ENTRIES':  [['ls','tasks','find','grep'],           'Browse entries'],
     'PROJECTS': [['projects','proj'],                   'Project info'],
     'GOALS':    [['goals'],                              'Goal progress'],
@@ -3138,6 +3141,8 @@ reg('help', ({ args }) => {
     'SYSTEM':   [['env','df','uptime','date','whoami'], 'System / settings'],
     'TOOLS':    [['cal','neofetch','history','echo','man'],'Utilities'],
     'SHELL':    [['clear','exit','help'],               'Shell builtins'],
+    'HELP':     [['keys','shortcuts'],                  'Keyboard shortcuts reference'],
+    'PANELS':   [['stats','reports','heatmap','habits','timeline','import','export'], 'Open UI panels'],
   };
   Object.entries(groups).forEach(([grp, [cmds, hint]]) => {
     termLine(`<span style="color:#665c54">  ${grp.padEnd(10)}</span><span style="color:#8ec07c">${cmds.join('  ')}</span>  <span style="color:#665c54">${hint}</span>`);
@@ -3196,9 +3201,7 @@ reg('status', () => {
   termBlank();
 }, { desc:'Show live timer and tracker status' });
 
-reg('stats', () => {
-  const now = new Date();
-  const sum = arr => arr.reduce((s,e)=>s+(e.durationMs||0),0);
+reg(['statsum','summary'], () => {
   const todayE  = timeEntries.filter(e=>sameDay(new Date(e.startTime),now));
   const weekE   = timeEntries.filter(e=>sameWeek(new Date(e.startTime),now));
   const monthE  = timeEntries.filter(e=>sameMon(new Date(e.startTime),now));
@@ -3557,6 +3560,105 @@ reg('neofetch', () => {
   }
 }, { desc:'Display system info with FOCUGRUV logo' });
 
+// ── Keyboard shortcuts reference ────────────────────────────
+reg(['keys','shortcuts','binds','keybinds'], () => {
+  const sec = (title, col) => termLine(`<span style="color:${col};font-weight:700">  ── ${title} ${'─'.repeat(Math.max(0,38-title.length))}</span>`,'tl-head');
+  const row = (keys, desc) => {
+    const k = keys.map(k=>`<span style="color:#fabd2f;font-weight:700">${k}</span>`).join(' <span style="color:#665c54">+</span> ');
+    termLine(`    ${k.padEnd?k:k}  <span style="color:#a89984">${desc}</span>`);
+  };
+  termBlank();
+  termLine(`<span style="color:#d3869b">  FOCUS KEYBOARD SHORTCUTS  ─────────────────────</span>`,'tl-head');
+  termBlank();
+  sec('POMODORO TIMER','#fb4934');
+  row(['Space'],         'Start / Pause timer');
+  row(['R'],             'Reset current session');
+  row(['S'],             'Skip to next session');
+  row(['1'],             'Switch → Work mode');
+  row(['2'],             'Switch → Short break');
+  row(['3'],             'Switch → Long break');
+  termBlank();
+  sec('TASK TRACKER','#b8bb26');
+  row(['N'],             'Focus task input field');
+  row(['Ctrl','Enter'],  'Start / Stop time tracking');
+  row(['Ctrl','P'],      'Pause / Resume tracker');
+  row(['['],             'Previous day');
+  row([']'],             'Next day');
+  row(['T'],             'Jump to today');
+  termBlank();
+  sec('NAVIGATION','#83a598');
+  row(['G'],             'New goal');
+  row(['P'],             'New project');
+  row(['Ctrl','K'],      'Command palette');
+  row(['Ctrl','H'],      'Focus heatmap');
+  row(['Ctrl','L'],      'Day timeline');
+  row(['Ctrl',','],      'Timer settings');
+  termBlank();
+  sec('PANELS & MODALS','#d3869b');
+  row(['`'],             'Toggle terminal (this)');
+  row(['?'],             'Show keyboard shortcuts panel');
+  row(['Esc'],           'Close modal / overlay');
+  row(['Ctrl','B'],      'Habits & routines');
+  row(['Ctrl','H'],      'Focus heatmap');
+  row(['Ctrl','L'],      'Day timeline');
+  row(['Ctrl','R'],      'Advanced reports');
+  row(['Ctrl','S'],      'Statistics & analytics');
+  row(['Ctrl','E'],      'Export data');
+  row(['Ctrl','I'],      'Import data');
+  termBlank();
+  sec('TERMINAL (IN-TERMINAL)','#8ec07c');
+  row(['↑ / ↓'],         'Navigate command history');
+  row(['Tab'],           'Autocomplete command');
+  row(['Ctrl','L'],      'Clear terminal');
+  row(['Ctrl','C'],      'Cancel current input');
+  termBlank();
+  termLine(`  <span style="color:#665c54">tip: open the full GUI panel with <span style="color:#8ec07c">?</span> outside the terminal</span>`);
+  termBlank();
+}, { desc:'Show all keyboard shortcuts and key bindings' });
+
+// ── Open panel commands ───────────────────────────────────
+reg('stats', () => {
+  termLine('  <span style="color:#8ec07c">→ opening statistics panel…</span>');
+  termBlank();
+  setTimeout(() => document.getElementById('openStatsBtn').click(), 200);
+}, { desc: 'Open statistics & analytics panel' });
+
+reg('reports', () => {
+  termLine('  <span style="color:#8ec07c">→ opening advanced reports panel…</span>');
+  termBlank();
+  setTimeout(() => document.getElementById('openReportBtn').click(), 200);
+}, { desc: 'Open advanced reports panel' });
+
+reg('heatmap', () => {
+  termLine('  <span style="color:#fabd2f">→ opening focus heatmap…</span>');
+  termBlank();
+  setTimeout(() => document.getElementById('openHeatmapBtn').click(), 200);
+}, { desc: 'Open focus heatmap panel' });
+
+reg(['habits','hab','routines'], () => {
+  termLine('  <span style="color:#b8bb26">→ opening habits & routines…</span>');
+  termBlank();
+  setTimeout(() => document.getElementById('openHabitsBtn').click(), 200);
+}, { desc: 'Open habits & routines panel' });
+
+reg(['timeline','tl'], () => {
+  termLine('  <span style="color:#83a598">→ opening day timeline…</span>');
+  termBlank();
+  setTimeout(() => document.getElementById('openTimelineBtn').click(), 200);
+}, { desc: 'Open day timeline panel' });
+
+reg(['import'], () => {
+  termLine('  <span style="color:#458588">→ opening import panel…</span>');
+  termBlank();
+  setTimeout(() => document.getElementById('openImportBtn').click(), 200);
+}, { desc: 'Open data import panel' });
+
+reg(['export'], () => {
+  termLine('  <span style="color:#928374">→ opening export panel…</span>');
+  termBlank();
+  setTimeout(() => document.getElementById('openExportBtn').click(), 200);
+}, { desc: 'Open data export panel' });
+
 reg('history', () => {
   if (!termHistory.length) { termLine(`  <span style="color:#665c54">no history</span>`); return; }
   termBlank();
@@ -3688,11 +3790,502 @@ document.addEventListener('keydown', e => {
 
   // Ctrl combos
   if ((e.ctrlKey||e.metaKey) && e.key==='h') { e.preventDefault(); $('openHeatmapBtn').click(); }
+  if ((e.ctrlKey||e.metaKey) && e.key==='b') { e.preventDefault(); $('openHabitsBtn').click(); }
   if ((e.ctrlKey||e.metaKey) && e.key==='l') { e.preventDefault(); $('openTimelineBtn').click(); }
   if ((e.ctrlKey||e.metaKey) && e.key===',') { e.preventDefault(); $('pomoSettingsBtn').click(); }
   if ((e.ctrlKey||e.metaKey) && e.key==='e') { e.preventDefault(); $('openExportBtn').click(); }
   if ((e.ctrlKey||e.metaKey) && e.key==='i') { e.preventDefault(); $('openImportBtn').click(); }
   if ((e.ctrlKey||e.metaKey) && e.key==='r') { e.preventDefault(); $('openReportBtn').click(); }
+  if ((e.ctrlKey||e.metaKey) && e.key==='s') { e.preventDefault(); $('openStatsBtn').click(); }
 });
 
 window._appStart = new Date();
+
+// ============================================================
+// === STATISTICS ENGINE ======================================
+// ============================================================
+
+(function initStats() {
+
+  let statsRange = 7; // days
+
+  // ── Helpers ──────────────────────────────────────────────
+  const msToHrs = ms => ms / 3600000;
+  const msToPretty = ms => {
+    const s = Math.floor(ms/1000), h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  };
+
+  const getEntries = range => {
+    if (range === 'all') return timeEntries;
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - range); cutoff.setHours(0,0,0,0);
+    return timeEntries.filter(e => new Date(e.startTime) >= cutoff);
+  };
+
+  // ── Statistical functions ─────────────────────────────────
+  const statMean   = arr => arr.length ? arr.reduce((s,v)=>s+v,0)/arr.length : 0;
+  const statMedian = arr => {
+    if (!arr.length) return 0;
+    const s = [...arr].sort((a,b)=>a-b);
+    const m = Math.floor(s.length/2);
+    return s.length%2 ? s[m] : (s[m-1]+s[m])/2;
+  };
+  const statStdDev = arr => {
+    if (arr.length < 2) return 0;
+    const mean = statMean(arr);
+    return Math.sqrt(arr.reduce((s,v)=>s+(v-mean)**2,0)/(arr.length-1));
+  };
+  const statMax = arr => arr.length ? Math.max(...arr) : 0;
+  const statMin = arr => arr.length ? Math.min(...arr) : 0;
+  const statSum = arr => arr.reduce((s,v)=>s+v,0);
+  // Pearson correlation coefficient
+  const pearson = (xs, ys) => {
+    if (xs.length < 2) return 0;
+    const mx = statMean(xs), my = statMean(ys);
+    const num = xs.reduce((s,x,i)=>s+(x-mx)*(ys[i]-my),0);
+    const den = Math.sqrt(xs.reduce((s,x)=>s+(x-mx)**2,0)*ys.reduce((s,y)=>s+(y-my)**2,0));
+    return den === 0 ? 0 : num/den;
+  };
+  // linear regression: returns {slope, intercept}
+  const linReg = (xs, ys) => {
+    const mx = statMean(xs), my = statMean(ys);
+    const slope = xs.reduce((s,x,i)=>s+(x-mx)*(ys[i]-my),0) / (xs.reduce((s,x)=>s+(x-mx)**2,0)||1);
+    return { slope, intercept: my - slope*mx };
+  };
+
+  // ── Canvas chart helpers ──────────────────────────────────
+  const COLORS = ['#83a598','#fabd2f','#b8bb26','#d3869b','#8ec07c','#fe8019','#fb4934','#458588'];
+  const gruvDim = '#504945';
+
+  const clearCanvas = cvs => {
+    const ctx = cvs.getContext('2d');
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    return ctx;
+  };
+
+  // Draw a responsive bar chart
+  const drawBarChart = (cvs, labels, values, color, options = {}) => {
+    const dpr = window.devicePixelRatio || 1;
+    const W = cvs.parentElement.clientWidth - 28;
+    const H = options.h || 140;
+    cvs.width  = W * dpr; cvs.height = H * dpr;
+    cvs.style.width  = W + 'px'; cvs.style.height = H + 'px';
+    const ctx = clearCanvas(cvs); ctx.scale(dpr, dpr);
+
+    const pad = { top:8, right:8, bottom:28, left:46 };
+    const cW = W - pad.left - pad.right;
+    const cH = H - pad.top - pad.bottom;
+    const maxV = Math.max(...values, 0.001);
+
+    // Trend line data
+    const trendXs = values.map((_,i)=>i);
+    const { slope, intercept } = linReg(trendXs, values);
+
+    // Y axis lines
+    const steps = 4;
+    ctx.font = `${9*dpr/dpr}px JetBrains Mono, monospace`; ctx.textAlign = 'right';
+    for (let i = 0; i <= steps; i++) {
+      const v = maxV * (i/steps);
+      const y = pad.top + cH - (cH * i/steps);
+      ctx.strokeStyle = gruvDim + '44'; ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+      ctx.fillStyle = '#665c54'; ctx.fillText(msToPretty(v*3600000), pad.left - 4, y + 3);
+    }
+
+    // Bars
+    const barW = Math.max(2, cW/values.length - 3);
+    values.forEach((v, i) => {
+      const x = pad.left + (cW/values.length)*i + (cW/values.length - barW)/2;
+      const bH = cH * (v/maxV);
+      const y = pad.top + cH - bH;
+      const isLast = i === values.length - 1;
+      ctx.fillStyle = isLast ? (options.highlightLast || color + 'cc') : color + '99';
+      ctx.beginPath();
+      const r = Math.min(3, barW/2);
+      ctx.moveTo(x+r, y); ctx.lineTo(x+barW-r, y);
+      ctx.quadraticCurveTo(x+barW, y, x+barW, y+r);
+      ctx.lineTo(x+barW, y+bH); ctx.lineTo(x, y+bH);
+      ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y); ctx.fill();
+      // X label
+      if (labels[i]) {
+        ctx.fillStyle = '#504945'; ctx.textAlign = 'center'; ctx.font = '8px JetBrains Mono, monospace';
+        ctx.fillText(labels[i], x + barW/2, H - pad.bottom + 12);
+      }
+    });
+
+    // Trend line
+    if (values.length > 2 && options.trend !== false) {
+      ctx.strokeStyle = '#fabd2f88'; ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+      ctx.beginPath();
+      trendXs.forEach((xi, i) => {
+        const x = pad.left + (cW/values.length)*xi + (cW/values.length)/2;
+        const y = pad.top + cH - cH * Math.max(0,Math.min(intercept + slope*xi, maxV)) / maxV;
+        i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      });
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+  };
+
+  // Draw a horizontal bar chart (for projects/dow)
+  const drawHBarChart = (cvs, labels, values, colors, h) => {
+    const dpr = window.devicePixelRatio || 1;
+    const W = cvs.parentElement.clientWidth - 28;
+    const H = h || Math.max(100, labels.length * 28 + 20);
+    cvs.width  = W * dpr; cvs.height = H * dpr;
+    cvs.style.width  = W + 'px'; cvs.style.height = H + 'px';
+    const ctx = clearCanvas(cvs); ctx.scale(dpr, dpr);
+
+    const maxV = Math.max(...values, 0.001);
+    const labW = 60, pad = 12;
+    const barZone = W - labW - pad - 50;
+
+    labels.forEach((lbl, i) => {
+      const y = 10 + i * 26;
+      const bW = barZone * values[i] / maxV;
+      const col = Array.isArray(colors) ? colors[i % colors.length] : colors;
+      ctx.fillStyle = col + '88';
+      ctx.beginPath();
+      const r = Math.min(4, 12/2);
+      ctx.moveTo(labW, y+r); ctx.lineTo(labW+bW-r, y);
+      ctx.quadraticCurveTo(labW+bW, y, labW+bW, y+r);
+      ctx.lineTo(labW+bW, y+12); ctx.lineTo(labW, y+12);
+      ctx.lineTo(labW, y+r); ctx.fill();
+      ctx.fillStyle = '#a89984'; ctx.font = '9px JetBrains Mono, monospace';
+      ctx.textAlign = 'right'; ctx.fillText(lbl, labW - 4, y + 10);
+      ctx.fillStyle = '#ebdbb2'; ctx.textAlign = 'left';
+      ctx.fillText(msToPretty(values[i]*3600000), labW + bW + 4, y + 10);
+    });
+  };
+
+  // Draw donut chart
+  const drawDonut = (cvs, labels, values, colors, h) => {
+    const dpr = window.devicePixelRatio || 1;
+    const W = cvs.parentElement.clientWidth - 28;
+    const H = h || 180;
+    cvs.width  = W * dpr; cvs.height = H * dpr;
+    cvs.style.width  = W + 'px'; cvs.style.height = H + 'px';
+    const ctx = clearCanvas(cvs); ctx.scale(dpr, dpr);
+    if (!values.length || statSum(values) === 0) {
+      ctx.fillStyle = '#504945'; ctx.font = '11px JetBrains Mono, monospace';
+      ctx.textAlign = 'center'; ctx.fillText('no data', W/2, H/2); return;
+    }
+    const cx = W * 0.35, cy = H/2, r = Math.min(cx, cy) - 16, inner = r * 0.55;
+    const total = statSum(values);
+    let angle = -Math.PI/2;
+    values.forEach((v, i) => {
+      const sweep = (v/total) * 2 * Math.PI;
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, angle, angle+sweep); ctx.closePath();
+      ctx.fillStyle = colors[i % colors.length]; ctx.fill();
+      angle += sweep;
+    });
+    // inner hole
+    ctx.beginPath(); ctx.arc(cx, cy, inner, 0, 2*Math.PI);
+    ctx.fillStyle = '#282828'; ctx.fill();
+    // center text
+    ctx.fillStyle = '#ebdbb2'; ctx.font = 'bold 13px JetBrains Mono, monospace';
+    ctx.textAlign = 'center'; ctx.fillText(msToPretty(total*3600000), cx, cy+5);
+    // legend
+    const lx = W * 0.68, ly0 = (H - labels.length*18)/2;
+    labels.forEach((lbl, i) => {
+      const y = ly0 + i*18;
+      ctx.fillStyle = colors[i%colors.length]; ctx.fillRect(lx, y+2, 10, 10);
+      ctx.fillStyle = '#a89984'; ctx.font = '9px JetBrains Mono, monospace';
+      ctx.textAlign = 'left'; ctx.fillText(lbl.slice(0,16), lx+14, y+11);
+      ctx.fillStyle = '#ebdbb2';
+      ctx.fillText(msToPretty(values[i]*3600000), lx+14+96, y+11);
+    });
+  };
+
+  // ── Build / refresh stats ─────────────────────────────────
+  const buildStats = () => {
+    const entries = getEntries(statsRange);
+    const now = new Date();
+
+    // ── KPI cards ──────────────────────────────────────────
+    const totalMs = statSum(entries.map(e=>e.durationMs||0));
+    const trackedDays = new Set(entries.map(e=>new Date(e.startTime).toDateString())).size;
+    const allDays = statsRange === 'all' ? trackedDays : statsRange;
+    const avgDayMs = allDays ? totalMs / allDays : 0;
+
+    // longest streak
+    const daySet = new Set(timeEntries.map(e=>new Date(e.startTime).toDateString()));
+    let streak = 0, maxStreak = 0, d2 = new Date();
+    for (let i = 0; i < 365; i++) {
+      if (daySet.has(d2.toDateString())) { streak++; maxStreak = Math.max(maxStreak,streak); }
+      else streak = 0;
+      d2.setDate(d2.getDate()-1);
+    }
+    // current streak (from today backward)
+    let curStreak = 0, cs = new Date();
+    while (daySet.has(cs.toDateString())) { curStreak++; cs.setDate(cs.getDate()-1); }
+
+    const pomoToday   = pomoLog.filter(s=>s.mode==='work').length;
+    const pomoTotal   = timeEntries.reduce((s,e)=>s+(e.pomoCount||0),0) || pomoToday;
+
+    const kpis = [
+      { val: totalMs ? msToPretty(totalMs) : '—',  lbl:'TOTAL TIME',     color:'#fabd2f', sub:`${trackedDays} tracked day${trackedDays!==1?'s':''}` },
+      { val: avgDayMs ? msToPretty(avgDayMs) : '—',lbl:'DAILY AVERAGE',  color:'#83a598', sub:`over ${allDays} day${allDays!==1?'s':''}` },
+      { val: String(entries.length),               lbl:'ENTRIES',        color:'#b8bb26', sub:'time blocks' },
+      { val: curStreak > 0 ? curStreak+'d' : '0d', lbl:'CURRENT STREAK', color:'#8ec07c', sub:`best: ${maxStreak}d` },
+      { val: String(projects.length),              lbl:'PROJECTS',       color:'#d3869b', sub:'total' },
+      { val: String(pomoToday),                    lbl:'POMODOROS TODAY', color:'#fb4934', sub:'work sessions' },
+    ];
+    const kpiRow = $('statsKpiRow'); kpiRow.innerHTML = '';
+    kpis.forEach(k => {
+      const el = document.createElement('div'); el.className = 'stats-kpi-card';
+      el.innerHTML = `<div class="stats-kpi-val" style="color:${k.color}">${k.val}</div><div class="stats-kpi-lbl">${k.lbl}</div><div class="stats-kpi-sub">${k.sub}</div>`;
+      kpiRow.appendChild(el);
+    });
+
+    // ── Daily bar chart (last N days) ──────────────────────
+    let dayCount;
+    if (statsRange === 'all') {
+      if (entries.length > 0) {
+        const oldest = new Date(Math.min(...entries.map(e=>new Date(e.startTime))));
+        const spanDays = Math.ceil((new Date()-oldest)/86400000) + 1;
+        dayCount = Math.min(60, Math.max(14, spanDays));
+      } else { dayCount = 14; }
+    } else { dayCount = statsRange; }
+    const dayLabels = [], dayVals = [];
+    for (let i = dayCount-1; i >= 0; i--) {
+      const dt = new Date(); dt.setDate(dt.getDate()-i); dt.setHours(0,0,0,0);
+      const dayMs = entries.filter(e=>sameDay(new Date(e.startTime),dt)).reduce((s,e)=>s+(e.durationMs||0),0);
+      dayLabels.push(i===0?'today':dt.getDate()===1?dt.toLocaleDateString('en',{month:'short'}):String(dt.getDate()));
+      dayVals.push(msToHrs(dayMs));
+    }
+    const dCvs = $('statsDailyChart');
+    requestAnimationFrame(() => drawBarChart(dCvs, dayLabels, dayVals, '#83a598', { h:140, highlightLast:'#8ec07c' }));
+
+    // ── Project donut ──────────────────────────────────────
+    const projData = projects.map((p,i) => ({
+      name: p.name,
+      ms: entries.filter(e=>e.projectId===p.id).reduce((s,e)=>s+(e.durationMs||0),0),
+      color: COLORS[i%COLORS.length]
+    })).filter(p=>p.ms>0).sort((a,b)=>b.ms-a.ms).slice(0,8);
+    const noProj = entries.filter(e=>!e.projectId).reduce((s,e)=>s+(e.durationMs||0),0);
+    if (noProj > 0) projData.push({ name:'(no project)', ms: noProj, color: '#504945' });
+    const pCvs = $('statsProjChart');
+    requestAnimationFrame(() => drawDonut(pCvs,
+      projData.map(p=>p.name), projData.map(p=>msToHrs(p.ms)), projData.map(p=>p.color), 180));
+
+    // ── Day-of-week horizontal bar ─────────────────────────
+    const DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const dowMs = Array(7).fill(0);
+    entries.forEach(e => {
+      let d = new Date(e.startTime).getDay(); // 0=Sun
+      d = d === 0 ? 6 : d-1; // Mon=0
+      dowMs[d] += e.durationMs||0;
+    });
+    const dowCvs = $('statsDowChart');
+    requestAnimationFrame(() => drawHBarChart(dowCvs, DOW, dowMs.map(msToHrs), COLORS, 7*28+20));
+
+    // ── Hour-of-day heatmap ────────────────────────────────
+    const hourMs = Array(24).fill(0);
+    entries.forEach(e => {
+      hourMs[new Date(e.startTime).getHours()] += e.durationMs||0;
+    });
+    const maxHour = Math.max(...hourMs, 1);
+    const hmDiv = $('statsHourHeatmap'); hmDiv.innerHTML = '';
+    // Group into rows of 12 hours
+    [[0,12,'00–11'],[12,24,'12–23']].forEach(([start, end, rowLabel]) => {
+      const row = document.createElement('div'); row.className = 'shh-row';
+      const lbl = document.createElement('div'); lbl.className = 'shh-lbl'; lbl.textContent = rowLabel;
+      row.appendChild(lbl);
+      const cells = document.createElement('div'); cells.className = 'shh-cells';
+      for (let h = start; h < end; h++) {
+        const cell = document.createElement('div'); cell.className = 'shh-cell';
+        const intensity = hourMs[h] / maxHour;
+        cell.style.background = `rgba(104,157,106,${intensity.toFixed(2)})`;
+        cell.title = `${String(h).padStart(2,'0')}:00 — ${hourMs[h] ? msToPretty(hourMs[h]) : 'no data'}`;
+        cells.appendChild(cell);
+      }
+      row.appendChild(cells); hmDiv.appendChild(row);
+    });
+    // X-axis labels — one shared row showing hour numbers
+    const xrow = document.createElement('div'); xrow.className = 'shh-row';
+    const xlbl = document.createElement('div'); xlbl.className = 'shh-lbl'; xrow.appendChild(xlbl);
+    const xcells = document.createElement('div'); xcells.className = 'shh-cells';
+    for (let h = 0; h < 12; h++) {
+      const xl = document.createElement('div'); xl.className = 'shh-xlabel';
+      xl.textContent = h % 3 === 0 ? String(h).padStart(2,'0') : '';
+      xcells.appendChild(xl);
+    }
+    xrow.appendChild(xcells); hmDiv.appendChild(xrow);
+    // Second row label (12–23)
+    const xrow2 = document.createElement('div'); xrow2.className = 'shh-row';
+    const xlbl2 = document.createElement('div'); xlbl2.className = 'shh-lbl'; xrow2.appendChild(xlbl2);
+    const xcells2 = document.createElement('div'); xcells2.className = 'shh-cells';
+    for (let h = 12; h < 24; h++) {
+      const xl = document.createElement('div'); xl.className = 'shh-xlabel';
+      xl.textContent = h % 3 === 0 ? String(h).padStart(2,'0') : '';
+      xcells2.appendChild(xl);
+    }
+    xrow2.appendChild(xcells2); hmDiv.appendChild(xrow2);
+
+    // ── Pomo session chart (work vs breaks) — single draw ──
+    const pomoModes = ['work','short','long'];
+    const pomoCounts = pomoModes.map(m => pomoLog.filter(s=>s.mode===m).length);
+    const pomoCvs = $('statsPomoChart');
+    requestAnimationFrame(() => {
+      const dpr = window.devicePixelRatio || 1;
+      const W = pomoCvs.parentElement.clientWidth - 28;
+      const H = 3*28+20;
+      pomoCvs.width = W*dpr; pomoCvs.height = H*dpr;
+      pomoCvs.style.width = W+'px'; pomoCvs.style.height = H+'px';
+      const ctx = pomoCvs.getContext('2d'); ctx.scale(dpr,dpr);
+      const maxC = Math.max(...pomoCounts, 1);
+      const labW = 76, barZone = W - labW - 64;
+      const rowColors = ['#fb4934','#b8bb26','#83a598'];
+      const rowLabels = ['WORK','SHORT BRK','LONG BRK'];
+      rowLabels.forEach((lbl,i) => {
+        const y = 10 + i*26, v = pomoCounts[i];
+        const bW = Math.max(0, barZone * v / maxC);
+        if (bW > 0) {
+          const rr = Math.min(3, bW/2);
+          ctx.fillStyle = rowColors[i]+'88';
+          ctx.beginPath();
+          ctx.moveTo(labW+rr,y); ctx.lineTo(labW+bW-rr,y);
+          ctx.quadraticCurveTo(labW+bW,y,labW+bW,y+rr);
+          ctx.lineTo(labW+bW,y+12); ctx.lineTo(labW,y+12);
+          ctx.lineTo(labW,y+rr); ctx.quadraticCurveTo(labW,y,labW+rr,y); ctx.fill();
+        }
+        ctx.fillStyle = '#a89984'; ctx.font = '9px JetBrains Mono, monospace';
+        ctx.textAlign = 'right'; ctx.fillText(lbl, labW-4, y+10);
+        ctx.fillStyle = v > 0 ? '#ebdbb2' : '#504945'; ctx.textAlign = 'left';
+        ctx.fillText(v > 0 ? `${v} session${v!==1?'s':''}` : 'none yet', labW+bW+6, y+10);
+      });
+    });
+
+    // ── Duration distribution histogram — single draw ─────
+    const durations  = entries.map(e => (e.durationMs||0)/60000); // minutes
+    const buckets    = [0,5,10,15,20,30,45,60,90,120,180,240];
+    const buckLabels = buckets.slice(0,-1).map((b,i)=>`${b}–${buckets[i+1]}`);
+    const buckCounts = new Array(buckets.length-1).fill(0);
+    durations.forEach(d => {
+      for (let i = 0; i < buckets.length-1; i++) {
+        if (d >= buckets[i] && d < buckets[i+1]) { buckCounts[i]++; break; }
+      }
+    });
+    const durCvs = $('statsDurChart');
+    requestAnimationFrame(() => {
+      const dpr = window.devicePixelRatio || 1;
+      const W = durCvs.parentElement.clientWidth - 28;
+      const H = 180;
+      durCvs.width = W*dpr; durCvs.height = H*dpr;
+      durCvs.style.width = W+'px'; durCvs.style.height = H+'px';
+      const ctx = durCvs.getContext('2d'); ctx.scale(dpr,dpr);
+      const pad = {top:8, right:8, bottom:28, left:36};
+      const cW = W-pad.left-pad.right, cH = H-pad.top-pad.bottom;
+      const maxC = Math.max(...buckCounts, 1);
+      const slotW = cW / buckCounts.length;
+      const barW  = Math.max(3, slotW - 3);
+      // Y gridlines + labels
+      for (let si = 0; si <= 4; si++) {
+        const v = Math.ceil(maxC*si/4);
+        const y = pad.top + cH - (cH*si/4);
+        ctx.strokeStyle = '#50494533'; ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
+        ctx.fillStyle = '#665c54'; ctx.font = '8px JetBrains Mono,monospace'; ctx.textAlign = 'right';
+        ctx.fillText(String(v), pad.left-3, y+3);
+      }
+      // Bars
+      buckCounts.forEach((c,i) => {
+        const x  = pad.left + slotW*i + (slotW-barW)/2;
+        const bH = cH * (c/maxC);
+        const y  = pad.top + cH - bH;
+        if (c > 0) {
+          const r = Math.min(3,barW/2);
+          ctx.fillStyle = '#d3869b88';
+          ctx.beginPath();
+          ctx.moveTo(x+r,y); ctx.lineTo(x+barW-r,y);
+          ctx.quadraticCurveTo(x+barW,y,x+barW,y+r);
+          ctx.lineTo(x+barW,y+bH); ctx.lineTo(x,y+bH);
+          ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.fill();
+          // count label on tall bars
+          if (bH > 16) {
+            ctx.fillStyle = '#ebdbb2'; ctx.font = '8px JetBrains Mono,monospace'; ctx.textAlign = 'center';
+            ctx.fillText(String(c), x+barW/2, y+10);
+          }
+        }
+        // X label every 2nd
+        if (i % 2 === 0) {
+          ctx.fillStyle = '#504945'; ctx.font = '7px JetBrains Mono,monospace'; ctx.textAlign = 'center';
+          ctx.fillText(buckLabels[i]+'m', x+barW/2, H-pad.bottom+10);
+        }
+      });
+    });
+
+    // ── Statistical summary ────────────────────────────────
+    const durSecs = entries.map(e=>(e.durationMs||0)/1000);
+    const dayHrs  = dayVals;
+    const corr    = pearson(dayHrs.slice(0,-1), dayVals.slice(1)); // lag-1 autocorrelation
+    const { slope } = linReg(dayHrs.map((_,i)=>i), dayHrs);
+    const coeffVar  = statStdDev(dayHrs) / (statMean(dayHrs)||1);
+    const peakHour  = hourMs.indexOf(Math.max(...hourMs));
+
+    const mathItems = [
+      { key:'Mean session',    val:msToPretty(statMean(durSecs)*1000),    hint:'average duration per entry' },
+      { key:'Median session',  val:msToPretty(statMedian(durSecs)*1000),  hint:'50th percentile duration' },
+      { key:'Std deviation',   val:msToPretty(statStdDev(durSecs)*1000),  hint:'consistency spread' },
+      { key:'Longest session', val:msToPretty(statMax(durSecs)*1000),     hint:'single block record' },
+      { key:'Shortest session',val:msToPretty((statMin(durSecs.filter(v=>v>0))||0)*1000), hint:'minimum tracked' },
+      { key:'Daily mean',      val:msToPretty(statMean(dayHrs)*3600000),  hint:'average hrs/day tracked' },
+      { key:'Daily σ (std)',   val:msToPretty(statStdDev(dayHrs)*3600000),hint:'day-to-day variance' },
+      { key:'CV (consistency)',val:(coeffVar*100).toFixed(0)+'%',          hint:'lower = more consistent' },
+      { key:'Trend (slope)',   val:(slope>=0?'+':'')+msToPretty(Math.abs(slope)*3600000)+'/day', hint:'daily time trend' },
+      { key:'Lag-1 autocorr', val:corr.toFixed(3),                        hint:'momentum effect' },
+      { key:'Peak hour',       val:`${String(peakHour).padStart(2,'0')}:00`, hint:'most productive hour' },
+      { key:'Total entries',   val:String(entries.length),                 hint:'time blocks tracked' },
+    ];
+    const mg = $('statsMathGrid'); mg.innerHTML = '';
+    mathItems.forEach(item => {
+      const el = document.createElement('div'); el.className = 'stats-math-item';
+      el.innerHTML = `<div class="stats-math-key">${item.key}</div><div class="stats-math-val">${item.val}</div><div class="stats-math-hint">${item.hint}</div>`;
+      // Color the trend
+      if (item.key === 'Trend (slope)') el.style.borderLeftColor = slope >= 0 ? '#b8bb26' : '#fb4934';
+      if (item.key === 'Lag-1 autocorr') el.style.borderLeftColor = Math.abs(corr) > 0.5 ? '#fabd2f' : '#504945';
+      mg.appendChild(el);
+    });
+
+    // ── Insights ──────────────────────────────────────────
+    const insights = [];
+    const bestDow = dowMs.indexOf(Math.max(...dowMs));
+    if (dowMs[bestDow] > 0) insights.push({ icon:'🏆', text:`Your most productive day of the week is <strong style="color:var(--yellow-b)">${DOW[bestDow]}</strong> — ${msToPretty(dowMs[bestDow])} tracked on average.` });
+    if (slope > 0) insights.push({ icon:'📈', text:`Your tracked time is trending <strong style="color:var(--green-b)">upward</strong> by ${msToPretty(Math.abs(slope)*3600000)} per day over the selected period.` });
+    else if (slope < -0.01) insights.push({ icon:'📉', text:`Your tracked time is trending <strong style="color:var(--red-b)">downward</strong> by ${msToPretty(Math.abs(slope)*3600000)} per day. Consider a refocus session!` });
+    if (coeffVar < 0.3 && entries.length > 5) insights.push({ icon:'🎯', text:`Excellent consistency! Your CV of ${(coeffVar*100).toFixed(0)}% indicates very stable daily productivity.` });
+    else if (coeffVar > 0.8 && entries.length > 5) insights.push({ icon:'⚡', text:`High variability in daily time (CV: ${(coeffVar*100).toFixed(0)}%). Try setting a minimum daily target for stability.` });
+    if (Math.abs(corr) > 0.4) insights.push({ icon:'🔗', text:`Strong momentum detected (autocorr: ${corr.toFixed(2)}). ${corr>0?'Good days tend to follow good days.':'Burnout pattern possible — alternate intensity.'}`});
+    if (peakHour >= 6 && peakHour < 12) insights.push({ icon:'🌅', text:`You do your best work in the <strong style="color:var(--aqua-b)">morning</strong> (peak: ${String(peakHour).padStart(2,'0')}:00). Protect those hours.` });
+    else if (peakHour >= 20 || peakHour < 4) insights.push({ icon:'🌙', text:`You're a <strong style="color:var(--blue-b)">night owl</strong> — peak productivity at ${String(peakHour).padStart(2,'0')}:00. Consider your sleep schedule.` });
+    if (curStreak >= 7) insights.push({ icon:'🔥', text:`You're on a <strong style="color:var(--orange,#fe8019)">${curStreak}-day streak</strong>! Keep it going — streaks build powerful habits.` });
+    if (!insights.length) insights.push({ icon:'💡', text:'Track more sessions to unlock personalized insights and pattern analysis.' });
+
+    const insDiv = $('statsInsights'); insDiv.innerHTML = '';
+    insights.forEach(ins => {
+      const el = document.createElement('div'); el.className = 'stats-insight-item';
+      el.innerHTML = `<span class="stats-insight-icon">${ins.icon}</span><span>${ins.text}</span>`;
+      insDiv.appendChild(el);
+    });
+  };
+
+  // ── Wire up range tabs ────────────────────────────────────
+  document.querySelectorAll('.stats-range-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.stats-range-tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      statsRange = btn.dataset.range === 'all' ? 'all' : parseInt(btn.dataset.range);
+      buildStats();
+    });
+  });
+
+  // ── Wire open button ──────────────────────────────────────
+  $('openStatsBtn').addEventListener('click', () => {
+    openM('statsModal');
+    $('openStatsBtn').classList.add('active');
+    requestAnimationFrame(buildStats);
+  });
+
+})(); // end initStats
