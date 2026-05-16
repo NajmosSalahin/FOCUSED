@@ -979,3 +979,58 @@ kbd{
 .stats-insights { display:flex; flex-direction:column; gap:6px; }
 .stats-insight-item { background:var(--bg); border:1px solid var(--bg2); border-radius:var(--r); padding:10px 14px; display:flex; align-items:flex-start; gap:10px; font-family:var(--mono); font-size:11px; color:var(--fg-dim); line-height:1.5; }
 .stats-insight-icon { font-size:13px; flex-shrink:0; margin-top:1px; }
+
+/* ── EXPORT SUMMARY ─────────────────────────────────────── */
+.export-summary, .import-preview {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px;
+  background: var(--bg); border: 1px solid var(--bg2); border-radius: var(--r);
+  padding: 10px 14px; margin-top: 10px;
+}
+.export-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid var(--bg2); }
+.export-row:last-child { border-bottom: none; }
+.export-lbl { font-family: var(--mono); font-size: 10px; color: var(--fg-dim); }
+.export-val { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--fg); }
+
+/* ── IMPORT ENHANCEMENTS ────────────────────────────────── */
+.file-input-wrap.drag-over { border-color: var(--aqua-b); background: rgba(131,165,152,.08); }
+.radio-opt { display: flex; align-items: baseline; gap: 6px; font-family: var(--mono); font-size: 11px; }
+.radio-hint { font-size: 10px; color: var(--fg-dim); }
+.import-danger .radio-hint { color: var(--red-b); }
+.import-danger input:checked ~ span { color: var(--red-b); }
+.import-preview { margin-top: 8px; }
+
+/* ── REPORT PRESETS ──────────────────────────────────────── */
+.rpt-filters { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.rpt-presets { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+.rpt-preset { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .4px;
+  color: var(--fg-dim); background: var(--bg); border: 1px solid var(--bg2); border-radius: 20px;
+  padding: 3px 10px; cursor: pointer; transition: var(--t); }
+.rpt-preset:hover { color: var(--fg); border-color: var(--bg3); }
+.rpt-preset.active { background: var(--bg2); color: var(--yellow-b); border-color: var(--yellow-b); }
+
+/* report entry — colored dot + running indicator */
+.rentry-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-right: 4px; vertical-align: middle; }
+.rentry-task { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rentry-running { color: var(--red-b); font-size: 9px; animation: blink 1.2s infinite; }
+.rentry-h { display: flex; align-items: center; gap: 4px; }
+.rentry-dur { font-weight: 700; font-family: var(--mono); font-size: 11px; white-space: nowrap; }
+#rTotalCount { color: var(--fg-dim); font-size: 11px; }
+
+/* ── HEATMAP TODAY TREND BAR ────────────────────────────── */
+.hm-bar-today .hm-bar-lbl { color: var(--yellow-b); font-weight: 700; }
+.hm-bar-today .hm-bar-fill { background: var(--yellow-b); }
+.hm-bar-val { min-width: 28px; text-align: right; }
+
+/* ── HABITS ─────────────────────────────────────────────── */
+.hab-day-btn.future { opacity: .35; pointer-events: none; }
+#habDateFwd:disabled { opacity: .3; cursor: not-allowed; }
+#tlnNext:disabled, #tlnToday:disabled { opacity: .3; cursor: not-allowed; }
+
+/* ── TIMELINE ────────────────────────────────────────────── */
+.tln-block.entry { border-radius: 0 var(--r) var(--r) 0; }
+.tln-idle-badge { font-size: 8px; background: var(--bg2); color: var(--bg3); border-radius: 8px; padding: 1px 5px; vertical-align: middle; }
+
+/* ── PDF BUTTON ──────────────────────────────────────────── */
+.btn-pdf { background:rgba(204,36,29,.12); color:#fb4934; border-color:rgba(204,36,29,.35); font-size:10px; }
+.btn-pdf:hover { background:rgba(204,36,29,.22); border-color:#fb4934; }
+.btn-sm-pdf { padding:3px 10px; font-size:9px; font-weight:700; letter-spacing:.4px; }

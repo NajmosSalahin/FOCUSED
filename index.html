@@ -546,48 +546,61 @@
 <!-- REPORTS -->
 <div class="overlay" id="reportModal">
 <div aria-modal="true" class="modal wide" role="dialog">
-<div class="mhead"><div class="mtitle">ADVANCED REPORTS</div><button aria-label="Close" class="mcls" data-close="reportModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
+<div class="mhead"><div class="mtitle"><i class="fas fa-chart-bar" style="color:var(--fg-dim);margin-right:7px"></i>ADVANCED REPORTS</div><button aria-label="Close" class="mcls" data-close="reportModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
 <div class="modal-body">
-<div class="field"><label for="rProj">Filter by Project</label><select id="rProj"><option value="">All Projects</option></select></div>
-<div class="frow mb">
-<div class="field"><label for="rStart">Start Date</label><input id="rStart" type="date"/></div>
-<div class="field"><label for="rEnd">End Date</label><input id="rEnd" type="date"/></div>
+<div class="rpt-filters">
+  <div class="field"><label for="rProj">Project</label><select id="rProj"><option value="">All Projects</option></select></div>
+  <div class="field"><label for="rStart">From</label><input id="rStart" type="date"/></div>
+  <div class="field"><label for="rEnd">To</label><input id="rEnd" type="date"/></div>
+</div>
+<div class="rpt-presets" id="rptPresets">
+  <button class="rpt-preset" data-range="today">Today</button>
+  <button class="rpt-preset" data-range="yesterday">Yesterday</button>
+  <button class="rpt-preset" data-range="week">This week</button>
+  <button class="rpt-preset" data-range="month">This month</button>
+  <button class="rpt-preset" data-range="30">Last 30 days</button>
+  <button class="rpt-preset" data-range="90">Last 90 days</button>
+  <button class="rpt-preset" data-range="all">All time</button>
 </div>
 <div class="errmsg mb" id="rDateErr" role="alert">Start date cannot be after end date.</div>
 <button class="btn btn-p" id="genReportBtn"><i aria-hidden="true" class="fas fa-bolt"></i> GENERATE REPORT</button>
-<div aria-live="polite" class="rlist" id="rList"><div class="empty">// run a report to see results</div></div>
-<div class="rtotal" id="rTotal" style="display:none"><span>TOTAL</span><span id="rTotalVal">00:00:00</span></div>
+<div aria-live="polite" class="rlist" id="rList"><div class="empty">// select a range or preset and generate</div></div>
+<div class="rtotal" id="rTotal" style="display:none"><span id="rTotalCount"></span><span>TOTAL</span><span id="rTotalVal">00:00:00</span></div>
 </div>
 </div>
 </div>
 <!-- EXPORT -->
 <div class="overlay" id="exportModal">
 <div aria-modal="true" class="modal" role="dialog">
-<div class="mhead"><div class="mtitle">EXPORT DATA</div><button aria-label="Close" class="mcls" data-close="exportModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
-<div class="modal-body"><p class="modal-info">Exports all projects, goals, and time entries as a JSON backup. Use this to restore or migrate your data later.</p></div>
-<div class="mfoot"><button class="btn btn-s" data-close="exportModal">CANCEL</button><button class="btn btn-p" id="confirmExportBtn"><i aria-hidden="true" class="fas fa-download"></i> EXPORT JSON</button></div>
+<div class="mhead"><div class="mtitle"><i class="fas fa-download" style="color:var(--fg-dim);margin-right:7px"></i>EXPORT DATA</div><button aria-label="Close" class="mcls" data-close="exportModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <p class="modal-info">Creates a full JSON backup of your workspace, including time entries, projects, goals, habits, habit completions, and pomodoro history.</p>
+  <div class="export-summary" id="exportSummary"></div>
+</div>
+<div class="mfoot"><button class="btn btn-s" data-close="exportModal">CANCEL</button><button class="btn btn-pdf" id="openPdfSummaryBtn"><i aria-hidden="true" class="fas fa-file-pdf"></i> PDF SUMMARY</button><button class="btn btn-p" id="confirmExportBtn"><i aria-hidden="true" class="fas fa-download"></i> EXPORT JSON</button></div>
 </div>
 </div>
 <!-- IMPORT -->
 <div class="overlay" id="importModal">
 <div aria-modal="true" class="modal" role="dialog">
-<div class="mhead"><div class="mtitle">IMPORT DATA</div><button aria-label="Close" class="mcls" data-close="importModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
+<div class="mhead"><div class="mtitle"><i class="fas fa-upload" style="color:var(--fg-dim);margin-right:7px"></i>IMPORT DATA</div><button aria-label="Close" class="mcls" data-close="importModal"><i aria-hidden="true" class="fas fa-times"></i></button></div>
 <div class="modal-body">
 <div class="field">
 <label>JSON Backup File</label>
-<div class="file-input-wrap">
+<div class="file-input-wrap" id="fileDropZone">
 <div class="file-input-label" id="fileInputLabel">
 <i aria-hidden="true" class="fas fa-folder-open"></i>
-<span class="file-name" id="fileNameDisplay">Choose a .json file…</span>
+<span class="file-name" id="fileNameDisplay">Choose or drop a .json file…</span>
 </div>
 <input accept=".json" aria-label="JSON backup file" id="importFile" type="file"/>
 </div>
 <div class="errmsg" id="importFileErr" role="alert">Please select a valid JSON file.</div>
+<div class="import-preview" id="importPreview" style="display:none"></div>
 </div>
 <div class="field"><label>Import Mode</label>
 <div class="radio-grp">
-<label class="radio-opt"><input checked="" name="importMode" type="radio" value="merge"/> Merge with existing data</label>
-<label class="radio-opt"><input name="importMode" type="radio" value="replace"/> Replace all existing data</label>
+<label class="radio-opt"><input checked="" name="importMode" type="radio" value="merge"/> <span>Merge</span> <span class="radio-hint">Add new data without touching existing records</span></label>
+<label class="radio-opt import-danger"><input name="importMode" type="radio" value="replace"/> <span>Replace all</span> <span class="radio-hint">⚠ Permanently overwrites everything — cannot be undone</span></label>
 </div>
 </div>
 </div>
@@ -599,7 +612,7 @@
   <div aria-modal="true" class="modal wide stats-modal" role="dialog">
     <div class="mhead">
       <div class="mtitle"><i class="fas fa-chart-line" style="color:var(--aqua-b);margin-right:8px"></i>STATISTICS &amp; ANALYTICS</div>
-      <button aria-label="Close" class="mcls" data-close="statsModal"><i aria-hidden="true" class="fas fa-times"></i></button>
+      <button class="btn btn-pdf btn-sm-pdf" id="statsPdfBtn" title="Download PDF summary"><i class="fas fa-file-pdf"></i> PDF</button><button aria-label="Close" class="mcls" data-close="statsModal"><i aria-hidden="true" class="fas fa-times"></i></button>
     </div>
     <div class="modal-body stats-body">
       <!-- Range selector -->
