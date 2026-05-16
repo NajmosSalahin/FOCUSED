@@ -1034,3 +1034,30 @@ kbd{
 .btn-pdf { background:rgba(204,36,29,.12); color:#fb4934; border-color:rgba(204,36,29,.35); font-size:10px; }
 .btn-pdf:hover { background:rgba(204,36,29,.22); border-color:#fb4934; }
 .btn-sm-pdf { padding:3px 10px; font-size:9px; font-weight:700; letter-spacing:.4px; }
+
+/* ── WEATHER × PRODUCTIVITY ──────────────────────────────── */
+.stats-wx-location { font-size:9px; color:var(--bg3); margin-left:8px; font-weight:400; }
+.stats-wx-updated  { font-size:9px; color:var(--bg3); margin-left:4px; font-weight:400; }
+
+/* Current conditions chips */
+.stats-wx-current { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.wx-chip { display:flex; align-items:center; gap:6px; background:var(--bg); border:1px solid var(--bg2); border-radius:var(--r); padding:7px 12px; font-family:var(--mono); font-size:12px; font-weight:700; color:var(--fg); }
+.wx-chip-icon { font-size:15px; }
+.wx-chip-sub { font-size:9px; font-weight:400; color:var(--bg3); margin-left:2px; }
+
+/* Correlation grid */
+.stats-wx-corr-grid { display:flex; flex-direction:column; gap:6px; }
+.wx-corr-row { display:flex; align-items:center; gap:10px; background:var(--bg); border:1px solid var(--bg2); border-radius:var(--r); padding:8px 12px; }
+.wx-corr-icon { font-size:16px; flex-shrink:0; width:22px; text-align:center; }
+.wx-corr-body { flex:1; min-width:0; }
+.wx-corr-name { font-family:var(--mono); font-size:10px; font-weight:600; color:var(--fg); margin-bottom:3px; }
+.wx-corr-track { height:5px; background:var(--bg2); border-radius:3px; overflow:hidden; margin-bottom:3px; }
+.wx-corr-bar { height:100%; border-radius:3px; transition:width .4s ease; }
+.wx-corr-note { font-family:var(--mono); font-size:8px; color:var(--bg3); }
+.wx-corr-stat { text-align:right; flex-shrink:0; min-width:80px; }
+.wx-corr-r  { font-family:var(--mono); font-size:14px; font-weight:800; line-height:1; }
+.wx-corr-lbl{ font-family:var(--mono); font-size:8px; font-weight:600; letter-spacing:.4px; margin-top:2px; }
+
+/* Enable prompt */
+.stats-wx-prompt { display:flex; align-items:flex-start; gap:14px; background:var(--bg); border:1px solid var(--bg2); border-radius:var(--r); padding:16px 18px; }
+.stats-wx-prompt-icon { font-size:28px; flex-shrink:0; }

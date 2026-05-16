@@ -1817,6 +1817,79 @@ function generatePDFSummary() {
   const card = (label,content) => `<div class="card"><div class="card-lbl">${label}</div>${content}</div>`;
   const mrow = (k,v) => `<div class="mr"><span class="mk">${k}</span><span class="mv">${v}</span></div>`;
 
+  // ── Weather data for PDF ──────────────────────────────────
+  const wxHist   = window.wxLoad ? window.wxLoad() : [];
+  const wxLatest = wxHist[wxHist.length - 1] || null;
+  const wxDayMap = {};
+  wxHist.forEach(s => {
+    if (!wxDayMap[s.date]) wxDayMap[s.date] = { temps:[], humids:[], precips:[], winds:[], codes:[] };
+    wxDayMap[s.date].temps.push(s.temp);
+    wxDayMap[s.date].humids.push(s.humid);
+    wxDayMap[s.date].precips.push(s.precip);
+    wxDayMap[s.date].winds.push(s.wind);
+    wxDayMap[s.date].codes.push(s.code);
+  });
+  const wxDays = Object.entries(wxDayMap).map(([date, d]) => ({
+    date,
+    hrs: timeEntries.filter(e=>e.startTime&&new Date(e.startTime).toISOString().slice(0,10)===date).reduce((s,e)=>s+(e.durationMs||0)/3600000,0),
+    temp:   d.temps.reduce((s,v)=>s+v,0)/d.temps.length,
+    humid:  d.humids.reduce((s,v)=>s+v,0)/d.humids.length,
+    precip: d.precips.reduce((s,v)=>s+v,0),
+    wind:   d.winds.reduce((s,v)=>s+v,0)/d.winds.length,
+    cat:    window.wxInfo ? window.wxInfo(Math.round(d.codes.reduce((s,v)=>s+v,0)/d.codes.length)).cat : 'unknown',
+  })).sort((a,b)=>a.date.localeCompare(b.date));
+  const wxPaired = wxDays.filter(d=>d.hrs>0);
+  const wxRr = (xs,ys) => { const n=xs.length; if(n<3) return null; const mx=xs.reduce((s,v)=>s+v,0)/n,my=ys.reduce((s,v)=>s+v,0)/n,num=xs.reduce((s,x,i)=>s+(x-mx)*(ys[i]-my),0),den=Math.sqrt(xs.reduce((s,x)=>s+(x-mx)**2,0)*ys.reduce((s,y)=>s+(y-my)**2,0));return den?+(num/den).toFixed(3):null; };
+  const wxRT=wxRr(wxPaired.map(d=>d.temp),wxPaired.map(d=>d.hrs)),wxRH=wxRr(wxPaired.map(d=>d.humid),wxPaired.map(d=>d.hrs)),wxRP=wxRr(wxPaired.map(d=>d.precip),wxPaired.map(d=>d.hrs)),wxRW=wxRr(wxPaired.map(d=>d.wind),wxPaired.map(d=>d.hrs));
+
+  const buildWxDual = () => {
+    if (!wxHist.length) return '<p style="color:#aaa;font-size:10px">Enable location access in Statistics to collect weather data.</p>';
+    const last14=[];
+    for(let i=13;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);d.setHours(0,0,0,0);const k=d.toISOString().slice(0,10);last14.push({label:i===0?'Today':String(d.getDate()),wxd:wxDayMap[k]||null,hrs:timeEntries.filter(e=>e.startTime&&new Date(e.startTime).toISOString().slice(0,10)===k).reduce((s,e)=>s+(e.durationMs||0)/3600000,0)});}
+    const maxH=Math.max(...last14.map(d=>d.hrs),0.1);
+    const vt=last14.filter(d=>d.wxd?.temps?.length).map(d=>d.wxd.temps.reduce((s,v)=>s+v,0)/d.wxd.temps.length);
+    const minT=vt.length?Math.min(...vt)-2:0,maxT=vt.length?Math.max(...vt)+2:30;
+    const cH=80,cW=W-PAD*2,top=10,bot=16,gap=cW/14,bW=Math.max(2,gap-2);
+    let els='';
+    for(let i=1;i<=3;i++){const y=top+cH*(1-i/3);els+=`<line x1="${PAD}" y1="${y}" x2="${W-PAD}" y2="${y}" stroke="#eee" stroke-width="0.5"/>`;els+=svgT(PAD-3,y+3,(maxH*i/3).toFixed(1)+'h',{sz:7,anc:'end'});}
+    last14.forEach((d,i)=>{const x=PAD+gap*i+(gap-bW)/2,bH=Math.max(d.hrs>0?2:0,(d.hrs/maxH)*cH);if(d.hrs>0)els+=svgR(x,top+cH-bH,bW,bH,i===13?'#8ec07c88':'#45858855',2);if(i%3===0||i===13)els+=svgT(x+bW/2,top+cH+11,d.label,{sz:7,anc:'middle',fill:'#aaa'});});
+    const pts=last14.map((d,i)=>{if(!d.wxd?.temps?.length)return null;const t=d.wxd.temps.reduce((s,v)=>s+v,0)/d.wxd.temps.length,x=PAD+gap*i+gap/2,y=top+cH-cH*(t-minT)/(maxT-minT);return `${x.toFixed(1)},${y.toFixed(1)}`;}).filter(Boolean);
+    if(pts.length>1){els+=`<polyline points="${pts.join(' ')}" fill="none" stroke="#fe8019" stroke-width="1.5"/>`;pts.forEach(pt=>{const[x,y]=pt.split(',');els+=`<circle cx="${x}" cy="${y}" r="2" fill="#fe8019"/>`;});}
+    for(let i=0;i<=3;i++){const t=minT+(maxT-minT)*i/3,y=top+cH-cH*i/3;els+=svgT(W-PAD+2,y+3,t.toFixed(0)+'°',{sz:7,fill:'#fe8019aa'});}
+    return svgWrap(els,top+cH+bot);
+  };
+
+  const buildWxCat = () => {
+    if(!wxPaired.length) return '<p style="color:#aaa;font-size:10px">No matched data yet</p>';
+    const cats=['clear','cloudy','rain','snow','storm'],labels=['☀ Clear','⛅ Cloudy','🌧 Rain','❄ Snow','⛈ Storm'],cols=['#d79921','#458588','#1d6b8b','#d3869b','#cc241d'];
+    const avgs=cats.map(cat=>{const m=wxPaired.filter(d=>d.cat===cat);return m.length?m.reduce((s,d)=>s+d.hrs,0)/m.length:0;});
+    const maxA=Math.max(...avgs,0.1),labW=70,bMaxW=180;
+    let els='',H=cats.length*24+8;
+    cats.forEach((c,i)=>{const y=4+i*24,bW=(avgs[i]/maxA)*bMaxW,cnt=wxPaired.filter(d=>d.cat===c).length;els+=svgT(labW-4,y+13,labels[i],{sz:9,anc:'end',fill:'#666'});if(bW>0)els+=svgR(labW,y+3,bW,13,cols[i]+'88',2);els+=svgT(labW+bW+5,y+13,avgs[i]>0?`${avgs[i].toFixed(1)}h · ${cnt}d`:'—',{sz:8,fill:avgs[i]>0?'#282828':'#aaa'});});
+    return svgWrap(els,H,labW+bMaxW+100);
+  };
+
+  const buildWxScatter = () => {
+    if(wxPaired.length<3) return `<p style="color:#aaa;font-size:10px">Need ${3-wxPaired.length} more matched days</p>`;
+    const xs=wxPaired.map(d=>d.temp),ys=wxPaired.map(d=>d.hrs),minX=Math.min(...xs)-2,maxX=Math.max(...xs)+2,maxY=Math.max(...ys,0.1);
+    const catC={clear:'#d79921',cloudy:'#458588',rain:'#1d6b8b',snow:'#d3869b',storm:'#cc241d',unknown:'#aaa'};
+    const cH=90,cW=W-PAD*2,top=8,bot=18;
+    let els='';
+    for(let i=0;i<=3;i++){const y=top+cH*(1-i/3);els+=`<line x1="${PAD}" y1="${y}" x2="${W-PAD}" y2="${y}" stroke="#eee" stroke-width="0.5"/>`;els+=svgT(PAD-3,y+3,(maxY*i/3).toFixed(1)+'h',{sz:7,anc:'end'});}
+    for(let i=0;i<=4;i++){const x=PAD+cW*i/4;els+=svgT(x,top+cH+12,(minX+(maxX-minX)*i/4).toFixed(0)+'°',{sz:7,anc:'middle',fill:'#aaa'});}
+    const n=xs.length,mx=xs.reduce((s,v)=>s+v,0)/n,my=ys.reduce((s,v)=>s+v,0)/n,sl=(xs.reduce((s,x,i)=>s+(x-mx)*(ys[i]-my),0))/(xs.reduce((s,x)=>s+(x-mx)**2,0)||1),ic=my-sl*mx;
+    els+=`<line x1="${PAD}" y1="${(top+cH-cH*Math.max(0,sl*minX+ic)/maxY).toFixed(1)}" x2="${(W-PAD).toFixed(1)}" y2="${(top+cH-cH*Math.max(0,sl*maxX+ic)/maxY).toFixed(1)}" stroke="#d79921" stroke-width="1" stroke-dasharray="3 2" opacity="0.6"/>`;
+    wxPaired.forEach(d=>{const x=PAD+cW*(d.temp-minX)/(maxX-minX),y=top+cH-cH*(d.hrs/maxY);els+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="${catC[d.cat]||'#aaa'}88" stroke="${catC[d.cat]||'#aaa'}" stroke-width="0.5"/>`;});
+    if(wxRT!==null)els+=svgT(W-PAD,top+8,`r = ${wxRT}`,{sz:8,anc:'end',fill:'#888'});
+    return svgWrap(els,top+cH+bot);
+  };
+
+  const wxCorrRow = (icon,name,r) => {
+    const a=r!==null?Math.abs(r):0,col=r===null?'#aaa':a>0.7?(r>0?'#689d6a':'#cc241d'):a>0.4?(r>0?'#d79921':'#fe8019'):a>0.2?'#458588':'#aaa';
+    const lbl=r===null?'no data':a>0.7?(r>0?'Strong ↑':'Strong ↓'):a>0.4?(r>0?'Moderate ↑':'Moderate ↓'):a>0.2?(r>0?'Weak ↑':'Weak ↓'):'Negligible';
+    return `<tr><td>${icon}</td><td style="font-size:10px">${name}</td><td style="font-weight:700;color:${col};text-align:right">${r!==null?r:'—'}</td><td style="color:${col};font-size:9px;text-align:center">${lbl}</td><td><div style="height:8px;width:${(a*80).toFixed(0)}px;background:${col}55;border-radius:2px;min-width:4px"></div></td></tr>`;
+  };
+
   const peakH  = hourMs.indexOf(Math.max(...hourMs));
   const bestDow= dowMs.indexOf(Math.max(...dowMs));
   const insights = [];
@@ -1954,6 +2027,41 @@ body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#282828;ba
 
   ${sec('AUTO-GENERATED INSIGHTS','#d65d0e')}
   <div class="insights">${insights.map(t=>`<div class="ins">${t}</div>`).join('')}</div>
+
+  ${wxHist.length ? `
+  ${sec('WEATHER × PRODUCTIVITY','#458588')}
+  ${wxLatest ? `<div class="card" style="display:flex;gap:16px;flex-wrap:wrap">
+    ${window.wxInfo ? `<div style="font-size:24px">${window.wxInfo(wxLatest.code).e}</div>` : ''}
+    <div><div style="font-size:14px;font-weight:700;color:#282828">${wxLatest.temp}°C &nbsp;<span style="font-size:10px;color:#888">feels ${wxLatest.feels}°C</span></div>
+    <div style="font-size:9px;color:#888">${window.wxInfo ? window.wxInfo(wxLatest.code).l : ''} &nbsp;·&nbsp; 💧${wxLatest.humid}% &nbsp;·&nbsp; 💨${wxLatest.wind}km/h &nbsp;·&nbsp; 🌧${wxLatest.precip}mm</div>
+    <div style="font-size:8px;color:#aaa;margin-top:2px">Updated ${new Date(wxLatest.ts).toLocaleString()} &nbsp;·&nbsp; ${wxHist.length} snapshots collected</div></div>
+  </div>` : ''}
+
+  <div class="two-col">
+    ${card('DAILY HOURS + TEMPERATURE OVERLAY (14 DAYS)', buildWxDual())}
+    ${card('AVG PRODUCTIVITY BY WEATHER CATEGORY', buildWxCat())}
+  </div>
+  ${card('TEMPERATURE vs HOURS SCATTER PLOT', buildWxScatter())}
+
+  ${sec('WEATHER CORRELATION MATRIX','#458588')}
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="tbl">
+      <thead><tr><th></th><th>WEATHER FACTOR</th><th style="text-align:right">r</th><th style="text-align:center">STRENGTH</th><th>BAR</th></tr></thead>
+      <tbody>
+        ${wxCorrRow('🌡️','Temperature (°C)', wxRT)}
+        ${wxCorrRow('💧','Humidity (%)', wxRH)}
+        ${wxCorrRow('🌧️','Precipitation (mm)', wxRP)}
+        ${wxCorrRow('💨','Wind speed (km/h)', wxRW)}
+      </tbody>
+    </table>
+  </div>
+  <div class="card" style="font-size:9px;color:#888;padding:8px 12px">
+    Pearson r: +1 = strong positive correlation, −1 = strong negative, 0 = no relationship. Based on ${wxPaired.length} days with both weather and productivity data.
+  </div>
+  ` : `
+  ${sec('WEATHER × PRODUCTIVITY','#458588')}
+  <div class="card"><p style="color:#aaa;font-size:10px">No weather data collected yet. Open Statistics → click Enable Weather to start tracking.</p></div>
+  `}
 
   <div class="ftr"><span>FOCUGRUV · Productivity OS</span><span>Generated ${now.toISOString().replace('T',' ').slice(0,19)} UTC</span></div>
 </div>
@@ -3603,7 +3711,7 @@ reg('help', ({ args }) => {
     'TOOLS':    [['cal','neofetch','history','echo','man'],'Utilities'],
     'SHELL':    [['clear','exit','help'],               'Shell builtins'],
     'HELP':     [['keys','shortcuts'],                  'Keyboard shortcuts reference'],
-    'PANELS':   [['stats','reports','heatmap','habits','timeline','import','export'], 'Open UI panels'],
+    'PANELS':   [['stats','reports','heatmap','habits','timeline','import','export','weather'], 'Open UI panels'],
   };
   Object.entries(groups).forEach(([grp, [cmds, hint]]) => {
     termLine(`<span style="color:#665c54">  ${grp.padEnd(10)}</span><span style="color:#8ec07c">${cmds.join('  ')}</span>  <span style="color:#665c54">${hint}</span>`);
@@ -4263,8 +4371,160 @@ document.addEventListener('keydown', e => {
 window._appStart = new Date();
 
 // ============================================================
-// === STATISTICS ENGINE ======================================
+// === WEATHER ENGINE =========================================
 // ============================================================
+(function initWeather() {
+
+  const WX_KEY   = 'tt_wx_hist';
+  const WX_COORD = 'tt_wx_coord';
+  const WX_LAST  = 'tt_wx_last';
+  const WX_12H   = 12 * 3600 * 1000;
+
+  // WMO weather interpretation codes
+  const WMO = {
+    0:{l:'Clear sky',     e:'☀️', cat:'clear'},
+    1:{l:'Mainly clear',  e:'🌤️',cat:'clear'},
+    2:{l:'Partly cloudy', e:'⛅', cat:'cloudy'},
+    3:{l:'Overcast',      e:'☁️', cat:'cloudy'},
+    45:{l:'Fog',          e:'🌫️',cat:'cloudy'},
+    48:{l:'Icy fog',      e:'🌫️',cat:'cloudy'},
+    51:{l:'Light drizzle',e:'🌦️',cat:'rain'},
+    53:{l:'Drizzle',      e:'🌦️',cat:'rain'},
+    55:{l:'Heavy drizzle',e:'🌧️',cat:'rain'},
+    61:{l:'Light rain',   e:'🌧️',cat:'rain'},
+    63:{l:'Rain',         e:'🌧️',cat:'rain'},
+    65:{l:'Heavy rain',   e:'🌧️',cat:'rain'},
+    71:{l:'Light snow',   e:'🌨️',cat:'snow'},
+    73:{l:'Snow',         e:'❄️', cat:'snow'},
+    75:{l:'Heavy snow',   e:'❄️', cat:'snow'},
+    80:{l:'Rain showers', e:'🌦️',cat:'rain'},
+    81:{l:'Rain showers', e:'🌧️',cat:'rain'},
+    82:{l:'Heavy showers',e:'⛈️',cat:'storm'},
+    95:{l:'Thunderstorm', e:'⛈️',cat:'storm'},
+  };
+
+  // Find nearest WMO entry for a given code
+  window.wxInfo = code => {
+    if (WMO[code]) return WMO[code];
+    const best = Math.max(...Object.keys(WMO).map(Number).filter(k => k <= code));
+    return WMO[best] || {l:'Unknown', e:'🌡️', cat:'unknown'};
+  };
+
+  window.wxLoad = () => JSON.parse(localStorage.getItem(WX_KEY) || '[]');
+
+  const wxSave = hist => localStorage.setItem(WX_KEY, JSON.stringify(hist.slice(-200)));
+
+  // ── Fetch from Open-Meteo (no API key required) ───────────
+  window.wxFetch = async () => {
+    try {
+      let coord = JSON.parse(localStorage.getItem(WX_COORD) || 'null');
+      if (!coord) {
+        coord = await new Promise((res, rej) => {
+          if (!navigator.geolocation) { rej(new Error('Geolocation not available')); return; }
+          navigator.geolocation.getCurrentPosition(
+            p => res({ lat: +p.coords.latitude.toFixed(4), lon: +p.coords.longitude.toFixed(4) }),
+            err => rej(err),
+            { timeout: 10000, maximumAge: 86400000 }
+          );
+        });
+        localStorage.setItem(WX_COORD, JSON.stringify(coord));
+      }
+
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${coord.lat}&longitude=${coord.lon}` +
+        `&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,is_day` +
+        `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code` +
+        `&timezone=auto&forecast_days=1`;
+
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`API ${r.status}`);
+      const d = await r.json();
+      const cu = d.current;
+
+      const snap = {
+        ts:      new Date().toISOString(),
+        date:    new Date().toISOString().slice(0, 10),
+        hour:    new Date().getHours(),
+        temp:    Math.round(cu.temperature_2m   * 10) / 10,
+        feels:   Math.round(cu.apparent_temperature * 10) / 10,
+        humid:   cu.relative_humidity_2m,
+        precip:  cu.precipitation,
+        code:    cu.weather_code,
+        wind:    Math.round(cu.wind_speed_10m),
+        isDay:   cu.is_day === 1,
+        lat:     coord.lat,
+        lon:     coord.lon,
+        tempMax: d.daily?.temperature_2m_max?.[0] ?? null,
+        tempMin: d.daily?.temperature_2m_min?.[0] ?? null,
+      };
+
+      const hist = wxLoad();
+      // Avoid duplicate within 1 hour
+      const lastSnap = hist[hist.length - 1];
+      if (!lastSnap || Math.abs(new Date(snap.ts) - new Date(lastSnap.ts)) > 3600000) {
+        hist.push(snap);
+        wxSave(hist);
+      }
+      localStorage.setItem(WX_LAST, Date.now().toString());
+      toast(`🌤 Weather updated: ${snap.temp}°C ${wxInfo(snap.code).l}`, 'ok');
+      return snap;
+    } catch (err) {
+      console.warn('Weather fetch failed:', err.message);
+      return null;
+    }
+  };
+
+  // ── Auto-fetch every 12 h ─────────────────────────────────
+  const maybeAutoFetch = () => {
+    const last = parseInt(localStorage.getItem(WX_LAST) || '0');
+    if (Date.now() - last > WX_12H) wxFetch();
+  };
+
+  maybeAutoFetch();
+  setInterval(maybeAutoFetch, 3600 * 1000); // check every hour
+
+  // ── "weather" terminal command ────────────────────────────
+  if (typeof reg === 'function') {
+    reg(['weather','wx'], () => {
+      const hist = wxLoad();
+      const last = hist[hist.length - 1];
+      if (!last) {
+        termLine(`  <span style="color:#fb4934">No weather data yet.</span> Open Statistics and click <span style="color:#fabd2f">ENABLE WEATHER</span>.`);
+        return;
+      }
+      const info = wxInfo(last.code);
+      termBlank();
+      termLine(`  <span style="color:#fabd2f">${info.e}  ${info.l}</span>`);
+      termLine(`  <span style="color:#a89984">Temperature</span>  <span style="color:#ebdbb2">${last.temp}°C</span>  <span style="color:#665c54">(feels ${last.feels}°C)</span>`);
+      termLine(`  <span style="color:#a89984">Humidity   </span>  <span style="color:#ebdbb2">${last.humid}%</span>`);
+      termLine(`  <span style="color:#a89984">Wind       </span>  <span style="color:#ebdbb2">${last.wind} km/h</span>`);
+      termLine(`  <span style="color:#a89984">Precip     </span>  <span style="color:#ebdbb2">${last.precip} mm</span>`);
+      termLine(`  <span style="color:#665c54">Updated ${new Date(last.ts).toLocaleTimeString()}  ·  ${hist.length} snapshots stored</span>`);
+      termBlank();
+    }, { desc: 'Show current weather conditions' });
+  }
+
+  // ── Enable button (shown in stats modal) ──────────────────
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#enableWeatherBtn')) return;
+    $('enableWeatherBtn').textContent = 'Fetching…';
+    $('enableWeatherBtn').disabled = true;
+    wxFetch().then(snap => {
+      if (snap) {
+        $('statsWxPrompt').style.display = 'none';
+        $('statsWxWrap').style.display   = 'block';
+        // Re-render weather section
+        if (window._buildWeatherSection) window._buildWeatherSection();
+      } else {
+        $('enableWeatherBtn').textContent = 'ENABLE WEATHER';
+        $('enableWeatherBtn').disabled = false;
+        toast('⚠ Could not get location. Check browser permissions.', 'err');
+      }
+    });
+  });
+
+})();
+
+
 
 (function initStats() {
 
@@ -4729,6 +4989,347 @@ window._appStart = new Date();
       const el = document.createElement('div'); el.className = 'stats-insight-item';
       el.innerHTML = `<span class="stats-insight-icon">${ins.icon}</span><span>${ins.text}</span>`;
       insDiv.appendChild(el);
+    });
+
+    // ── Weather section ────────────────────────────────────
+    buildWeatherSection();
+  };
+
+  // ── Weather × Productivity ────────────────────────────────
+  const buildWeatherSection = () => {
+    window._buildWeatherSection = buildWeatherSection;
+    const hist = window.wxLoad ? window.wxLoad() : [];
+    const wrapEl   = $('statsWeatherWrap');
+    const promptEl = $('statsWxPrompt');
+
+    if (!hist.length) {
+      if (wrapEl)   wrapEl.style.display   = 'none';
+      if (promptEl) promptEl.style.display = 'flex';
+      return;
+    }
+    if (wrapEl)   wrapEl.style.display   = 'block';
+    if (promptEl) promptEl.style.display = 'none';
+
+    // Latest snapshot
+    const latest = hist[hist.length - 1];
+    const info   = window.wxInfo(latest.code);
+    $('statsWeatherIcon').textContent  = info.e;
+    $('statsWxUpdated').textContent    = `· updated ${new Date(latest.ts).toLocaleTimeString()}`;
+
+    // Current conditions chips
+    $('statsWxCurrent').innerHTML = `
+      <div class="wx-chip wx-temp"><span class="wx-chip-icon">🌡️</span>${latest.temp}°C <span class="wx-chip-sub">feels ${latest.feels}°C</span></div>
+      <div class="wx-chip wx-humid"><span class="wx-chip-icon">💧</span>${latest.humid}% <span class="wx-chip-sub">humidity</span></div>
+      <div class="wx-chip wx-wind"><span class="wx-chip-icon">💨</span>${latest.wind} km/h <span class="wx-chip-sub">wind</span></div>
+      <div class="wx-chip wx-precip"><span class="wx-chip-icon">🌧️</span>${latest.precip} mm <span class="wx-chip-sub">precip</span></div>
+      <div class="wx-chip wx-desc"><span class="wx-chip-icon">${info.e}</span>${info.l}</div>`;
+
+    // ── Build per-day data (weather snapshot matched to tracked hours) ──
+    const dayMap = {};  // key → { hrs, temps:[], humids:[], precips:[], winds:[], codes:[] }
+    hist.forEach(s => {
+      if (!dayMap[s.date]) dayMap[s.date] = { hrs:0, temps:[], humids:[], precips:[], winds:[], codes:[] };
+      dayMap[s.date].temps.push(s.temp);
+      dayMap[s.date].humids.push(s.humid);
+      dayMap[s.date].precips.push(s.precip);
+      dayMap[s.date].winds.push(s.wind);
+      dayMap[s.date].codes.push(s.code);
+    });
+    timeEntries.forEach(e => {
+      const k = new Date(e.startTime).toISOString().slice(0,10);
+      if (dayMap[k]) dayMap[k].hrs += (e.durationMs||0) / 3600000;
+    });
+
+    // Aggregated per day: avg temp, avg humid, sum precip, dominant code
+    const days = Object.entries(dayMap).map(([date, d]) => ({
+      date,
+      hrs:    d.hrs,
+      temp:   d.temps.reduce((s,v)=>s+v,0) / d.temps.length,
+      humid:  d.humids.reduce((s,v)=>s+v,0) / d.humids.length,
+      precip: d.precips.reduce((s,v)=>s+v,0),
+      wind:   d.winds.reduce((s,v)=>s+v,0) / d.winds.length,
+      cat:    window.wxInfo(Math.round(d.codes.reduce((s,v)=>s+v,0)/d.codes.length)).cat,
+    })).sort((a,b)=>a.date.localeCompare(b.date));
+
+    const paired = days.filter(d => d.hrs > 0 && d.temps.length > 0);
+
+    // ── Pearson helper ─────────────────────────────────────
+    const rr = (xs, ys) => {
+      const n = xs.length; if (n < 3) return null;
+      const mx = xs.reduce((s,v)=>s+v,0)/n, my = ys.reduce((s,v)=>s+v,0)/n;
+      const num = xs.reduce((s,x,i)=>s+(x-mx)*(ys[i]-my),0);
+      const den = Math.sqrt(xs.reduce((s,x)=>s+(x-mx)**2,0)*ys.reduce((s,y)=>s+(y-my)**2,0));
+      return den ? +(num/den).toFixed(3) : null;
+    };
+    const rTemp   = rr(paired.map(d=>d.temp),  paired.map(d=>d.hrs));
+    const rHumid  = rr(paired.map(d=>d.humid), paired.map(d=>d.hrs));
+    const rPrecip = rr(paired.map(d=>d.precip),paired.map(d=>d.hrs));
+    const rWind   = rr(paired.map(d=>d.wind),  paired.map(d=>d.hrs));
+
+    // ── Chart 1: Dual-axis — bars=hours, line=temperature ──
+    const dualCvs = $('statsWxDualChart');
+    const last14  = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
+      const k = d.toISOString().slice(0,10);
+      last14.push({ label: i===0?'Today':String(d.getDate()), ...dayMap[k] || { hrs:0, temps:[], humids:[], precips:[], winds:[], codes:[] } });
+    }
+    requestAnimationFrame(() => {
+      const dpr = window.devicePixelRatio || 1;
+      const W = dualCvs.parentElement.clientWidth - 28;
+      const H = 140;
+      dualCvs.width  = W*dpr; dualCvs.height = H*dpr;
+      dualCvs.style.width  = W+'px'; dualCvs.style.height = H+'px';
+      const ctx = dualCvs.getContext('2d'); ctx.scale(dpr, dpr);
+      const pad = { top:12, right:46, bottom:22, left:42 };
+      const cW  = W - pad.left - pad.right;
+      const cH  = H - pad.top  - pad.bottom;
+      const hrs  = last14.map(d=>d.hrs);
+      const maxH = Math.max(...hrs, 0.1);
+      const temps = last14.map(d => d.temps?.length ? d.temps.reduce((s,v)=>s+v,0)/d.temps.length : null);
+      const validTemps = temps.filter(t => t !== null);
+      const minT = validTemps.length ? Math.min(...validTemps) - 2 : 0;
+      const maxT = validTemps.length ? Math.max(...validTemps) + 2 : 30;
+      const gap  = cW / 14, bW = Math.max(3, gap - 3);
+
+      // Y gridlines (hours, left axis)
+      for (let i = 0; i <= 3; i++) {
+        const v = maxH * i/3;
+        const y = pad.top + cH - (cH * i/3);
+        ctx.strokeStyle = '#3c383655'; ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+        ctx.fillStyle = '#665c54'; ctx.font = '8px JetBrains Mono,monospace'; ctx.textAlign = 'right';
+        ctx.fillText(v.toFixed(1)+'h', pad.left - 3, y + 3);
+      }
+
+      // Bars (hours)
+      last14.forEach((d, i) => {
+        const x   = pad.left + gap*i + (gap - bW)/2;
+        const bH  = cH * (d.hrs / maxH);
+        const col = i === 13 ? '#8ec07c' : '#45858877';
+        if (d.hrs > 0) {
+          const r = Math.min(3, bW/2);
+          ctx.fillStyle = col;
+          ctx.beginPath();
+          ctx.moveTo(x+r, pad.top+cH-bH); ctx.lineTo(x+bW-r, pad.top+cH-bH);
+          ctx.quadraticCurveTo(x+bW, pad.top+cH-bH, x+bW, pad.top+cH-bH+r);
+          ctx.lineTo(x+bW, pad.top+cH); ctx.lineTo(x, pad.top+cH);
+          ctx.lineTo(x, pad.top+cH-bH+r); ctx.quadraticCurveTo(x, pad.top+cH-bH, x+r, pad.top+cH-bH);
+          ctx.fill();
+        }
+        // X label
+        if (i % 2 === 0 || i === 13) {
+          ctx.fillStyle = '#504945'; ctx.font = '7px JetBrains Mono,monospace'; ctx.textAlign = 'center';
+          ctx.fillText(d.label, x + bW/2, H - pad.bottom + 10);
+        }
+      });
+
+      // Temperature line (right axis)
+      ctx.strokeStyle = '#fe8019'; ctx.lineWidth = 1.8; ctx.lineJoin = 'round';
+      ctx.beginPath();
+      let started = false;
+      last14.forEach((d, i) => {
+        if (!d.temps?.length) return;
+        const t   = d.temps.reduce((s,v)=>s+v,0) / d.temps.length;
+        const x   = pad.left + gap*i + gap/2;
+        const y   = pad.top  + cH - cH * (t - minT) / (maxT - minT);
+        started ? ctx.lineTo(x, y) : (ctx.moveTo(x, y), started=true);
+      });
+      ctx.stroke();
+      // Temperature dots
+      last14.forEach((d, i) => {
+        if (!d.temps?.length) return;
+        const t = d.temps.reduce((s,v)=>s+v,0)/d.temps.length;
+        const x = pad.left + gap*i + gap/2;
+        const y = pad.top  + cH - cH * (t - minT) / (maxT - minT);
+        ctx.fillStyle = '#fe8019';
+        ctx.beginPath(); ctx.arc(x, y, 2.5, 0, 2*Math.PI); ctx.fill();
+      });
+      // Right axis labels (temperature)
+      ctx.fillStyle = '#fe801999'; ctx.textAlign = 'left'; ctx.font = '8px JetBrains Mono,monospace';
+      for (let i = 0; i <= 3; i++) {
+        const t = minT + (maxT-minT)*i/3;
+        const y = pad.top + cH - cH*i/3;
+        ctx.fillText(t.toFixed(0)+'°', W - pad.right + 3, y + 3);
+      }
+      // Legend
+      ctx.fillStyle = '#45858877'; ctx.fillRect(pad.left, 2, 10, 7);
+      ctx.fillStyle = '#a89984'; ctx.font = '8px JetBrains Mono,monospace'; ctx.textAlign = 'left';
+      ctx.fillText('hours', pad.left + 13, 9);
+      ctx.strokeStyle = '#fe8019'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(W - pad.right - 60, 5); ctx.lineTo(W - pad.right - 50, 5); ctx.stroke();
+      ctx.fillText('temp', W - pad.right - 47, 9);
+    });
+
+    // ── Chart 2: Productivity by weather category ──────────
+    const catCvs = $('statsWxCatChart');
+    requestAnimationFrame(() => {
+      const dpr = window.devicePixelRatio || 1;
+      const W   = catCvs.parentElement.clientWidth - 28;
+      const H   = 160;
+      catCvs.width  = W*dpr; catCvs.height = H*dpr;
+      catCvs.style.width = W+'px'; catCvs.style.height = H+'px';
+      const ctx = catCvs.getContext('2d'); ctx.scale(dpr,dpr);
+
+      const cats    = ['clear','cloudy','rain','snow','storm'];
+      const catLabels = ['☀ Clear','⛅ Cloudy','🌧 Rain','❄ Snow','⛈ Storm'];
+      const catColors = ['#fabd2f','#83a598','#458588','#d3869b','#fb4934'];
+      const catAvg = cats.map(cat => {
+        const matching = paired.filter(d => d.cat === cat);
+        return matching.length ? matching.reduce((s,d)=>s+d.hrs,0)/matching.length : 0;
+      });
+      const maxAvg = Math.max(...catAvg, 0.1);
+      const labW = 70, bMaxW = W - labW - 50;
+
+      cats.forEach((cat, i) => {
+        const y   = 12 + i * 28;
+        const bW  = (catAvg[i] / maxAvg) * bMaxW;
+        const cnt = paired.filter(d=>d.cat===cat).length;
+        ctx.fillStyle = '#504945'; ctx.font = '9px JetBrains Mono,monospace'; ctx.textAlign = 'right';
+        ctx.fillText(catLabels[i], labW - 4, y + 11);
+        if (bW > 0) {
+          const r = Math.min(3, bW/2);
+          ctx.fillStyle = catColors[i] + '88';
+          ctx.beginPath();
+          ctx.moveTo(labW+r, y); ctx.lineTo(labW+bW-r, y);
+          ctx.quadraticCurveTo(labW+bW, y, labW+bW, y+r);
+          ctx.lineTo(labW+bW, y+14); ctx.lineTo(labW, y+14);
+          ctx.lineTo(labW, y+r); ctx.quadraticCurveTo(labW, y, labW+r, y); ctx.fill();
+        }
+        ctx.fillStyle = catAvg[i] > 0 ? '#ebdbb2' : '#504945';
+        ctx.textAlign = 'left'; ctx.font = '8px JetBrains Mono,monospace';
+        ctx.fillText(catAvg[i] > 0 ? `${catAvg[i].toFixed(1)}h avg · ${cnt}d` : '—', labW + bW + 5, y + 11);
+      });
+    });
+
+    // ── Chart 3: Scatter — temperature vs hours ────────────
+    const scatCvs = $('statsWxScatter');
+    requestAnimationFrame(() => {
+      const dpr = window.devicePixelRatio || 1;
+      const W   = scatCvs.parentElement.clientWidth - 28;
+      const H   = 160;
+      scatCvs.width  = W*dpr; scatCvs.height = H*dpr;
+      scatCvs.style.width = W+'px'; scatCvs.style.height = H+'px';
+      const ctx = scatCvs.getContext('2d'); ctx.scale(dpr,dpr);
+      const pad = { top:10, right:14, bottom:26, left:34 };
+      const cW  = W - pad.left - pad.right;
+      const cH  = H - pad.top  - pad.bottom;
+
+      if (paired.length < 3) {
+        ctx.fillStyle = '#504945'; ctx.font = '10px JetBrains Mono,monospace'; ctx.textAlign = 'center';
+        ctx.fillText(`Need ${3 - paired.length} more matched days`, W/2, H/2);
+        return;
+      }
+
+      const xs = paired.map(d=>d.temp), ys = paired.map(d=>d.hrs);
+      const minX = Math.min(...xs)-2, maxX = Math.max(...xs)+2;
+      const maxY = Math.max(...ys, 0.1);
+      const catColors = { clear:'#fabd2f', cloudy:'#83a598', rain:'#458588', snow:'#d3869b', storm:'#fb4934', unknown:'#665c54' };
+
+      // Grid
+      for (let i = 0; i <= 3; i++) {
+        const y = pad.top + cH*(1 - i/3);
+        ctx.strokeStyle = '#3c383644'; ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
+        ctx.fillStyle = '#665c54'; ctx.font = '7px JetBrains Mono,monospace'; ctx.textAlign = 'right';
+        ctx.fillText((maxY*i/3).toFixed(1)+'h', pad.left-2, y+3);
+      }
+      for (let i = 0; i <= 4; i++) {
+        const x = pad.left + cW*i/4;
+        ctx.strokeStyle = '#3c383622'; ctx.beginPath(); ctx.moveTo(x,pad.top); ctx.lineTo(x,pad.top+cH); ctx.stroke();
+        const t = minX + (maxX-minX)*i/4;
+        ctx.fillStyle = '#665c54'; ctx.textAlign = 'center'; ctx.font = '7px JetBrains Mono,monospace';
+        ctx.fillText(t.toFixed(0)+'°', x, H-pad.bottom+10);
+      }
+
+      // Trend line
+      const n=xs.length, mx=xs.reduce((s,v)=>s+v,0)/n, my=ys.reduce((s,v)=>s+v,0)/n;
+      const slope=(xs.reduce((s,x,i)=>s+(x-mx)*(ys[i]-my),0))/(xs.reduce((s,x)=>s+(x-mx)**2,0)||1);
+      const intc = my - slope*mx;
+      ctx.strokeStyle = '#fabd2f44'; ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+      ctx.beginPath();
+      ctx.moveTo(pad.left,         pad.top + cH - cH*Math.max(0, slope*minX+intc)/maxY);
+      ctx.lineTo(W-pad.right,      pad.top + cH - cH*Math.max(0, slope*maxX+intc)/maxY);
+      ctx.stroke(); ctx.setLineDash([]);
+
+      // Dots
+      paired.forEach(d => {
+        const x = pad.left + cW*(d.temp-minX)/(maxX-minX);
+        const y = pad.top  + cH - cH*(d.hrs/maxY);
+        ctx.fillStyle = (catColors[d.cat]||'#665c54') + 'cc';
+        ctx.beginPath(); ctx.arc(x, y, 4, 0, 2*Math.PI); ctx.fill();
+        ctx.strokeStyle = '#28282844'; ctx.lineWidth = 0.5; ctx.stroke();
+      });
+
+      // r label
+      if (rTemp !== null) {
+        ctx.fillStyle = '#a89984'; ctx.textAlign = 'right'; ctx.font = '8px JetBrains Mono,monospace';
+        ctx.fillText(`r = ${rTemp}`, W-pad.right, pad.top+9);
+      }
+    });
+
+    // ── Correlation matrix ─────────────────────────────────
+    const corrGrid = $('statsWxCorrGrid');
+    const rStrength = r => {
+      if (r === null) return { label:'—', color:'#504945' };
+      const a = Math.abs(r);
+      if (a > 0.7)  return { label: r > 0 ? 'Strong ↑' : 'Strong ↓',   color: r > 0 ? '#b8bb26' : '#fb4934' };
+      if (a > 0.4)  return { label: r > 0 ? 'Moderate ↑':'Moderate ↓', color: r > 0 ? '#fabd2f' : '#fe8019' };
+      if (a > 0.2)  return { label: r > 0 ? 'Weak ↑':'Weak ↓',         color: '#83a598' };
+      return { label: 'No correlation', color: '#504945' };
+    };
+    const factors = [
+      { name:'Temperature (°C)',  r: rTemp,   icon:'🌡️', note:'Warmer = more/less focused?' },
+      { name:'Humidity (%)',      r: rHumid,  icon:'💧', note:'Does humidity affect energy?' },
+      { name:'Precipitation(mm)', r: rPrecip, icon:'🌧️', note:'Rain days vs dry days output' },
+      { name:'Wind speed(km/h)',  r: rWind,   icon:'💨', note:'Gusty vs calm conditions'     },
+    ];
+    corrGrid.innerHTML = '';
+    factors.forEach(f => {
+      const s = rStrength(f.r);
+      const bar = f.r !== null ? `<div class="wx-corr-bar" style="width:${Math.abs(f.r)*100}%;background:${s.color}44"></div>` : '';
+      const el = document.createElement('div'); el.className = 'wx-corr-row';
+      el.innerHTML = `
+        <span class="wx-corr-icon">${f.icon}</span>
+        <div class="wx-corr-body">
+          <div class="wx-corr-name">${f.name}</div>
+          <div class="wx-corr-track">${bar}</div>
+          <div class="wx-corr-note">${f.note}</div>
+        </div>
+        <div class="wx-corr-stat">
+          <div class="wx-corr-r" style="color:${s.color}">${f.r !== null ? f.r : '—'}</div>
+          <div class="wx-corr-lbl" style="color:${s.color}">${s.label}</div>
+        </div>`;
+      corrGrid.appendChild(el);
+    });
+
+    // ── Weather insights ───────────────────────────────────
+    const wxIns = [];
+    if (rTemp !== null) {
+      const s = rStrength(rTemp);
+      if (Math.abs(rTemp) > 0.3) wxIns.push({ icon:'🌡️', text:`Temperature ${rTemp > 0 ? '<strong style="color:var(--green-b)">positively</strong>' : '<strong style="color:var(--red-b)">negatively</strong>'} correlates with your productivity (r=${rTemp}). ${rTemp > 0 ? 'You work more on warmer days.' : 'Cooler days seem to boost your focus.'}` });
+    }
+    if (rHumid !== null && Math.abs(rHumid) > 0.3) {
+      wxIns.push({ icon:'💧', text:`Humidity ${rHumid < 0 ? 'reduces' : 'increases'} your tracked time (r=${rHumid}). ${rHumid < 0 ? 'High humidity days show lower productivity.' : 'Humid conditions seem to keep you indoors and focused.'}` });
+    }
+    if (rPrecip !== null && Math.abs(rPrecip) > 0.3) {
+      wxIns.push({ icon:'🌧️', text:`Rainy days ${rPrecip > 0 ? '<strong>boost</strong> your focus' : 'tend to <strong>distract</strong> you'} (r=${rPrecip}). Great data point for planning deep work.` });
+    }
+    const clearDays  = paired.filter(d=>d.cat==='clear');
+    const rainyDays  = paired.filter(d=>d.cat==='rain');
+    const clearAvg   = clearDays.length  ? clearDays.reduce((s,d)=>s+d.hrs,0)/clearDays.length   : null;
+    const rainyAvg   = rainyDays.length  ? rainyDays.reduce((s,d)=>s+d.hrs,0)/rainyDays.length   : null;
+    if (clearAvg && rainyAvg) {
+      const diff = Math.abs(clearAvg - rainyAvg);
+      if (diff > 0.3) wxIns.push({ icon:'📊', text:`You track ${diff.toFixed(1)}h ${clearAvg > rainyAvg ? 'more on ☀ clear days' : 'more on 🌧 rainy days'}. ${clearAvg > rainyAvg ? 'Good weather = outdoors, bad weather = desk time.' : 'Rain keeps you focused!'}` });
+    }
+    if (paired.length < 5) wxIns.push({ icon:'📈', text:`${paired.length} matched weather/productivity days so far — correlations will strengthen with more data.` });
+    if (!wxIns.length) wxIns.push({ icon:'🌍', text:'No strong weather–productivity correlations detected yet. Keep tracking!' });
+
+    const wxInsDiv = $('statsWxInsights'); wxInsDiv.innerHTML = '';
+    wxIns.forEach(ins => {
+      const el = document.createElement('div'); el.className = 'stats-insight-item';
+      el.innerHTML = `<span class="stats-insight-icon">${ins.icon}</span><span>${ins.text}</span>`;
+      wxInsDiv.appendChild(el);
     });
   };
 
