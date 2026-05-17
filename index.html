@@ -668,6 +668,17 @@
           <span id="statsWeatherIcon">🌤</span>&nbsp;WEATHER × PRODUCTIVITY
           <span class="stats-wx-location" id="statsWxLocation"></span>
           <span class="stats-wx-updated" id="statsWxUpdated"></span>
+          <button class="wx-refresh-btn" id="wxRefreshBtn" title="Manually refresh weather data (once every 30 min)">
+            <i class="fas fa-rotate-right" id="wxRefreshIcon"></i>
+            <span id="wxRefreshLabel">REFRESH</span>
+          </button>
+        </div>
+        <!-- Cooldown bar -->
+        <div class="wx-cooldown-wrap" id="wxCooldownWrap" style="display:none">
+          <div class="wx-cooldown-track">
+            <div class="wx-cooldown-fill" id="wxCooldownFill"></div>
+          </div>
+          <span class="wx-cooldown-label" id="wxCooldownLabel">next refresh in —</span>
         </div>
         <!-- Current conditions -->
         <div class="stats-wx-current" id="statsWxCurrent"></div>

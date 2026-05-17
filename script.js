@@ -73,8 +73,15 @@ const toast = (msg,type='ok') => {
 };
 
 // === MODAL ===
+const _syncTermBehind = () => {
+  const termEl = $('terminalModal');
+  if (!termEl || !termEl.classList.contains('open')) return;
+  const anyOpen = document.querySelectorAll('.overlay.open:not(#terminalModal)').length > 0;
+  termEl.classList.toggle('behind', anyOpen);
+};
 const openM = id => {
   $(id).classList.add('open');
+  _syncTermBehind();
   requestAnimationFrame(()=>{
     const el=$(id).querySelector('input,select,button:not(.mcls)');
     if(el) el.focus();
@@ -83,10 +90,11 @@ const openM = id => {
 const closeM = id => {
   $(id).classList.remove('open');
   if (id === 'statsModal') $('openStatsBtn').classList.remove('active');
+  _syncTermBehind();
 };
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeM(b.dataset.close)));
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{
-  if(e.target===o && !o.hasAttribute('data-no-overlay-close')) o.classList.remove('open');
+  if(e.target===o && !o.hasAttribute('data-no-overlay-close')) { o.classList.remove('open'); _syncTermBehind(); }
 }));
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape') {
@@ -1905,7 +1913,7 @@ function generatePDFSummary() {
 
   // ── Full HTML document ─────────────────────────────────────
   const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-<title>FOCUGRUV Report — ${now.toLocaleDateString()}</title>
+<title>FOCUSED Report — ${now.toLocaleDateString()}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#282828;background:#fff;line-height:1.5}
@@ -2063,7 +2071,7 @@ body{font-family:'Courier New',Courier,monospace;font-size:11px;color:#282828;ba
   <div class="card"><p style="color:#aaa;font-size:10px">No weather data collected yet. Open Statistics → click Enable Weather to start tracking.</p></div>
   `}
 
-  <div class="ftr"><span>FOCUGRUV · Productivity OS</span><span>Generated ${now.toISOString().replace('T',' ').slice(0,19)} UTC</span></div>
+  <div class="ftr"><span>FOCUSED · Productivity OS</span><span>Generated ${now.toISOString().replace('T',' ').slice(0,19)} UTC</span></div>
 </div>
 
 <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),600));<\/script>
@@ -3621,13 +3629,13 @@ const ruler   = (ch='─', n=44) => ch.repeat(n);
 
 // ── Boot banner ────────────────────────────────────────────
 // ── Shared auto-scaling ASCII logo ─────────────────────────
-// FOCUGRUV in standard figlet ASCII (5 rows, pure ASCII chars)
+// FOCUSED in standard figlet ASCII (5 rows, pure ASCII chars)
 const ASCII_LOGO_ROWS = [
-  [' _____   ___    ____  _   _   ____  ____  _   _  __   __',  '#fabd2f'],
-  ['|  ___| / _ \\  / ___|| | | | / ___||  _ \\| | | | \\ \\ / /', '#fabd2f'],
-  ['| |_   | | | || |    | | | || |  _ || |_) || | | |  \\ V / ','#fe8019'],
-  ['|  _|  | |_| || |___ | |_| || |_| ||  _ < | |_| |   \\  /  ', '#fe8019'],
-  ['|_|     \\___/  \\____|  \\___/  \\____|_| \\_\\ \\___/    \\/   ', '#d65d0e'],
+  [' _____  ___    ____  _   _  ____  _____  ____ ',  '#fabd2f'],
+  ['|  ___| / _ \\  / ___|| | | |/ ___||  ___||  _ \\ ', '#fabd2f'],
+  ['| |_   | | | || |    | | | |\\___ \\|  _|  | | | |','#fe8019'],
+  ['|  _|  | |_| || |___ | |_| | ___) || |___| |_| |', '#fe8019'],
+  ['|_|     \\___/  \\____|  \\___/  |____/ |_____|____/ ', '#d65d0e'],
 ];
 
 // Creates a scaled logo <div>. Measures actual render width and applies
@@ -3691,33 +3699,79 @@ const reg = (names, fn, meta = {}) => {
 // help
 reg('help', ({ args }) => {
   const target = args[0];
-  if (target && TERM_CMDS[target] && TERM_CMDS[target].desc) {
+
+  // ── help <cmd> ────────────────────────────────────────────
+  if (target) {
+    const entry = TERM_CMDS[target];
+    if (!entry) { termLine(`  <span style="color:#fb4934">No manual entry for '<strong>${escHtml(target)}</strong>'</span>`,'tl-err'); return; }
     termBlank();
-    termLine(`<span style="color:#d3869b">${target}</span>  <span style="color:#a89984">${TERM_CMDS[target].desc}</span>`);
-    if (TERM_CMDS[target].usage) termLine(`  usage: <span style="color:#8ec07c">${TERM_CMDS[target].usage}</span>`);
+    termLine(`  <span style="color:#fabd2f;font-weight:700">${escHtml(target)}</span>  <span style="color:#a89984">${entry.desc||'—'}</span>`);
+    if (entry.usage) termLine(`  <span style="color:#665c54">usage:</span>  <span style="color:#8ec07c">${escHtml(entry.usage)}</span>`);
     termBlank(); return;
   }
-  termBlank();
-  termLine(`<span style="color:#d3869b">${ruler()}</span>`,'tl-head');
-  const groups = {
-    'TIMER':    [['start','pause','reset','skip'],       'Pomodoro controls'],
-    'MODE':     [['work','short','long'],                'Switch session mode'],
-    'DATA':     [['status','statsum','today','week'],    'Time & session data'],
-    'ENTRIES':  [['ls','tasks','find','grep'],           'Browse entries'],
-    'PROJECTS': [['projects','proj'],                   'Project info'],
-    'GOALS':    [['goals'],                              'Goal progress'],
-    'SESSIONS': [['log','pomo','top'],                  'Session info'],
-    'SYSTEM':   [['env','df','uptime','date','whoami'], 'System / settings'],
-    'TOOLS':    [['cal','neofetch','history','echo','man'],'Utilities'],
-    'SHELL':    [['clear','exit','help'],               'Shell builtins'],
-    'HELP':     [['keys','shortcuts'],                  'Keyboard shortcuts reference'],
-    'PANELS':   [['stats','reports','heatmap','habits','timeline','import','export','weather'], 'Open UI panels'],
+
+  // ── Full help ─────────────────────────────────────────────
+  const W = 60;
+  const bar  = c => `  <span style="color:#3c3836">${'─'.repeat(W)}</span>`;
+  const sec  = (title, col='#d3869b') => {
+    const pad = Math.max(0, W - title.length - 2);
+    return `  <span style="color:${col};font-weight:700;letter-spacing:.3px">${title}</span>  <span style="color:#3c3836">${'─'.repeat(pad)}</span>`;
   };
-  Object.entries(groups).forEach(([grp, [cmds, hint]]) => {
-    termLine(`<span style="color:#665c54">  ${grp.padEnd(10)}</span><span style="color:#8ec07c">${cmds.join('  ')}</span>  <span style="color:#665c54">${hint}</span>`);
-  });
-  termLine(`<span style="color:#d3869b">${ruler()}</span>`,'tl-head');
-  termLine(`<span style="color:#665c54">  help &lt;cmd&gt; for details  ·  Tab to autocomplete</span>`);
+  const row  = (cmd, desc, indent=2) => {
+    const sp = Math.max(2, 30 - indent - cmd.length);
+    return `${' '.repeat(indent)}<span style="color:#8ec07c">${escHtml(cmd)}</span>${' '.repeat(sp)}<span style="color:#a89984">${escHtml(desc)}</span>`;
+  };
+  const row2 = (c1, d1, c2, d2) => {
+    const sp1 = Math.max(2, 22 - c1.length);
+    const sp2 = Math.max(2, 18 - d1.length);
+    return `  <span style="color:#8ec07c">${escHtml(c1)}</span>${' '.repeat(sp1)}<span style="color:#a89984">${escHtml(d1)}</span>${' '.repeat(sp2)}<span style="color:#458588">${escHtml(c2)}</span>  <span style="color:#665c54">${escHtml(d2)}</span>`;
+  };
+  const dim  = t => `  <span style="color:#504945">${escHtml(t)}</span>`;
+
+  termBlank();
+  termLine(`  <span style="color:#504945">${'─'.repeat(Math.floor((W-14)/2))} FOCUSED TERM ${'─'.repeat(Math.ceil((W-14)/2))}</span>`,'tl-head');
+  termBlank();
+
+  termLine(sec('TRACKING','#b8bb26'));
+  termLine(row('track <task> [#project]', 'Start time tracking'));
+  termLine(row('stop',                    'Stop current session'));
+  termLine(row('pause  /  resume',        'Toggle pause on session'));
+  termLine(row('status',                  'Live status + today total'));
+  termBlank();
+
+  termLine(sec('DATA','#fe8019'));
+  termLine(row('add <task> <dur> [#proj]','Log manual entry  (e.g. 1h30m, 45m)'));
+  termLine(row('entries [yesterday|date]','List entries for a day'));
+  termLine(row('total [today|week|month]','Tracked time summary + breakdown'));
+  termLine(row('delete <index>',          'Remove a today entry by index'));
+  termLine(row('note <text>',             'Save timestamped note'));
+  termBlank();
+
+  termLine(sec('POMODORO','#fb4934'));
+  termLine(row2('start / pause / reset', 'Timer controls', 'skip',  'Skip session'));
+  termLine(row2('work / short / long',   'Switch mode',    'pomo',  'Session log'));
+  termBlank();
+
+  termLine(sec('HABITS & GOALS','#b8bb26'));
+  termLine(row2('habit list',   'Today\'s schedule', 'habit done <name>', 'Mark complete'));
+  termLine(row2('goal',         'Goal progress',    'project',           'Project stats'));
+  termBlank();
+
+  termLine(sec('PANELS','#83a598'));
+  termLine(row('open <name>',    'Open any panel by name'));
+  termLine(dim('  names: stats · heatmap · reports · timeline · habits · import · export'));
+  termBlank();
+
+  termLine(sec('TOOLS','#d3869b'));
+  termLine(row2('keys / shortcuts', 'Keyboard ref',  'weather',   'Current conditions'));
+  termLine(row2('statsum',          'Text stats',    'neofetch',  'System info'));
+  termLine(row2('history',          'Cmd history',   'man <cmd>', 'Command manual'));
+  termLine(row2('find <query>',     'Search entries','today',     'Today summary'));
+  termLine(row2('clear',            'Clear terminal','exit',      'Close terminal'));
+  termBlank();
+
+  termLine(`  <span style="color:#504945">${'─'.repeat(W)}</span>`);
+  termLine(`  <span style="color:#665c54">help <cmd></span>  <span style="color:#3c3836">detailed usage</span>  <span style="color:#504945">·</span>  <span style="color:#665c54">Tab</span>  <span style="color:#3c3836">autocomplete</span>  <span style="color:#504945">·</span>  <span style="color:#665c54">↑↓</span>  <span style="color:#3c3836">history</span>`);
   termBlank();
 }, { desc:'Show available commands', usage:'help [command]' });
 
@@ -4127,7 +4181,7 @@ reg('neofetch', () => {
       if (el) el.textContent = `${Math.round(b.level*100)}%${b.charging ? ' (charging)' : ''}`;
     }).catch(()=>{});
   }
-}, { desc:'Display system info with FOCUGRUV logo' });
+}, { desc:'Display system info with FOCUSED logo' });
 
 // ── Keyboard shortcuts reference ────────────────────────────
 reg(['keys','shortcuts','binds','keybinds'], () => {
@@ -4154,6 +4208,15 @@ reg(['keys','shortcuts','binds','keybinds'], () => {
   row(['['],             'Previous day');
   row([']'],             'Next day');
   row(['T'],             'Jump to today');
+  termBlank();
+  sec('TERMINAL DATA COMMANDS','#d3869b');
+  row(['track <task>'],  'Start tracking from terminal');
+  row(['stop'],          'Stop current tracking');
+  row(['add <t> <dur>'], 'Add manual entry (e.g. add focus 1h30m)');
+  row(['entries'],       'List today\'s entries');
+  row(['total week'],    'Show weekly total');
+  row(['habit done'],    'Mark a habit complete');
+  row(['note <text>'],   'Save a timestamped note');
   termBlank();
   sec('NAVIGATION','#83a598');
   row(['G'],             'New goal');
@@ -4185,48 +4248,273 @@ reg(['keys','shortcuts','binds','keybinds'], () => {
   termBlank();
 }, { desc:'Show all keyboard shortcuts and key bindings' });
 
-// ── Open panel commands ───────────────────────────────────
-reg('stats', () => {
-  termLine('  <span style="color:#8ec07c">→ opening statistics panel…</span>');
-  termBlank();
-  setTimeout(() => document.getElementById('openStatsBtn').click(), 200);
-}, { desc: 'Open statistics & analytics panel' });
+// ── Data & Automation commands ────────────────────────────
 
-reg('reports', () => {
-  termLine('  <span style="color:#8ec07c">→ opening advanced reports panel…</span>');
-  termBlank();
-  setTimeout(() => document.getElementById('openReportBtn').click(), 200);
-}, { desc: 'Open advanced reports panel' });
+// TRACK — start tracking a task directly from terminal
+reg(['track','start'], ({ args }) => {
+  if (taskRunning) {
+    termLine(`  <span style="color:#fb4934">✗ Already tracking: <strong>${escHtml(activeEntry?.task||'')}</strong></span>`);
+    termLine(`  <span style="color:#665c54">  use <span style="color:#fabd2f">stop</span> first</span>`);
+    return;
+  }
+  const raw   = args.join(' ');
+  // Syntax: track "task name" [#project]
+  const projM = raw.match(/#(\S+)/);
+  const task  = raw.replace(/#\S+/,'').trim();
+  if (!task) { termLine(`  <span style="color:#fb4934">Usage: track &lt;task&gt; [#project]</span>`); return; }
+  const proj  = projM ? projects.find(p => p.name.toLowerCase().includes(projM[1].toLowerCase())) : null;
+  taskInput.value = task;
+  projSelect.value = proj?.id || '';
+  trackBtn.click();
+  termLine(`  <span style="color:#b8bb26">▶ Tracking: <strong style="color:#ebdbb2">${escHtml(task)}</strong>${proj?' · '+escHtml(proj.name):''}</span>`);
+}, { desc:'Start time tracking', usage:'track <task> [#project]' });
 
-reg('heatmap', () => {
-  termLine('  <span style="color:#fabd2f">→ opening focus heatmap…</span>');
-  termBlank();
-  setTimeout(() => document.getElementById('openHeatmapBtn').click(), 200);
-}, { desc: 'Open focus heatmap panel' });
+// STOP — stop current tracking
+reg('stop', () => {
+  if (!taskRunning) { termLine(`  <span style="color:#665c54">No active session.</span>`); return; }
+  const task = activeEntry?.task || '';
+  trackBtn.click();
+  termLine(`  <span style="color:#fb4934">■ Stopped: <strong style="color:#ebdbb2">${escHtml(task)}</strong></span>`);
+  const ms = timeEntries[timeEntries.length-1]?.durationMs || 0;
+  if (ms) termLine(`  <span style="color:#665c54">  session: ${fmt(ms)}</span>`);
+}, { desc:'Stop current time tracking' });
 
-reg(['habits','hab','routines'], () => {
-  termLine('  <span style="color:#b8bb26">→ opening habits & routines…</span>');
-  termBlank();
-  setTimeout(() => document.getElementById('openHabitsBtn').click(), 200);
-}, { desc: 'Open habits & routines panel' });
+// PAUSE / RESUME
+reg(['pause','resume'], () => {
+  if (!taskRunning) { termLine(`  <span style="color:#665c54">No active session.</span>`); return; }
+  pauseBtn.click();
+  const state = taskPaused ? 'Paused' : 'Resumed';
+  const col   = taskPaused ? '#fabd2f' : '#b8bb26';
+  termLine(`  <span style="color:${col}">${state}: <strong style="color:#ebdbb2">${escHtml(activeEntry?.task||'')}</strong></span>`);
+}, { desc:'Pause or resume current tracking' });
 
-reg(['timeline','tl'], () => {
-  termLine('  <span style="color:#83a598">→ opening day timeline…</span>');
+// STATUS — live session overview
+reg(['status','st'], () => {
   termBlank();
-  setTimeout(() => document.getElementById('openTimelineBtn').click(), 200);
-}, { desc: 'Open day timeline panel' });
+  if (taskRunning) {
+    const ms = activeEntry ? _committedMs(activeEntry) : 0;
+    termLine(`  <span style="color:#b8bb26">▶ RUNNING</span>  <span style="color:#ebdbb2">${escHtml(activeEntry?.task||'')}</span>`);
+    if (activeEntry?.projectName) termLine(`  <span style="color:#665c54">  project: ${escHtml(activeEntry.projectName)}</span>`);
+    termLine(`  <span style="color:#665c54">  elapsed: <span style="color:#fabd2f">${fmt(ms)}</span></span>`);
+  } else if (taskPaused) {
+    termLine(`  <span style="color:#fabd2f">⏸ PAUSED</span>  ${escHtml(activeEntry?.task||'')}`);
+  } else {
+    termLine(`  <span style="color:#665c54">■ No active session</span>`);
+  }
+  // Today total
+  const todayMs = timeEntries.filter(e => sameDay(new Date(e.startTime), new Date())).reduce((s,e)=>s+(e.durationMs||0),0);
+  termLine(`  <span style="color:#665c54">  today total: <span style="color:#83a598">${fmt(todayMs)}</span></span>`);
+  termBlank();
+}, { desc:'Show current tracking status and today total' });
 
-reg(['import'], () => {
-  termLine('  <span style="color:#458588">→ opening import panel…</span>');
-  termBlank();
-  setTimeout(() => document.getElementById('openImportBtn').click(), 200);
-}, { desc: 'Open data import panel' });
+// ADD — add a manual time entry without the UI
+reg('add', ({ args }) => {
+  // Syntax: add <task> <duration> [#project]
+  // Duration: 25m | 1h30m | 1.5h
+  const raw  = args.join(' ');
+  const durM = raw.match(/(\d+(?:\.\d+)?)(h|m)(?:(\d+)m)?/i);
+  if (!durM) { termLine(`  <span style="color:#fb4934">Usage: add &lt;task&gt; &lt;duration&gt; [#project]</span>`); termLine(`  <span style="color:#665c54">  e.g. add deep work 1h30m #research</span>`); return; }
+  let ms = 0;
+  if (durM[2].toLowerCase() === 'h') {
+    ms = (parseFloat(durM[1]) * 3600 + (parseInt(durM[3]||0) * 60)) * 1000;
+  } else {
+    ms = parseFloat(durM[1]) * 60000;
+  }
+  if (ms < 60000) { termLine(`  <span style="color:#fb4934">Duration too short (minimum 1m)</span>`); return; }
+  const projM = raw.match(/#(\S+)/);
+  const proj  = projM ? projects.find(p => p.name.toLowerCase().includes(projM[1].toLowerCase())) : null;
+  const task  = raw.replace(/\d+(?:\.\d+)?(?:h|m)(?:\d+m)?/i,'').replace(/#\S+/,'').trim();
+  if (!task) { termLine(`  <span style="color:#fb4934">Task name is required.</span>`); return; }
+  const end   = new Date();
+  const start = new Date(end - ms);
+  const entry = { id:uid(), task, projectId:proj?.id||null, projectName:proj?.name||null, startTime:start.toISOString(), endTime:end.toISOString(), durationMs:ms, segments:[] };
+  timeEntries.push(entry); save(); rerender();
+  termLine(`  <span style="color:#b8bb26">+ Added: <strong style="color:#ebdbb2">${escHtml(task)}</strong> — ${fmt(ms)}${proj?' · '+escHtml(proj.name):''}</span>`);
+  if(proj) updateGoalProgress(proj.id, ms);
+}, { desc:'Add a manual entry', usage:'add <task> <duration> [#project]' });
 
-reg(['export'], () => {
-  termLine('  <span style="color:#928374">→ opening export panel…</span>');
+// ENTRIES — show entries for a date
+reg(['entries','ls','tasks'], ({ args }) => {
+  const dateArg = args[0];
+  let date = new Date();
+  if (dateArg === 'yesterday') { date.setDate(date.getDate()-1); }
+  else if (dateArg && /^\d{4}-\d{2}-\d{2}$/.test(dateArg)) { date = new Date(dateArg+'T12:00:00'); }
+  const dayEs = timeEntries.filter(e=>sameDay(new Date(e.startTime),date)).sort((a,b)=>new Date(a.startTime)-new Date(b.startTime));
+  const label = sameDay(date,new Date()) ? 'Today' : date.toDateString();
   termBlank();
-  setTimeout(() => document.getElementById('openExportBtn').click(), 200);
-}, { desc: 'Open data export panel' });
+  termLine(`<span style="color:#d3869b">── ${label} · ${dayEs.length} entries ────────────────────</span>`,'tl-head');
+  if (!dayEs.length) { termLine(`  <span style="color:#504945">no entries</span>`); termBlank(); return; }
+  dayEs.forEach((e, i) => {
+    const t   = new Date(e.startTime).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const col = projColor(e.projectId);
+    const run = taskRunning && activeEntry?.id === e.id;
+    termLine(`  <span style="color:#504945">${String(i+1).padStart(2)}</span>  <span style="color:#665c54">${t}</span>  <span style="color:${col}">●</span> <span style="color:#ebdbb2">${escHtml(e.task||'—')}</span>  <span style="color:#83a598">${run?'running…':fmt(e.durationMs||0)}</span>`);
+  });
+  const total = dayEs.reduce((s,e)=>s+(e.durationMs||0),0);
+  termLine(`  <span style="color:#665c54">  ─────────────────────────── total: <span style="color:#fabd2f">${fmt(total)}</span></span>`);
+  termBlank();
+}, { desc:'List entries for today or a date', usage:'entries [yesterday|YYYY-MM-DD]' });
+
+// TOTAL — quick time totals
+reg(['total','sum'], ({ args }) => {
+  const period = args[0] || 'today';
+  const now = new Date();
+  let entries, label;
+  if (period === 'today') {
+    entries = timeEntries.filter(e=>sameDay(new Date(e.startTime),now));
+    label = 'Today';
+  } else if (period === 'week') {
+    const mon = new Date(now); mon.setDate(now.getDate()-now.getDay()+1); mon.setHours(0,0,0,0);
+    entries = timeEntries.filter(e=>new Date(e.startTime)>=mon);
+    label = 'This week';
+  } else if (period === 'month') {
+    const m1 = new Date(now.getFullYear(),now.getMonth(),1);
+    entries = timeEntries.filter(e=>new Date(e.startTime)>=m1);
+    label = 'This month';
+  } else if (period === 'yesterday') {
+    const y = new Date(now); y.setDate(y.getDate()-1);
+    entries = timeEntries.filter(e=>sameDay(new Date(e.startTime),y));
+    label = 'Yesterday';
+  } else {
+    entries = timeEntries; label = 'All time';
+  }
+  const ms = entries.reduce((s,e)=>s+(e.durationMs||0),0);
+  termBlank();
+  termLine(`  <span style="color:#a89984">${label}:</span>  <span style="color:#fabd2f;font-size:inherit">${fmt(ms)}</span>  <span style="color:#665c54">(${entries.length} sessions)</span>`);
+  // Per-project breakdown
+  const byProj = {};
+  entries.forEach(e=>{const k=e.projectName||'(no project)';byProj[k]=(byProj[k]||0)+(e.durationMs||0);});
+  Object.entries(byProj).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([name,ms2])=>{
+    termLine(`  <span style="color:#504945">  ${escHtml(name).padEnd?escHtml(name):'  '}</span>  <span style="color:#83a598">${fmt(ms2)}</span>`);
+  });
+  termBlank();
+}, { desc:'Show tracked time totals', usage:'total [today|yesterday|week|month|all]' });
+
+// HABIT DONE — mark a habit complete from terminal
+reg(['hab','habit'], ({ args }) => {
+  const sub  = args[0]?.toLowerCase();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const key   = today.toISOString().slice(0,10);
+  const activeH = habits.filter(h=>!h.archived && habIsScheduled(h, today));
+
+  if (!sub || sub === 'list') {
+    // List today's habits
+    termBlank();
+    termLine(`<span style="color:#b8bb26">── Habits · ${key} ───────────────────────────────</span>`,'tl-head');
+    if (!activeH.length) { termLine(`  <span style="color:#504945">no habits scheduled today</span>`); termBlank(); return; }
+    const c = habComp();
+    activeH.forEach((h,i) => {
+      const done = (c[key]||[]).includes(h.id);
+      const streak = habStreak(h.id);
+      termLine(`  ${done?'<span style="color:#b8bb26">✓</span>':'<span style="color:#504945">○</span>'} <span style="color:#ebdbb2">${escHtml((h.icon||'')+' '+h.name)}</span>  <span style="color:#665c54">streak: ${streak}d</span>`);
+    });
+    termLine(`  <span style="color:#665c54">  use <span style="color:#fabd2f">habit done &lt;name&gt;</span> to mark complete</span>`);
+    termBlank();
+    return;
+  }
+
+  if (sub === 'done' || sub === 'check' || sub === 'tick') {
+    const nameQ = args.slice(1).join(' ').toLowerCase();
+    if (!nameQ) { termLine(`  <span style="color:#fb4934">Usage: habit done &lt;name&gt;</span>`); return; }
+    const match = activeH.find(h => h.name.toLowerCase().includes(nameQ));
+    if (!match) { termLine(`  <span style="color:#fb4934">No habit matching "<strong>${escHtml(nameQ)}</strong>" scheduled today.</span>`); return; }
+    const c = habComp();
+    if ((c[key]||[]).includes(match.id)) {
+      termLine(`  <span style="color:#665c54">Already done: <strong>${escHtml(match.name)}</strong></span>`);
+      return;
+    }
+    c[key] = [...(c[key]||[]), match.id];
+    localStorage.setItem('tt_hc', JSON.stringify(c));
+    if (typeof renderHabitsModal === 'function' && $('habitsModal').classList.contains('open')) renderHabitsModal();
+    const streak = habStreak(match.id);
+    termLine(`  <span style="color:#b8bb26">✓ Done: <strong style="color:#ebdbb2">${escHtml((match.icon||'')+' '+match.name)}</strong>  🔥 ${streak} day streak</span>`);
+    return;
+  }
+
+  termLine(`  <span style="color:#fb4934">Usage: habit [list|done &lt;name&gt;]</span>`);
+}, { desc:'List or complete habits', usage:'habit [list | done <name>]' });
+
+// GOAL — show goal progress
+reg(['goal','goals'], ({ args }) => {
+  termBlank();
+  if (!goals.length) { termLine(`  <span style="color:#504945">No goals set.</span>`); termBlank(); return; }
+  termLine(`<span style="color:#fabd2f">── Goals ──────────────────────────────────────</span>`,'tl-head');
+  goals.forEach(g => {
+    const p   = Math.min(100, Math.round((g.currentMs||0)/(g.targetMs||1)*100));
+    const bar = '█'.repeat(Math.round(p/5)) + '░'.repeat(20-Math.round(p/5));
+    const col = p>=100?'#b8bb26':p>=70?'#fabd2f':'#83a598';
+    termLine(`  <span style="color:#ebdbb2">${escHtml(g.name)}</span>`);
+    termLine(`  <span style="color:${col}">${bar}</span> <span style="color:${col}">${p}%</span>  <span style="color:#665c54">${fmt(g.currentMs||0)} / ${fmt(g.targetMs||0)}</span>`);
+  });
+  termBlank();
+}, { desc:'Show goal progress' });
+
+// PROJECT — list projects with time summary
+reg(['project','proj','projects'], () => {
+  termBlank();
+  if (!projects.length) { termLine(`  <span style="color:#504945">No projects.</span>`); termBlank(); return; }
+  termLine(`<span style="color:#d3869b">── Projects ──────────────────────────────────</span>`,'tl-head');
+  const now = new Date();
+  projects.forEach((p, i) => {
+    const col  = PROJ_COLORS[i % PROJ_COLORS.length];
+    const ms   = timeEntries.filter(e=>e.projectId===p.id).reduce((s,e)=>s+(e.durationMs||0),0);
+    const last = timeEntries.filter(e=>e.projectId===p.id).sort((a,b)=>new Date(b.startTime)-new Date(a.startTime))[0];
+    const daysAgo = last ? Math.floor((now-new Date(last.startTime))/86400000) : null;
+    const ago  = daysAgo===0?'today':daysAgo===1?'yesterday':daysAgo!=null?`${daysAgo}d ago`:'—';
+    termLine(`  <span style="color:${col}">●</span> <span style="color:#ebdbb2">${escHtml(p.name)}</span>  <span style="color:#83a598">${fmt(ms)}</span>  <span style="color:#504945">last: ${ago}</span>`);
+  });
+  termBlank();
+}, { desc:'List projects with time summary' });
+
+// DELETE — delete a time entry by index shown in `entries`
+reg(['delete','del','rm'], ({ args }) => {
+  if (!args[0]) { termLine(`  <span style="color:#fb4934">Usage: delete &lt;entry-id&gt;</span>`); return; }
+  const today = timeEntries.filter(e=>sameDay(new Date(e.startTime),new Date())).sort((a,b)=>new Date(a.startTime)-new Date(b.startTime));
+  const idx   = parseInt(args[0]) - 1;
+  if (isNaN(idx) || idx < 0 || idx >= today.length) { termLine(`  <span style="color:#fb4934">Index out of range. Run <span style="color:#fabd2f">entries</span> to see valid indices.</span>`); return; }
+  const entry = today[idx];
+  if (taskRunning && activeEntry?.id === entry.id) { termLine(`  <span style="color:#fb4934">Cannot delete a running entry. Stop it first.</span>`); return; }
+  if (!confirm(`Delete "${entry.task}" (${fmt(entry.durationMs)})?`)) return;
+  const gi = timeEntries.findIndex(e=>e.id===entry.id);
+  if (gi !== -1) timeEntries.splice(gi, 1);
+  save(); rerender();
+  termLine(`  <span style="color:#fb4934">✗ Deleted: <strong>${escHtml(entry.task)}</strong> (${fmt(entry.durationMs)})</span>`);
+}, { desc:'Delete a today entry by index', usage:'delete <index> (from entries list)' });
+
+// NOTE — open a quick text prompt and add a timestamped note entry
+reg('note', ({ args }) => {
+  const text = args.join(' ').trim() || prompt('Enter note:');
+  if (!text) return;
+  const entry = { id:uid(), task:`📝 ${text}`, projectId:null, projectName:null, startTime:new Date().toISOString(), endTime:new Date().toISOString(), durationMs:0, segments:[], isNote:true };
+  timeEntries.push(entry); save(); rerender();
+  termLine(`  <span style="color:#83a598">📝 Note saved: <em style="color:#a89984">${escHtml(text)}</em></span>`);
+}, { desc:'Save a timestamped note', usage:'note <text>' });
+
+// OPEN — explicitly open any panel (consolidated launcher)
+const _openPanel = (name) => {
+  const map = {
+    stats:    'openStatsBtn',    reports: 'openReportBtn',
+    heatmap:  'openHeatmapBtn',  habits:  'openHabitsBtn',
+    timeline: 'openTimelineBtn', import:  'openImportBtn',
+    export:   'openExportBtn',
+  };
+  const btn = map[name];
+  if (!btn) { termLine(`  <span style="color:#fb4934">Unknown panel. Try: ${Object.keys(map).join(', ')}</span>`); return; }
+  termLine(`  <span style="color:#8ec07c">→ opening ${name}…</span>`);
+  termBlank();
+  setTimeout(() => document.getElementById(btn)?.click(), 180);
+};
+reg('open', ({ args }) => { _openPanel(args[0]?.toLowerCase() || ''); },
+  { desc:'Open a UI panel', usage:'open <stats|reports|heatmap|habits|timeline|import|export>' });
+
+// Keep individual aliases but route through _openPanel so they benefit from behind-fix
+reg('stats',    () => _openPanel('stats'),    { desc:'Open statistics panel' });
+reg('reports',  () => _openPanel('reports'),  { desc:'Open advanced reports panel' });
+reg('heatmap',  () => _openPanel('heatmap'),  { desc:'Open focus heatmap' });
+reg(['habits','hab','routines'], () => _openPanel('habits'), { desc:'Open habits & routines' });
+reg(['timeline','tl'],           () => _openPanel('timeline'),{ desc:'Open day timeline' });
+reg(['import'],                  () => _openPanel('import'), { desc:'Open import panel' });
+reg(['export'],                  () => _openPanel('export'), { desc:'Open export panel' });
 
 reg('history', () => {
   if (!termHistory.length) { termLine(`  <span style="color:#665c54">no history</span>`); return; }
@@ -4522,6 +4810,96 @@ window._appStart = new Date();
     });
   });
 
+  // ── Manual refresh with 30-min cooldown ───────────────────
+  const WX_MANUAL_KEY = 'tt_wx_manual_last';
+  const WX_COOLDOWN   = 30 * 60 * 1000; // 30 minutes
+  let wxCooldownTimer = null;
+
+  const wxCooldownRemaining = () => {
+    const last = parseInt(localStorage.getItem(WX_MANUAL_KEY) || '0');
+    return Math.max(0, WX_COOLDOWN - (Date.now() - last));
+  };
+
+  const wxFormatCountdown = ms => {
+    const total = Math.ceil(ms / 1000);
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
+  const wxUpdateCooldownUI = () => {
+    const btn      = $('wxRefreshBtn');
+    const fill     = $('wxCooldownFill');
+    const label    = $('wxCooldownLabel');
+    const wrapEl   = $('wxCooldownWrap');
+    const iconEl   = $('wxRefreshIcon');
+    const lblEl    = $('wxRefreshLabel');
+    if (!btn) return;
+
+    const remaining = wxCooldownRemaining();
+
+    if (remaining > 0) {
+      btn.disabled = true;
+      btn.classList.add('cooling');
+      if (wrapEl) wrapEl.style.display = 'flex';
+      if (fill)  fill.style.width = `${((WX_COOLDOWN - remaining) / WX_COOLDOWN) * 100}%`;
+      if (label) label.textContent = `next refresh in ${wxFormatCountdown(remaining)}`;
+      if (lblEl) lblEl.textContent = wxFormatCountdown(remaining);
+      if (iconEl) iconEl.className = 'fas fa-hourglass-half';
+    } else {
+      btn.disabled = false;
+      btn.classList.remove('cooling');
+      if (wrapEl) wrapEl.style.display = 'none';
+      if (lblEl) lblEl.textContent = 'REFRESH';
+      if (iconEl) iconEl.className = 'fas fa-rotate-right';
+    }
+  };
+
+  const wxStartCooldownTick = () => {
+    if (wxCooldownTimer) clearInterval(wxCooldownTimer);
+    wxUpdateCooldownUI();
+    if (wxCooldownRemaining() > 0) {
+      wxCooldownTimer = setInterval(() => {
+        const rem = wxCooldownRemaining();
+        wxUpdateCooldownUI();
+        if (rem <= 0) { clearInterval(wxCooldownTimer); wxCooldownTimer = null; }
+      }, 1000);
+    }
+  };
+
+  document.addEventListener('click', async e => {
+    if (!e.target.closest('#wxRefreshBtn')) return;
+    if (wxCooldownRemaining() > 0) return; // should not happen since btn is disabled
+
+    const btn   = $('wxRefreshBtn');
+    const iconEl = $('wxRefreshIcon');
+    const lblEl  = $('wxRefreshLabel');
+    btn.disabled = true;
+    if (iconEl) iconEl.className = 'fas fa-rotate-right wx-spin';
+    if (lblEl)  lblEl.textContent = 'Fetching…';
+
+    const snap = await wxFetch();
+
+    if (snap) {
+      localStorage.setItem(WX_MANUAL_KEY, Date.now().toString());
+      wxStartCooldownTick();
+      if (window._buildWeatherSection) window._buildWeatherSection();
+      toast(`🌤 Weather refreshed: ${snap.temp}°C ${wxInfo(snap.code).l}`);
+    } else {
+      btn.disabled = false;
+      if (iconEl) iconEl.className = 'fas fa-rotate-right';
+      if (lblEl)  lblEl.textContent = 'REFRESH';
+      toast('⚠ Refresh failed — check location permissions.', 'err');
+    }
+  });
+
+  // Restore cooldown state when stats modal opens (user may have refreshed earlier)
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#openStatsBtn') && !e.target.closest('#statsPdfBtn')) return;
+    // Small delay so DOM is ready
+    setTimeout(wxStartCooldownTick, 300);
+  });
+
 })();
 
 
@@ -4585,10 +4963,18 @@ window._appStart = new Date();
     return ctx;
   };
 
+  // Robust canvas-width reader — uses getBoundingClientRect so it works
+  // even when the modal is animating in or the parent is a CSS grid cell.
+  const cvsW = (cvs, pad = 28) => {
+    const rect = cvs.parentElement?.getBoundingClientRect();
+    const w = rect ? Math.floor(rect.width) - pad : 0;
+    return w > 10 ? w : 0;
+  };
+
   // Draw a responsive bar chart
   const drawBarChart = (cvs, labels, values, color, options = {}) => {
+    const W = cvsW(cvs); if (!W) return;
     const dpr = window.devicePixelRatio || 1;
-    const W = cvs.parentElement.clientWidth - 28;
     const H = options.h || 140;
     cvs.width  = W * dpr; cvs.height = H * dpr;
     cvs.style.width  = W + 'px'; cvs.style.height = H + 'px';
@@ -4605,7 +4991,7 @@ window._appStart = new Date();
 
     // Y axis lines
     const steps = 4;
-    ctx.font = `${9*dpr/dpr}px JetBrains Mono, monospace`; ctx.textAlign = 'right';
+    ctx.font = `9px JetBrains Mono, monospace`; ctx.textAlign = 'right';
     for (let i = 0; i <= steps; i++) {
       const v = maxV * (i/steps);
       const y = pad.top + cH - (cH * i/steps);
@@ -4651,7 +5037,7 @@ window._appStart = new Date();
   // Draw a horizontal bar chart (for projects/dow)
   const drawHBarChart = (cvs, labels, values, colors, h) => {
     const dpr = window.devicePixelRatio || 1;
-    const W = cvs.parentElement.clientWidth - 28;
+    const W = cvsW(cvs); if (!W) return;
     const H = h || Math.max(100, labels.length * 28 + 20);
     cvs.width  = W * dpr; cvs.height = H * dpr;
     cvs.style.width  = W + 'px'; cvs.style.height = H + 'px';
@@ -4682,7 +5068,7 @@ window._appStart = new Date();
   // Draw donut chart
   const drawDonut = (cvs, labels, values, colors, h) => {
     const dpr = window.devicePixelRatio || 1;
-    const W = cvs.parentElement.clientWidth - 28;
+    const W = cvsW(cvs); if (!W) return;
     const H = h || 180;
     cvs.width  = W * dpr; cvs.height = H * dpr;
     cvs.style.width  = W + 'px'; cvs.style.height = H + 'px';
@@ -4851,7 +5237,7 @@ window._appStart = new Date();
     const pomoCvs = $('statsPomoChart');
     requestAnimationFrame(() => {
       const dpr = window.devicePixelRatio || 1;
-      const W = pomoCvs.parentElement.clientWidth - 28;
+      const W = cvsW(pomoCvs); if (!W) return;
       const H = 3*28+20;
       pomoCvs.width = W*dpr; pomoCvs.height = H*dpr;
       pomoCvs.style.width = W+'px'; pomoCvs.style.height = H+'px';
@@ -4892,7 +5278,7 @@ window._appStart = new Date();
     const durCvs = $('statsDurChart');
     requestAnimationFrame(() => {
       const dpr = window.devicePixelRatio || 1;
-      const W = durCvs.parentElement.clientWidth - 28;
+      const W = cvsW(durCvs); if (!W) return;
       const H = 180;
       durCvs.width = W*dpr; durCvs.height = H*dpr;
       durCvs.style.width = W+'px'; durCvs.style.height = H+'px';
@@ -5075,7 +5461,7 @@ window._appStart = new Date();
     }
     requestAnimationFrame(() => {
       const dpr = window.devicePixelRatio || 1;
-      const W = dualCvs.parentElement.clientWidth - 28;
+      const W = cvsW(dualCvs); if (!W) return;
       const H = 140;
       dualCvs.width  = W*dpr; dualCvs.height = H*dpr;
       dualCvs.style.width  = W+'px'; dualCvs.style.height = H+'px';
@@ -5164,7 +5550,7 @@ window._appStart = new Date();
     const catCvs = $('statsWxCatChart');
     requestAnimationFrame(() => {
       const dpr = window.devicePixelRatio || 1;
-      const W   = catCvs.parentElement.clientWidth - 28;
+      const W   = cvsW(catCvs); if (!W) return;
       const H   = 160;
       catCvs.width  = W*dpr; catCvs.height = H*dpr;
       catCvs.style.width = W+'px'; catCvs.style.height = H+'px';
@@ -5205,7 +5591,7 @@ window._appStart = new Date();
     const scatCvs = $('statsWxScatter');
     requestAnimationFrame(() => {
       const dpr = window.devicePixelRatio || 1;
-      const W   = scatCvs.parentElement.clientWidth - 28;
+      const W   = cvsW(scatCvs); if (!W) return;
       const H   = 160;
       scatCvs.width  = W*dpr; scatCvs.height = H*dpr;
       scatCvs.style.width = W+'px'; scatCvs.style.height = H+'px';
@@ -5339,7 +5725,7 @@ window._appStart = new Date();
       document.querySelectorAll('.stats-range-tab').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       statsRange = btn.dataset.range === 'all' ? 'all' : parseInt(btn.dataset.range);
-      buildStats();
+      requestAnimationFrame(() => requestAnimationFrame(buildStats));
     });
   });
 
@@ -5347,7 +5733,8 @@ window._appStart = new Date();
   $('openStatsBtn').addEventListener('click', () => {
     openM('statsModal');
     $('openStatsBtn').classList.add('active');
-    requestAnimationFrame(buildStats);
+    // Double rAF: first frame starts modal animation, second frame fires after layout resolves
+    requestAnimationFrame(() => requestAnimationFrame(buildStats));
   });
 
 })(); // end initStats
